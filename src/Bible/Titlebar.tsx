@@ -152,6 +152,7 @@ const TitleBar: React.FC = () => {
         onClick={toggleDropdown}
         className="w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer flex items-center justify-center relative"
         title="More tools"
+        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
         <MoreHorizontal className="text-white z-20 size-3" />
 
