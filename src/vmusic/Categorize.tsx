@@ -334,7 +334,7 @@ const SongCollectionManager: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-r from-[#9a674a] to-[#b8805c] p-4 overflow-y-scroll no-scrollbar ">
+    <div className="h-screen bg-gradient-to-r from-vmprim to-[#b8805c] p-4 overflow-y-scroll no-scrollbar ">
       <div className="max-w-6xl mx-auto rounded-lg shadow-lg overflow-hidden ] 4">
         {/* <TitleBar /> */}
         <div className="flex items-center space-x-2 ml-2 -rotate-2">
@@ -375,7 +375,7 @@ const SongCollectionManager: React.FC = () => {
             <ArrowLeftCircle className="absolute text-white w-3 h-3" />
           </div>
         </div>
-        <div className="bg-gradient-to-r from-[#9a674a] to-[#b8805c] p-4 md:p-6 text-white">
+        <div className="bg-gradient-to-r from-vmprim to-[#b8805c] p-4 md:p-6 text-white">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center">
             <Music className="mr-2" /> Song Collection Manager
           </h1>
@@ -389,7 +389,7 @@ const SongCollectionManager: React.FC = () => {
           <div className="flex justify-center bg-[#faeed1] p-2">
             <button
               onClick={toggleView}
-              className="flex items-center justify-center px-4 py-2 bg-[#9a674a] text-white rounded-full text-sm"
+              className="flex items-center justify-center px-4 py-2 bg-vmfrom-vmprim text-white rounded-full text-sm"
             >
               {showSongList ? (
                 <span className="flex items-center">
@@ -404,7 +404,7 @@ const SongCollectionManager: React.FC = () => {
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row gap-5 bg-[#9a674a]">
+        <div className="flex flex-col md:flex-row gap-5 bg-vmfrom-vmprim">
           {/* Song List Panel */}
           <AnimatePresence>
             {showSongList && (
@@ -415,8 +415,8 @@ const SongCollectionManager: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 className="w-full md:w-1/2 p-4 border-r border-gray-200 "
               >
-                <div className="sticky top-0 bg-[#9a674a] pb-3 z-10">
-                  <h2 className="text-xl font-semibold text-[#9a674a] mb-3">
+                <div className="sticky top-0 bg-vmfrom-vmprim pb-3 z-10">
+                  <h2 className="text-xl font-semibold text-vmfrom-vmprim mb-3">
                     All Songs
                   </h2>
                   <div className="relative mb-4">
@@ -425,7 +425,7 @@ const SongCollectionManager: React.FC = () => {
                       placeholder="Search songs..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-[92%] inputcontrol p-2 pl-9 shadow border-none bg-gradient-to-r from-[#9a674a] to-[#b8805c] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#9a674a] text-white placeholder:text-white/50 placeholder:text-[12px]"
+                      className="w-[92%] inputcontrol p-2 pl-9 shadow border-none bg-gradient-to-r from-vmprim to-[#b8805c] rounded-lg focus:outline-none focus:ring-1 focus:ring-vmfrom-vmprim text-white placeholder:text-white/50 placeholder:text-[12px]"
                     />
                     <Search
                       className="absolute left-2 top-2 text-gray-100"
@@ -453,12 +453,12 @@ const SongCollectionManager: React.FC = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         whileHover={{ scale: 1.01 }}
-                        className={`px-4 rounded-lg cursor-pointer border shadow bg-gradient-to-r from-[#9a674a] to-[#b8805c] ${
+                        className={`px-4 rounded-lg cursor-pointer border shadow bg-gradient-to-r from-vmprim to-[#b8805c] ${
                           selectedCollection &&
                           collections
                             .find((c) => c.id === selectedCollection)
                             ?.songIds.includes(song.id)
-                            ? "border-[#9a674a] bg-[#faeed1]"
+                            ? "border-vmfrom-vmprim bg-[#faeed1]"
                             : "border-gray-200 hover:[#faeed1]"
                         }`}
                         onClick={() => handleSongSelection(song)}
@@ -484,7 +484,7 @@ const SongCollectionManager: React.FC = () => {
                                     {song.categories.map((category, idx) => (
                                       <span
                                         key={idx}
-                                        className="px-2 py-0.5 text-[12px] rounded-full bg-[#9a674a] bg-opacity-20 text-[#9a674a]"
+                                        className="px-2 py-0.5 text-[12px] rounded-full bg-vmfrom-vmprim bg-opacity-20 text-vmfrom-vmprim"
                                       >
                                         {category}
                                       </span>
@@ -496,11 +496,11 @@ const SongCollectionManager: React.FC = () => {
 
                           {selectedCollection && (
                             <button
-                              className={`p-1 h-8 w-8 bg-gradient-to-r from-[#9a674a] to-[#b8805c]  flex items-center justify-center rounded-full ${
+                              className={`p-1 h-8 w-8 bg-gradient-to-r from-vmprim to-[#b8805c]  flex items-center justify-center rounded-full ${
                                 collections
                                   .find((c) => c.id === selectedCollection)
                                   ?.songIds.includes(song.id)
-                                  ? "bg-[#9a674a] text-white"
+                                  ? "bg-vmprim text-white"
                                   : "bg-gray-200 text-yellow-500"
                               }`}
                               onClick={(e) => {
@@ -538,12 +538,12 @@ const SongCollectionManager: React.FC = () => {
               >
                 <div className="sticky top-0  pb-3 z-10">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-[#9a674a]">
+                    <h2 className="text-xl font-semibold text-vmfrom-vmprim">
                       Collections
                     </h2>
                     <button
                       onClick={() => setIsAddingCollection(true)}
-                      className="p-2 flex items-center justify-center  bg-gradient-to-r from-[#b8805c] to-[#9a674a] shadow h-8 w-8 text-white rounded-full hover:bg-[#85583f] transition-colors"
+                      className="p-2 flex items-center justify-center  bg-gradient-to-r from-[#b8805c] to-vmfrom-vmprim shadow h-8 w-8 text-white rounded-full hover:bg-[#85583f] transition-colors"
                     >
                       <FolderPlus size={18} />
                     </button>
@@ -562,12 +562,12 @@ const SongCollectionManager: React.FC = () => {
                           placeholder="Collection name..."
                           value={newCollectionName}
                           onChange={(e) => setNewCollectionName(e.target.value)}
-                          className="flex-1 inputcontrol bg-gradient-to-r from-[#9a674a] to-[#b8805c] p-2 shadow border-none rounded-l-lg focus:outline-none text-gray-100 font-serif  focus:ring-1 focus:ring-[#9a674a] placeholder:text-white/60"
+                          className="flex-1 inputcontrol bg-gradient-to-r from-vmprim to-[#b8805c] p-2 shadow border-none rounded-l-lg focus:outline-none text-gray-100 font-serif  focus:ring-1 focus:ring-vmfrom-vmprim placeholder:text-white/60"
                           autoFocus
                         />
                         <button
                           onClick={createCollection}
-                          className="p-2 bg-gradient-to-r from-[#9a674a] to-[#b8805c] shadow text-white border-l rounded-r-lg hover:bg-[#85583f]"
+                          className="p-2 bg-gradient-to-r from-vmprim to-[#b8805c] shadow text-white border-l rounded-r-lg hover:bg-[#85583f]"
                         >
                           <Save size={18} />
                         </button>
@@ -594,7 +594,7 @@ const SongCollectionManager: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className={`p-3 rounded-lg border cursor-pointer  transition-colors ${
                           selectedCollection === collection.id
-                            ? "border-[#9a674a] bg-gradient-to-r from-[#b8805c] to-[#9a674a] shadow"
+                            ? "border-vmfrom-vmprim bg-gradient-to-r from-[#b8805c] to-vmfrom-vmprim shadow"
                             : "border-gray-200 hover:bg-[#b8805c] "
                         }`}
                         onClick={() => {
@@ -638,12 +638,12 @@ const SongCollectionManager: React.FC = () => {
                             {selectedCollection === collection.id ? (
                               <ChevronDown
                                 size={20}
-                                className="text-[#9a674a] mr-2"
+                                className="text-vmfrom-vmprim mr-2"
                               />
                             ) : (
                               <ChevronRight
                                 size={20}
-                                className="text-[#9a674a] mr-2"
+                                className="text-vmfrom-vmprim mr-2"
                               />
                             )}
                             <div>
@@ -657,7 +657,7 @@ const SongCollectionManager: React.FC = () => {
                           </div>
 
                           <button
-                            className="p-1 h-8 w-8 z-30 text-yellow-500 bg-gradient-to-r from-[#b8805c] to-[#9a674a] shadow transition-colors hover:text-red-500 rounded-full hover:bg-red-50"
+                            className="p-1 h-8 w-8 z-30 text-yellow-500 bg-gradient-to-r from-[#b8805c] to-vmfrom-vmprim shadow transition-colors hover:text-red-500 rounded-full hover:bg-red-50"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteCollection(collection.id);
@@ -679,12 +679,12 @@ const SongCollectionManager: React.FC = () => {
                                 {getCollectionSongs().map((song) => (
                                   <div
                                     key={song.id}
-                                    className="bg-gradient-to-r from-[#9a674a] to-[#b8805c] shadow flex justify-between items-center py-2  rounded hover:bg-white group"
+                                    className="bg-gradient-to-r from-vmprim to-[#b8805c] shadow flex justify-between items-center py-2  rounded hover:bg-white group"
                                   >
                                     <div className="flex items-center text-[12px]">
                                       <Music
                                         size={14}
-                                        className="text-[#9a674a] mr-2"
+                                        className="text-vmfrom-vmprim mr-2"
                                       />
                                       <span className="text-white">
                                         {song.title}
@@ -692,7 +692,7 @@ const SongCollectionManager: React.FC = () => {
                                     </div>
                                     <div className="flex items-center">
                                       <button
-                                        className="opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-r from-[#9a674a] to-[#b8805c] p-1 h-6 w-6 text-gray-100 flex items-center hover:text-red-500 rounded-full hover:bg-red-50 "
+                                        className="opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-r from-vmprim to-[#b8805c] p-1 h-6 w-6 text-gray-100 flex items-center hover:text-red-500 rounded-full hover:bg-red-50 "
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           removeSongFromCollection(
@@ -704,7 +704,7 @@ const SongCollectionManager: React.FC = () => {
                                         <X size={14} />
                                       </button>
                                       <button
-                                        className="opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-r from-[#9a674a] to-[#b8805c] p-1 h-6 w-6 text-gray-100 flex items-center hover:text-red-500 rounded-full hover:bg-red-50 "
+                                        className="opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-r from-vmprim to-[#b8805c] p-1 h-6 w-6 text-gray-100 flex items-center hover:text-red-500 rounded-full hover:bg-red-50 "
                                         title="present here📩"
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -717,7 +717,7 @@ const SongCollectionManager: React.FC = () => {
                                         <Monitor size={14} />
                                       </button>
                                       <button
-                                        className="opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-r from-[#9a674a] to-[#b8805c] p-1 h-6 w-6 text-gray-100 flex items-center hover:text-red-500 rounded-full hover:bg-red-50 "
+                                        className="opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-r from-vmprim to-[#b8805c] p-1 h-6 w-6 text-gray-100 flex items-center hover:text-red-500 rounded-full hover:bg-red-50 "
                                         title="external screen ↗️"
                                         onClick={(e) => {
                                           e.stopPropagation();

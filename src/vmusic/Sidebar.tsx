@@ -71,15 +71,19 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   return (
     <div className="relative " ref={dropdownRef}>
       {label && (
-        <label className="text-sm font-thin  skew-x-12 italic mb-1 block">
+        <label
+          className="text-sm font-thin  mb-1 block "
+          style={{ fontFamily: "Georgia" }}
+        >
           {label}
         </label>
       )}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full p-2 rounded-lg ${
-          theme === "creamy" ? "bg-[#9a674a]/20 " : "bg-white"
+          theme === "creamy" ? "bg-vmprim/20 " : "bg-gray-50"
         } text-[12px] border border-stone-200 flex items-center justify-between hover:bg-white/60 transition-colors`}
+        style={{ fontFamily: label === "Font Family" ? value : undefined }}
       >
         <span>{displayValue as string}</span>
         <ChevronDown
@@ -90,8 +94,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       </button>
       {isOpen && (
         <div
-          className={`absolute z-40 w-full mt-1 flex flex-col items-center  ${
-            theme === "creamy" ? "bg-[#9a674a]" : "bg-white"
+          className={`absolute z-40 w-full mt-1 flex flex-col items-center gap-1  ${
+            theme === "creamy" ? "bg-vmprim" : "bg-white"
           } rounded-lg shadow-lg border border-stone-200 py-1 max-h-48 overflow-y-auto no-scrollbar`}
         >
           {options.map((option, index) => (
@@ -101,13 +105,16 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-[90%] px-3 py-2 text-left  text-[12px] shadow-inner  hover:[#9a674a]/40 hover:text-black  transition-colors ${
+              className={`w-[90%] px-3 py-2 text-left  text-[12px   hover:[#9a674a]/40 hover:text-black  transition-colors ${
                 (option.value || option) === value
                   ? "bg-white/20 text-orange-400"
                   : theme === "creamy"
-                  ? "bg-[#9a674a]/20 text-white"
-                  : "bg-transparent border text-stone-500"
+                  ? "bg-vmprim/20 text-white"
+                  : "bg-gray-50 border text-stone-500"
               }`}
+              style={{
+                fontFamily: label === "Font Family" ? option.value : undefined,
+              }}
             >
               {option.label}
             </button>
@@ -118,22 +125,22 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   );
 };
 
-const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
+const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
   // const [activeTab, setActiveTab] = useState("recent");
   const { setSongRepo, selectedSong, setSelectedHymnBackground, theme } =
     useBmusicContext();
   const { setCurrentScreen } = useEastVoiceContext();
   const [fontSize, setFontSize] = useState(
-    localStorage.getItem("fontSize") || "1.5"
+    localStorage.getItem("bmusicfontSize") || "1.5"
   );
   const [fontFamily, setFontFamily] = useState(
-    localStorage.getItem("fontFamily") || "'Georgia', serif"
+    localStorage.getItem("bmusicfontFamily") || "'Georgia', serif"
   );
   const [displayCount, setDisplayCount] = useState(
-    localStorage.getItem("displayCount") || "6"
+    localStorage.getItem("bmusicdisplayCount") || "6"
   );
   const [layout, setLayout] = useState(
-    localStorage.getItem("layout") || "table"
+    localStorage.getItem("bmusiclayout") || "table"
   );
   const [selectedBg, setSelectedBg] = useState(
     localStorage.getItem("selectedBg") || "bg1"
@@ -166,18 +173,6 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
       thumbnail: "./wood9.png",
       gradient: "bg-gradient-to-r from-green-100 to-emerald-100",
     },
-    {
-      id: "bg5",
-      name: "Forest Calm",
-      thumbnail: "./pi8.jpg",
-      gradient: "bg-gradient-to-r from-green-100 to-emerald-100",
-    },
-    {
-      id: "bg6",
-      name: "Forest Calm",
-      thumbnail: "./pic3.jpg",
-      gradient: "bg-gradient-to-r from-green-100 to-emerald-100",
-    },
   ];
 
   const fontSizeOptions = [
@@ -204,12 +199,6 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
     },
   ];
 
-  const displayCountOptions = [
-    { value: "4", label: "4 Items" },
-    { value: "6", label: "6 Items" },
-    { value: "8", label: "8 Items" },
-  ];
-
   const selectsongDir = async () => {
     const path = await window.api.selectDirectory();
     if (typeof path === "string") {
@@ -221,7 +210,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
     const path = await window.api.selectDirectory();
     if (typeof path === "string") {
       // setSongRepo(path);
-      localStorage.setItem("vmusicimages", path);
+      localStorage.setItem("bmusicimages", path);
       setCurrentScreen("backgrounds");
     }
   };
@@ -233,7 +222,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
   };
 
   useEffect(() => {
-    const savedCollections = localStorage.getItem("collections");
+    const savedCollections = localStorage.getItem("bmusiccollections");
     if (savedCollections) {
       setCollections(JSON.parse(savedCollections));
     } else {
@@ -259,16 +248,19 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
         },
       ];
       setCollections(sampleCollections);
-      localStorage.setItem("collections", JSON.stringify(sampleCollections));
+      localStorage.setItem(
+        "bmusiccollections",
+        JSON.stringify(sampleCollections)
+      );
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("fontSize", fontSize);
-    localStorage.setItem("fontFamily", fontFamily);
-    localStorage.setItem("displayCount", displayCount);
-    localStorage.setItem("layout", layout);
-    localStorage.setItem("selectedBg", selectedBg);
+    localStorage.setItem("bmusicfontFamily", fontFamily);
+    localStorage.setItem("bmusicdisplayCount", displayCount);
+    localStorage.setItem("bmusiclayout", layout);
+    localStorage.setItem("bmusicselectedBg", selectedBg);
+    localStorage.setItem("bmusicfontSize", fontSize);
   }, [fontSize, fontFamily, displayCount, layout, selectedBg]);
 
   const renderContent = () => {
@@ -308,7 +300,10 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
         return (
           <div className="space-y-6 ">
             <div className="space-y-4 ">
-              <h3 className="text-lg font-semibold skew-x-12 italic">
+              <h3
+                className="text-lg font-semibold"
+                style={{ fontFamily: "Georgia" }}
+              >
                 Display Settings
               </h3>
 
@@ -326,38 +321,76 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
                 options={fontFamilyOptions}
               />
 
-              <CustomDropdown
-                label="Items to Display"
-                value={displayCount}
-                onChange={setDisplayCount}
-                options={displayCountOptions}
-              />
+              <div className="flex items-center gap-2 ">
+                <div
+                  onClick={selectsongDir}
+                  className="w-4 h-4 p-4 cursor-pointer  bg-white/50  text-vmborder-vmprim text-[12px] rounded-full
+                               transition-all duration-300 flex items-center justify-center gap-2
+                               focus:outline-none group"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    borderStyle: "dashed",
+                  }}
+                >
+                  <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  {/* <span>Songs directory </span> */}
+                </div>
+                <div
+                  onClick={() => selectImagesPath()}
+                  className="w-4 h-4 cursor-pointer rounded-full p-4  bg-white/50 border-2 border-vmprim/20
+                               hover:border-vmprim text-vmborder-vmprim text-[12px] 
+                               transition-all duration-300 flex items-center justify-center gap-2
+                               focus:outline-none group"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    borderStyle: "dashed",
+                  }}
+                >
+                  <Wallpaper className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  {/* <span>Presentation background path </span> */}
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-thin">Layout Style</label>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setLayout("table")}
-                    className={`flex items-center space-x-2 p-2 text-[12px] rounded-lg ${
-                      layout === "table"
-                        ? "bg-[#9a674a] text-white"
-                        : "bg-white"
-                    }`}
-                  >
-                    <Grid size={12} />
-                    <span>Grid</span>
-                  </button>
-                  <button
-                    onClick={() => setLayout("list")}
-                    className={`flex items-center space-x-2 text-[12px] p-2 rounded-lg ${
-                      layout === "list" ? "bg-[#9a674a] text-white" : "bg-white"
-                    }`}
-                  >
-                    <List size={12} />
-                    <span>List</span>
-                  </button>
+                <div
+                  onClick={() => setLayout("table")}
+                  className={`w-4 h-4 cursor-pointer rounded-full p-4  bg-white/50 border-2 border-vmprim/20
+                               hover:border-vmprim text-vmborder-vmprim text-[12px] 
+                               transition-all duration-300 flex items-center justify-center gap-2
+                               focus:outline-none group ${
+                                 layout === "table"
+                                   ? "bg-vmprim text-white"
+                                   : "bg-white"
+                               }`}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    borderStyle: "dashed",
+                  }}
+                >
+                  <Grid className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </div>
+
+                <div
+                  onClick={() => setLayout("list")}
+                  className={`w-4 h-4 cursor-pointer rounded-full p-4  bg-white/50 border-2 border-vmprim/20
+                               hover:border-vmprim text-[#6d4a35] text-[12px] 
+                               transition-all duration-300 flex items-center justify-center gap-2
+                               focus:outline-none group ${
+                                 layout === "list"
+                                   ? "bg-vmprim text-["
+                                   : "bg-white"
+                               }`}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    borderStyle: "dashed",
+                  }}
+                >
+                  <List className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Background Theme</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -366,10 +399,10 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
                       key={bg.id}
                       onClick={() => selectPresentationBackground(bg.thumbnail)}
                       className={`relative group p-1 rounded-lg ${
-                        theme === "creamy" ? "bg-[#9a674a]/30" : "bg-white"
+                        theme === "creamy" ? "bg-vmprim/30" : "bg-white"
                       } border-2 transition-all ${
                         selectedBg === bg.id
-                          ? "border-[#9a674a]"
+                          ? "border-vmprim"
                           : "border-transparent hover:border-stone-200"
                       }`}
                     >
@@ -378,7 +411,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
                         style={{ backgroundImage: `url(${bg.thumbnail})` }}
                       >
                         {selectedBg === bg.thumbnail && (
-                          <div className="absolute top-2 right-2 w-5 h-5 bg-[#9a674a] rounded-full flex items-center justify-center">
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-vmprim rounded-full flex items-center justify-center">
                             <Check className="w-3 h-3 text-white" />
                           </div>
                         )}
@@ -392,34 +425,14 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
                 {/* choose directory to load images from */}
                 {/* <button
                   onClick={selectedImageDirectory}
-                  className="w-full py-2 px-4  bg-white/50 border-2 border-[#9a674a]/20
-                               hover:border-[#9a674a] text-[#9a674a] text-[12px] rounded-lg
+                  className="w-full py-2 px-4  bg-white/50 border-2 border-vmprim/20
+                               hover:border-vmprim text-vmborder-vmprim text-[12px] rounded-lg
                                transition-all duration-300 flex items-center justify-center gap-2
                                focus:outline-none group"
                 >
                   <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   <span>Images Directory</span>
                 </button> */}
-                <button
-                  onClick={selectsongDir}
-                  className="w-full py-2 px-4  bg-white/50 border-2 border-[#9a674a]/20
-                               hover:border-[#9a674a] text-[#9a674a] text-[12px] rounded-lg
-                               transition-all duration-300 flex items-center justify-center gap-2
-                               focus:outline-none group"
-                >
-                  <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span>Songs directory </span>
-                </button>
-                <button
-                  onClick={() => selectImagesPath()}
-                  className="w-full py-2 px-4  bg-white/50 border-2 border-[#9a674a]/20
-                               hover:border-[#9a674a] text-[#9a674a] text-[12px] rounded-lg
-                               transition-all duration-300 flex items-center justify-center gap-2
-                               focus:outline-none group"
-                >
-                  <Wallpaper className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span>Presentation background path </span>
-                </button>
               </div>
             </div>
           </div>
@@ -447,7 +460,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
                       {collection.name}{" "}
                       <span>
                         <ExternalLink
-                          className="h-4 w-4 text-[#9a674a] hover:scale-105 hover:cursor-pointer"
+                          className="h-4 w-4 text-vmborder-vmprim hover:scale-105 hover:cursor-pointer"
                           onClick={() => setCurrentScreen("categorize")}
                         />
                       </span>
@@ -485,7 +498,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
       className="w-72 pt-2 border-r border-stone-300 bg-white/20 backdrop-blur-sm transition-all duration-300 ease-in-out overflow-y-auto no-scrollbar shadow"
     >
       <div className="p-4 flex items-center justify-between">
-        <h2 className="font-serif text-xl s font-bold text-[#9a674a] flex items-center gap-2">
+        <h2 className="font-serif text-xl s font-bold text-vmborder-vmprim flex items-center gap-2">
           <Music className="w-5 h-5 animate-bounce" />
           Soul healing music
           <Music className="w-5 h-5 animate-bounce" />
@@ -502,7 +515,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
             onClick={() => setActiveTab("Song")}
             className={` py-2 rounded-md text-[12px] px-2 font-medium transition-colors flex items-center justify-center ${
               activeTab === "Song"
-                ? "bg-[#9a674a] text-white"
+                ? "bg-vmprim text-white"
                 : "text-stone-600 bg-white"
             }`}
           >
@@ -512,7 +525,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
             onClick={() => setActiveTab("settings")}
             className={` py-2 rounded-md text-[12px] px-2  font-medium transition-colors flex items-center justify-center ${
               activeTab === "settings"
-                ? "bg-[#9a674a] text-white"
+                ? "bg-vmprim text-white"
                 : "text-stone-600 bg-white"
             }`}
           >
@@ -522,7 +535,7 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
             onClick={() => setActiveTab("collections")}
             className={`flex-1 py-2 rounded-md text-[12px] px-2 font-medium transition-colors flex items-center justify-center ${
               activeTab === "collections"
-                ? "bg-[#9a674a] text-white"
+                ? "bg-vmprim text-white"
                 : "text-stone-600 bg-white"
             }`}
           >
@@ -536,6 +549,6 @@ const Sidebar = ({ activeTab, setActiveTab }: SideBarProps) => {
       </div>
     </div>
   );
-};
+});
 
 export default Sidebar;

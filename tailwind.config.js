@@ -10,8 +10,8 @@ export default {
         background:"#faeed1",
         primary: '#9a674a',
         bgray:"#202020",
-        ltgray:"#080808"
-
+        ltgray:"#080808",
+        vmprim:"#9a674a",
       },
       fontFamily: {
         anton: ['"Anton SC"', 'sans-serif'],
