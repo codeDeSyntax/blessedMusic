@@ -6,7 +6,6 @@
       http-equiv="Content-Security-Policy"
       content="script-src 'self' 'unsafe-inline';"
     />
-
     <title>Song Presentation</title>
     <link rel="stylesheet" href="./presentation.css" />
   </head>
@@ -18,25 +17,53 @@
 
       <!-- Content Container -->
       <div class="content-container">
-        <!-- Title Section -->
-        <div class="title-section">
-          <h2 id="sectionTitle" class="section-title">
-            <span id="titleText"></span>
-            <svg class="audio-lines" viewBox="0 0 24 24" width="24" height="24">
-              <path
-                d="M2 10v3m4-7v11m4-7v3m4-7v11m4-4v3"
-                stroke="currentColor"
-                stroke-width="2"
-                fill="none"
-              />
-            </svg>
-          </h2>
-        </div>
-
         <!-- Main Content -->
         <div class="content-wrapper no-scrollbar">
           <div id="contentContainer" class="content no-scrollbar">
             Blessed Music
+          </div>
+        </div>
+
+        <!-- Section Indicator -->
+        <div id="sectionIndicator" class="section-indicator">Section</div>
+
+        <!-- Font Size Controls -->
+        <div id="fontControls" class="font-controls">
+          <button
+            id="fontToggle"
+            class="font-toggle-btn"
+            aria-label="Toggle font controls"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path
+                d="M9 4v3h5v12h3V7h5V4H9zM3 7c0 2.08.25 3.92.75 5.5S5.41 15.5 6.5 16.5c1.08 1 2.33 1.5 3.75 1.5H12v-3h-1.75c-.83 0-1.58-.25-2.25-.75S6.83 13.33 6.5 12.5 6.33 10.67 6.5 9.5 7 7.33 7.75 6.5 9.08 5.5 9.92 5.5H12V2.5h-1.75C8.83 2.5 7.58 3 6.5 4S4.75 6.42 4.25 8C3.75 9.58 3.5 11.42 3.5 13.5"
+              />
+              <circle cx="9" cy="12" r="1" />
+            </svg>
+          </button>
+          <div id="fontControlsPanel" class="font-controls-panel">
+            <button
+              id="fontDecrease"
+              class="font-btn"
+              aria-label="Decrease font size"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path d="M19 13H5v-2h14v2z" fill="currentColor" />
+              </svg>
+            </button>
+            <span id="fontSizeDisplay" class="font-size-display">100%</span>
+            <button
+              id="fontIncrease"
+              class="font-btn"
+              aria-label="Increase font size"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path
+                  d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -50,7 +77,7 @@
             <button
               id="prevButton"
               class="nav-button"
-              aria-label="Previous page"
+              aria-label="Previous section"
             >
               <svg viewBox="0 0 24 24" width="12" height="12">
                 <path
@@ -61,7 +88,11 @@
                 />
               </svg>
             </button>
-            <button id="nextButton" class="nav-button" aria-label="Next page">
+            <button
+              id="nextButton"
+              class="nav-button"
+              aria-label="Next section"
+            >
               <svg viewBox="0 0 24 24" width="12" height="12">
                 <path
                   d="M9 18l6-6-6-6"
@@ -78,10 +109,11 @@
 
     <script>
       // State management
-      let songSections = []; // Original parsed sections
-      let displaySequence = []; // Sequence with chorus after each verse
+      let songSections = [];
       let currentIndex = 0;
       let songTitle = "";
+      let fontSizeMultiplier = 0.05;
+      let baseFontSize = 30; // Much larger base font size for visibility
 
       // Helper function to safely access localStorage
       const getLocalStorageItem = (key, defaultValue = null) => {
@@ -91,6 +123,15 @@
         } catch (error) {
           console.error(`Error accessing localStorage for key ${key}:`, error);
           return defaultValue;
+        }
+      };
+
+      // Helper function to safely set localStorage
+      const setLocalStorageItem = (key, value) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.error(`Error setting localStorage for key ${key}:`, error);
         }
       };
 
@@ -104,7 +145,33 @@
         }
       };
 
-      // Function to parse song content into sections
+      // Load font size multiplier from localStorage
+      const loadFontSettings = () => {
+        const savedMultiplier = getLocalStorageItem(
+          "bmusicFontMultiplier",
+          "1.0"
+        );
+        fontSizeMultiplier = parseFloat(savedMultiplier) || 1.0;
+        updateFontSizeDisplay();
+      };
+
+      // Save font size multiplier to localStorage
+      const saveFontSettings = () => {
+        setLocalStorageItem(
+          "bmusicFontMultiplier",
+          fontSizeMultiplier.toString()
+        );
+      };
+
+      // Update font size display
+      const updateFontSizeDisplay = () => {
+        const display = document.getElementById("fontSizeDisplay");
+        if (display) {
+          display.textContent = Math.round(fontSizeMultiplier * 100) + "%";
+        }
+      };
+
+      // Function to parse song content into complete sections
       const parseSongContent = (content) => {
         if (!content) {
           console.error("No song content provided");
@@ -113,7 +180,6 @@
               type: "Error",
               content: ["No song content available"],
               number: null,
-              pageIndex: 0,
             },
           ];
         }
@@ -124,21 +190,14 @@
           const doc = parser.parseFromString(content, "text/html");
           const paragraphs = Array.from(doc.getElementsByTagName("p"));
           console.log("Total paragraphs found:", paragraphs.length);
-          console.log("Parsed sections:", sections);
 
           let currentType = null;
           let currentNumber = null;
           let currentContent = [];
 
-          // Handle empty paragraph list
           if (paragraphs.length === 0) {
             return [
-              {
-                type: "Song",
-                content: ["No lyrics found"],
-                number: null,
-                pageIndex: 0,
-              },
+              { type: "Song", content: ["No lyrics found"], number: null },
             ];
           }
 
@@ -147,56 +206,47 @@
             const verseMatch = text.match(/^Verse (\d+)$/);
             const isChorus = text === "Chorus";
 
-            // Check for new section start
             if (verseMatch) {
-              // Save previous section if exists
               if (currentType && currentContent.length > 0) {
                 sections.push({
                   type: currentType,
-                  content: currentContent,
+                  content: [...currentContent],
                   number: currentNumber,
                 });
-                currentContent = [];
               }
-
               currentType = "Verse";
               currentNumber = parseInt(verseMatch[1]);
+              currentContent = [];
             } else if (isChorus) {
-              // Save previous section if exists
               if (currentType && currentContent.length > 0) {
                 sections.push({
                   type: currentType,
-                  content: currentContent,
+                  content: [...currentContent],
                   number: currentNumber,
                 });
-                currentContent = [];
               }
-
               currentType = "Chorus";
               currentNumber = null;
+              currentContent = [];
             } else if (text && !verseMatch && !isChorus) {
-              // Add content to current section
               currentContent.push(text);
             }
 
-            // Ensure the last section is added
             if (index === paragraphs.length - 1 && currentContent.length > 0) {
               sections.push({
                 type: currentType,
-                content: currentContent,
+                content: [...currentContent],
                 number: currentNumber,
               });
             }
           });
 
-          // Handle case where no valid sections were found
           if (sections.length === 0) {
             return [
               {
                 type: "Song",
                 content: ["No structured lyrics found"],
                 number: null,
-                pageIndex: 0,
               },
             ];
           }
@@ -209,82 +259,36 @@
               type: "Error",
               content: ["Error parsing song content"],
               number: null,
-              pageIndex: 0,
             },
           ];
         }
       };
 
-      // Function to create paginated sections
-      const createPaginatedSections = (sections) => {
-        // Convert sections into pages with maximum lines per page
-        const paginatedSections = [];
-        const linesPerPage = 6;
-
-        sections.forEach((section) => {
-          const pages = [];
-          for (let i = 0; i < section.content.length; i += linesPerPage) {
-            const pageContent = section.content.slice(i, i + linesPerPage);
-            // Only create pages for non-empty content
-            if (pageContent.length > 0) {
-              pages.push({
-                type: section.type,
-                content: pageContent,
-                number: section.number,
-                pageIndex: Math.floor(i / linesPerPage),
-                sectionId: section.type.toLowerCase() + (section.number || "1"),
-              });
-            }
-          }
-          if (pages.length > 0) {
-            paginatedSections.push({
-              type: section.type,
-              number: section.number,
-              pages: pages,
-            });
-          }
-        });
-
-        return paginatedSections;
-      };
-
-      // Function to create display sequence with chorus after each verse (but not after chorus)
-      const createDisplaySequence = (paginatedSections) => {
+      // Function to create display sequence with chorus after each verse
+      const createDisplaySequence = (sections) => {
         const sequence = [];
-
-        // Find the first chorus section (if any)
-        const firstChorus = paginatedSections.find(
+        const firstChorus = sections.find(
           (section) => section.type === "Chorus"
         );
 
         if (!firstChorus) {
-          // If no chorus found, just flatten all sections
-          paginatedSections.forEach((section) => {
-            section.pages.forEach((page) => sequence.push(page));
-          });
-          return sequence;
+          return [...sections];
         }
 
-        // Create sequence with chorus after each verse (but not after chorus)
-        paginatedSections.forEach((section, index) => {
-          // Add the current section's pages
-          section.pages.forEach((page) => sequence.push(page));
+        sections.forEach((section, index) => {
+          sequence.push(section);
 
-          // If this was a verse, add the first chorus UNLESS the next section is already a chorus
           if (section.type === "Verse" && firstChorus) {
-            // Check if the next section is a chorus
             const nextSectionIsChorus =
-              index + 1 < paginatedSections.length &&
-              paginatedSections[index + 1].type === "Chorus";
+              index + 1 < sections.length &&
+              sections[index + 1].type === "Chorus";
 
-            // Only add repeating chorus if the next section is not already a chorus
             if (!nextSectionIsChorus) {
-              firstChorus.pages.forEach((page) => {
-                // Clone the chorus page and mark it as repeating
-                const chorusPage = { ...page };
-                chorusPage.isRepeating = true;
-                sequence.push(chorusPage);
-              });
+              const chorusRepeat = {
+                ...firstChorus,
+                isRepeating: true,
+              };
+              sequence.push(chorusRepeat);
             }
           }
         });
@@ -292,112 +296,178 @@
         return sequence;
       };
 
-      // Function to update page display
+      // Enhanced dynamic font sizing function
+      const calculateOptimalFontSize = (container, lines) => {
+        const containerHeight = container.clientHeight;
+        const containerWidth = container.clientWidth;
+
+        // Get font family from localStorage or use default
+        const fontFamily = getLocalStorageItem(
+          "bmusicfontFamily",
+          "Georgia, serif"
+        );
+
+        // Create temporary element for measurements
+        const temp = document.createElement("div");
+        temp.style.position = "absolute";
+        temp.style.visibility = "hidden";
+        temp.style.fontFamily = fontFamily;
+        temp.style.fontWeight = "bold";
+        temp.style.lineHeight = "0";
+        temp.style.textAlign = "center";
+        temp.style.width = containerWidth * 0.95 + "px"; // Use 95% of width
+        temp.style.padding = "0";
+        temp.style.margin = "0";
+        document.body.appendChild(temp);
+
+        // Start with a much larger base font size for visibility
+        let maxFontSize = Math.min(containerHeight / (lines.length * 1.2), 120);
+        let minFontSize = Math.max(baseFontSize, 24); // Ensure minimum visibility
+
+        // Ensure we start with a reasonable size
+        if (maxFontSize < minFontSize) {
+          maxFontSize = minFontSize;
+        }
+
+        let optimalSize = maxFontSize;
+        let iterations = 0;
+        const maxIterations = 15;
+
+        // Binary search for optimal font size
+        while (maxFontSize - minFontSize > 2 && iterations < maxIterations) {
+          const testSize = (maxFontSize + minFontSize) / 2;
+          temp.style.fontSize = testSize + "px";
+          temp.innerHTML = "";
+
+          // Add all lines to temp element
+          lines.forEach((line, index) => {
+            const p = document.createElement("p");
+            p.textContent = line;
+            p.style.margin = "0";
+            if (index < lines.length - 1) {
+              p.style.marginBottom = "1rem";
+            }
+            temp.appendChild(p);
+          });
+
+          const tempHeight = temp.scrollHeight;
+          const availableHeight = containerHeight * 0.9; // Use 85% of height
+
+          if (tempHeight <= availableHeight) {
+            minFontSize = testSize;
+            optimalSize = testSize;
+          } else {
+            maxFontSize = testSize;
+          }
+
+          iterations++;
+        }
+
+        document.body.removeChild(temp);
+
+        // Apply user font size multiplier
+        const finalSize = Math.max(24, optimalSize * fontSizeMultiplier);
+
+        console.log(
+          `Calculated font size: ${Math.floor(finalSize)}px for ${
+            lines.length
+          } lines`
+        );
+        return Math.floor(finalSize);
+      };
+
+      // Function to update page display with complete sections
       const updatePage = (index) => {
-        if (!displaySequence || displaySequence.length === 0) {
-          console.error("No song pages available");
+        if (!songSections || songSections.length === 0) {
+          console.error("No song sections available");
           return;
         }
 
-        if (index < 0 || index >= displaySequence.length) {
-          console.error(`Invalid page index: ${index}`);
+        if (index < 0 || index >= songSections.length) {
+          console.error(`Invalid section index: ${index}`);
           return;
         }
 
-        const page = displaySequence[index];
-        const titleElement = document.getElementById("titleText");
+        const section = songSections[index];
         const container = document.getElementById("contentContainer");
+        const sectionIndicator = document.getElementById("sectionIndicator");
 
-        if (!titleElement || !container) {
+        if (!container || !sectionIndicator) {
           console.error("Required DOM elements not found");
           return;
         }
 
-        // Update the title with section information
-        let sectionTitle = `${page.type}${
-          page.number ? ` ${page.number}` : ""
-        }${page.pageIndex > 0 ? " (cont.)" : ""}`;
-
-        // Add indication if this is a repeating chorus
-        if (page.isRepeating) {
+        // Update section indicator
+        let sectionTitle = `${section.type}${
+          section.number ? ` ${section.number}` : ""
+        }`;
+        if (section.isRepeating) {
           sectionTitle += " (Repeat)";
         }
-
-        sectionTitle += ` - ${songTitle || ""}`;
-        titleElement.textContent = sectionTitle;
+        sectionIndicator.textContent = sectionTitle;
 
         // Clear previous content
         container.innerHTML = "";
 
-        // Get user preferences from localStorage with defaults
-        const savedSize = parseInt(getLocalStorageItem("fontSize", "0"));
-        const baseFontSize = 3.5; // Base font size in rem
-        const textSize = `${baseFontSize + savedSize}rem`;
-        const fontFamily = getLocalStorageItem("fontFamily", "serif");
-        const maxWidth = container.clientWidth - 10; // Account for padding
+        // Get font family from localStorage
+        const fontFamily = getLocalStorageItem(
+          "bmusicfontFamily",
+          "Georgia, serif"
+        );
+
+        // Calculate optimal font size for this section
+        const optimalFontSize = calculateOptimalFontSize(
+          container,
+          section.content
+        );
 
         // Add each line of content
-        page.content.forEach((line, i) => {
-          if (!line.trim()) return; // Skip empty lines
+        section.content.forEach((line, i) => {
+          if (!line.trim()) return;
 
           const p = document.createElement("p");
           p.textContent = line;
-          p.style.animation = `fadeInUp ${i * 0.1 + 0.2}s ease forwards`;
-          p.style.fontSize = textSize;
+          p.style.animation = `fadeInUp ${i * 0.1 + 0.3}s ease forwards`;
+          p.style.fontSize = `${optimalFontSize}px`;
           p.style.fontFamily = fontFamily;
-          // p.style.marginBottom = "1rem";
-          p.innerText.toLowerCase();
-          // p.style.fontWeight = "900";
+          p.style.marginBottom = "0.5rem";
+       
 
-          // Add to DOM temporarily to measure width
           container.appendChild(p);
-
-          // Adjust font size if text is too wide
-          if (p.offsetWidth > maxWidth) {
-            const scaleFactor = Math.min(0.9, maxWidth / p.offsetWidth);
-            const adjustedSize = parseFloat(textSize) * scaleFactor;
-            p.style.fontSize = `${adjustedSize}rem`;
-          }
         });
 
-        // Update navigation buttons state
+        // Update navigation buttons
         const prevButton = document.getElementById("prevButton");
         const nextButton = document.getElementById("nextButton");
 
         if (prevButton) prevButton.disabled = index === 0;
-        if (nextButton)
-          nextButton.disabled = index === displaySequence.length - 1;
+        if (nextButton) nextButton.disabled = index === songSections.length - 1;
 
         // Update progress indicators
         updateProgressIndicators(index);
       };
 
-      // Function to update progress indicators with different style for chorus repeats
+      // Function to update progress indicators
       const updateProgressIndicators = (currentIndex) => {
         const container = document.getElementById("progressIndicators");
         if (!container) return;
 
         container.innerHTML = "";
 
-        displaySequence.forEach((page, index) => {
+        songSections.forEach((section, index) => {
           const indicator = document.createElement("button");
 
-          // Use a different class for repeating chorus indicators
-          if (page.isRepeating) {
+          if (section.isRepeating) {
             indicator.className = `progress-dot chorus-repeat ${
               index === currentIndex ? "active" : ""
             }`;
-
-            // Add a different style to repeating chorus dots
-            indicator.style.borderRadius = "0"; // Make it square instead of round
-            indicator.style.transform = "rotate(45deg)"; // Diamond shape
           } else {
             indicator.className = `progress-dot ${
               index === currentIndex ? "active" : ""
             }`;
           }
 
-          indicator.setAttribute("aria-label", `Go to page ${index + 1}`);
+          indicator.setAttribute("aria-label", `Go to section ${index + 1}`);
           indicator.onclick = () => {
             currentIndex = index;
             updatePage(index);
@@ -412,7 +482,6 @@
         if (!main) return;
 
         const mainImg = getLocalStorageItem("bmusicpresentationbg");
-
         if (mainImg) {
           main.style.backgroundImage = `url(${mainImg})`;
         } else {
@@ -431,18 +500,13 @@
         try {
           songTitle = songData.title || "Untitled Song";
 
-          // Step 1: Parse the song content into sections
+          // Parse song into complete sections
           const sections = parseSongContent(songData.content);
 
-          // Step 2: Create paginated sections
-          const paginatedSections = createPaginatedSections(sections);
-
-          // Step 3: Create display sequence with chorus after each verse
-          displaySequence = createDisplaySequence(paginatedSections);
+          // Create display sequence with chorus repetitions
+          songSections = createDisplaySequence(sections);
 
           currentIndex = 0;
-
-          // Initialize with first page
           updatePage(0);
         } catch (error) {
           console.error("Error handling song data:", error);
@@ -451,9 +515,47 @@
         }
       };
 
+      // Font control functions
+      const increaseFontSize = () => {
+        if (fontSizeMultiplier < 2.0) {
+          fontSizeMultiplier += 0.05;
+          updateFontSizeDisplay();
+          saveFontSettings();
+          if (songSections.length > 0) {
+            updatePage(currentIndex);
+          }
+        }
+      };
+
+      const decreaseFontSize = () => {
+        if (fontSizeMultiplier > 0.2) {
+          fontSizeMultiplier -= 0.05;
+          updateFontSizeDisplay();
+          saveFontSettings();
+          if (songSections.length > 0) {
+            updatePage(currentIndex);
+          }
+        }
+      };
+
+      const toggleFontControls = () => {
+        const panel = document.getElementById("fontControlsPanel");
+        const toggle = document.getElementById("fontToggle");
+
+        if (panel && toggle) {
+          const isVisible = panel.classList.contains("visible");
+          if (isVisible) {
+            panel.classList.remove("visible");
+            toggle.classList.remove("active");
+          } else {
+            panel.classList.add("visible");
+            toggle.classList.add("active");
+          }
+        }
+      };
+
       // Set up event listeners
       const setupEventListeners = () => {
-        // Previous button
         const prevButton = document.getElementById("prevButton");
         if (prevButton) {
           prevButton.onclick = () => {
@@ -464,47 +566,81 @@
           };
         }
 
-        // Next button
         const nextButton = document.getElementById("nextButton");
         if (nextButton) {
           nextButton.onclick = () => {
-            if (currentIndex < displaySequence.length - 1) {
+            if (currentIndex < songSections.length - 1) {
               currentIndex++;
               updatePage(currentIndex);
             }
           };
         }
 
+        // Font control event listeners
+        const fontToggle = document.getElementById("fontToggle");
+        if (fontToggle) {
+          fontToggle.onclick = toggleFontControls;
+        }
+
+        const fontIncrease = document.getElementById("fontIncrease");
+        if (fontIncrease) {
+          fontIncrease.onclick = increaseFontSize;
+        }
+
+        const fontDecrease = document.getElementById("fontDecrease");
+        if (fontDecrease) {
+          fontDecrease.onclick = decreaseFontSize;
+        }
+
         // Keyboard navigation
         document.addEventListener("keydown", (event) => {
           if (
             event.key === "ArrowRight" &&
-            currentIndex < displaySequence.length - 1
+            currentIndex < songSections.length - 1
           ) {
             currentIndex++;
             updatePage(currentIndex);
           } else if (event.key === "ArrowLeft" && currentIndex > 0) {
             currentIndex--;
             updatePage(currentIndex);
+          } else if (event.key === "Escape") {
+            if (window.api && window.api.minimizeProjection) {
+              window.api.minimizeProjection();
+            }
+          } else if (event.key === "+" || event.key === "=") {
+            increaseFontSize();
+          } else if (event.key === "-") {
+            decreaseFontSize();
+          } else if (event.key === "f" || event.key === "F") {
+            toggleFontControls();
+          }
+        });
+
+        // Handle window resize to recalculate font sizes
+        window.addEventListener("resize", () => {
+          if (songSections.length > 0) {
+            setTimeout(() => updatePage(currentIndex), 100);
+          }
+        });
+
+        // Hide font controls when clicking outside
+        document.addEventListener("click", (event) => {
+          const fontControls = document.getElementById("fontControls");
+          const panel = document.getElementById("fontControlsPanel");
+
+          if (fontControls && panel && !fontControls.contains(event.target)) {
+            panel.classList.remove("visible");
+            document.getElementById("fontToggle").classList.remove("active");
           }
         });
       };
 
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          // Use the IPC exposed by preload to communicate with main process
-          if (window.api && window.api.minimizeProjection) {
-            window.api.minimizeProjection();
-          }
-        }
-      });
-
       // Initialize on page load
       document.addEventListener("DOMContentLoaded", () => {
         loadBackgroundImage();
+        loadFontSettings();
         setupEventListeners();
 
-        // Try to load song from localStorage if available
         const contentContainer = document.getElementById("contentContainer");
         if (
           contentContainer &&
@@ -515,31 +651,14 @@
           );
 
           if (selectedSong) {
-            // If we have API access, use it
             if (window.api && window.api.projectSong) {
               window.api.projectSong(selectedSong);
             } else {
-              // Otherwise, process directly
               handleSongData(selectedSong);
             }
           }
         }
       });
-
-      // Add CSS for the chorus repeat indicators
-      const style = document.createElement("style");
-      style.textContent = `
-        .progress-dot.chorus-repeat {
-          border-radius: 0;
-          transform: rotate(45deg);
-          background-color: rgba(255, 255, 255, 0.4);
-        }
-        
-        .progress-dot.chorus-repeat.active {
-          background-color: rgba(255, 255, 255, 0.9);
-        }
-      `;
-      document.head.appendChild(style);
 
       // Register API event handler if available
       if (window.api && window.api.onDisplaySong) {

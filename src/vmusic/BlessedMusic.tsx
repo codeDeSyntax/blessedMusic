@@ -15,10 +15,10 @@ const BlessedMusic = () => {
   const [activeTab, setActiveTab] = useState("collections");
   const [deleting, setDeleting] = useState(false);
   const [showDeleting, setShowDeleting] = useState(false);
-  
+
   // Get viewMode from localStorage only once on mount
-  const [viewMode, setViewMode] = useState(() => 
-    localStorage.getItem("layout") || "table"
+  const [viewMode, setViewMode] = useState(
+    () => localStorage.getItem("layout") || "table"
   );
 
   const {
@@ -34,18 +34,20 @@ const BlessedMusic = () => {
     songs,
     refetch,
   } = useBmusicContext();
-  
+
   const { setCurrentScreen } = useEastVoiceContext();
   const { isDarkMode } = useTheme();
-  
+
   const [savedFavorites, setSavedFavorites] = useState<Song[]>(favorites);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
 
   // Handle window resize for responsive columns
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Determine number of columns based on screen size
@@ -56,7 +58,7 @@ const BlessedMusic = () => {
   // Memoized filtered songs calculation
   const filteredSongs = useMemo(() => {
     if (!searchQuery.trim()) return songs;
-    
+
     const query = searchQuery.toLowerCase();
     return songs.filter(
       (song) =>
@@ -69,13 +71,16 @@ const BlessedMusic = () => {
   const columnSongs = useMemo(() => {
     const songsPerColumn = Math.ceil(filteredSongs.length / numberOfColumns);
     const columns: Song[][] = [];
-    
+
     for (let i = 0; i < numberOfColumns; i++) {
       const startIndex = i * songsPerColumn;
-      const endIndex = Math.min(startIndex + songsPerColumn, filteredSongs.length);
+      const endIndex = Math.min(
+        startIndex + songsPerColumn,
+        filteredSongs.length
+      );
       columns.push(filteredSongs.slice(startIndex, endIndex));
     }
-    
+
     return columns;
   }, [filteredSongs, numberOfColumns]);
 
@@ -85,18 +90,24 @@ const BlessedMusic = () => {
   }, [viewMode]);
 
   // Memoized callbacks to prevent unnecessary re-renders
-  const onSingleClick = useCallback((song: Song) => {
-    setSelectedSong(song);
-    setActiveTab("Song");
-    localStorage.setItem("selectedSong", JSON.stringify(song));
-  }, [setSelectedSong, setActiveTab]);
-
-  const onDoubleClick = useCallback((song: Song) => {
-    if (selectedSong) {
-      setCurrentScreen("Presentation");
+  const onSingleClick = useCallback(
+    (song: Song) => {
+      setSelectedSong(song);
+      setActiveTab("Song");
       localStorage.setItem("selectedSong", JSON.stringify(song));
-    }
-  }, [selectedSong, setCurrentScreen]);
+    },
+    [setSelectedSong, setActiveTab]
+  );
+
+  const onDoubleClick = useCallback(
+    (song: Song) => {
+      if (selectedSong) {
+        setCurrentScreen("Presentation");
+        localStorage.setItem("selectedSong", JSON.stringify(song));
+      }
+    },
+    [selectedSong, setCurrentScreen]
+  );
 
   const presentSong = useCallback((selectedSong: any) => {
     if (selectedSong) {
@@ -120,18 +131,21 @@ const BlessedMusic = () => {
     }
   }, [setSongRepo]);
 
-  const deleteSong = useCallback(async (filePath: string) => {
-    try {
-      setDeleting(true);
-      const response = await window.api.deleteSong(filePath);
-      console.log("Delete song response:", response);
-      setDeleting(false);
-      setShowDeleting(false);
-      refetch();
-    } catch (error) {
-      console.error("Failed to delete song:", error);
-    }
-  }, [refetch]);
+  const deleteSong = useCallback(
+    async (filePath: string) => {
+      try {
+        setDeleting(true);
+        const response = await window.api.deleteSong(filePath);
+        console.log("Delete song response:", response);
+        setDeleting(false);
+        setShowDeleting(false);
+        refetch();
+      } catch (error) {
+        console.error("Failed to delete song:", error);
+      }
+    },
+    [refetch]
+  );
 
   // Optimized keyboard event handler
   useEffect(() => {
@@ -149,7 +163,7 @@ const BlessedMusic = () => {
   useEffect(() => {
     const savedDirectory = localStorage.getItem("bmusic");
     const savedTheme = localStorage.getItem("bmusic");
-    
+
     if (savedTheme) {
       setTheme(savedTheme);
     }
@@ -180,14 +194,20 @@ const BlessedMusic = () => {
     setCurrentScreen("create");
   }, [setCurrentScreen]);
 
-  const handlePresentSongClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    presentSong(selectedSong);
-  }, [presentSong, selectedSong]);
+  const handlePresentSongClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      presentSong(selectedSong);
+    },
+    [presentSong, selectedSong]
+  );
 
   // Memoized random color for folder icon
-  const folderColor = useMemo(() => 
-    `rgba(${Math.floor(Math.random() * 255)},${Math.floor(Math.random() * 255)},${Math.floor(Math.random() * 255)},1)`,
+  const folderColor = useMemo(
+    () =>
+      `rgba(${Math.floor(Math.random() * 255)},${Math.floor(
+        Math.random() * 255
+      )},${Math.floor(Math.random() * 255)},1)`,
     []
   );
 
@@ -240,13 +260,17 @@ const BlessedMusic = () => {
             />
 
             {/* Multi-Column Content with Virtual Scrolling */}
-            <div className={`flex gap-6 w-full h-[80vh] ${numberOfColumns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <LoadingError 
+            <div
+              className={`flex gap-6 w-full h-[80vh] ${
+                numberOfColumns === 3 ? "grid-cols-3" : "grid-cols-2"
+              }`}
+            >
+              <LoadingError
                 fetching={fetching}
                 fetchError={fetchError}
                 songsLength={songs.length}
               />
-              
+
               {!fetching && songs.length > 0 && (
                 <>
                   {columnSongs.map((columnSongList, columnIndex) => (

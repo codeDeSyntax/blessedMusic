@@ -246,7 +246,7 @@ const WorkspaceSelector = () => {
           </div>
 
           {/* Add Song Button */}
-          <div
+          {/* <div
             className={`flex items-center justify-between px-4 py-3   border border-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200`}
           >
             <div className="flex items-center gap-3">
@@ -270,7 +270,7 @@ const WorkspaceSelector = () => {
             >
               Open
             </button>
-          </div>
+          </div> */}
           <div
             className={`flex items-center justify-between px-4 py-3   border border-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200`}
           >

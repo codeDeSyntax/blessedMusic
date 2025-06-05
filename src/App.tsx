@@ -42,9 +42,6 @@ const App = () => {
           case "b":
             setCurrentScreen("bible");
             break;
-          case "l":
-            setCurrentScreen("hisvoice");
-            break;
           case "p":
             setCurrentScreen("mpresenter");
             break;

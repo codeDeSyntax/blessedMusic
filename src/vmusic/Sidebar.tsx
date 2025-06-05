@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { DeleteColumnOutlined } from "@ant-design/icons";
 import { Song, Collection } from "@/types";
 import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { Tooltip } from "antd";
 
 interface Option {
   value: string;
@@ -95,7 +96,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       {isOpen && (
         <div
           className={`absolute z-40 w-full mt-1 flex flex-col items-center gap-1  ${
-            theme === "creamy" ? "bg-vmprim" : "bg-white"
+            theme === "creamy" ? "bg-yellow-800" : "bg-white"
           } rounded-lg shadow-lg border border-stone-200 py-1 max-h-48 overflow-y-auto no-scrollbar`}
         >
           {options.map((option, index) => (
@@ -190,13 +191,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
     { value: "'Impact', sans-serif", label: "Impact" },
     { value: "'Alumini Sans Black', serif", label: "Alumini Sans Black" },
     { value: "'LTFuzz', serif", label: "LTFuzz" },
-    { value: "'Palatino Linotype', serif", label: "Palatino Linotype" },
-    { value: "'Garamond', serif", label: "Garamond" },
-    { value: "'Segoe UI', sans-serif", label: "Segoe UI" },
-    {
-      value: "'Franklin Gothic Medium', sans-serif",
-      label: "Franklin Gothic Medium",
-    },
+    { value: "'Milkyway DEMO'", label: "Milkyway" },
   ];
 
   const selectsongDir = async () => {
@@ -259,7 +254,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
     localStorage.setItem("bmusicfontFamily", fontFamily);
     localStorage.setItem("bmusicdisplayCount", displayCount);
     localStorage.setItem("bmusiclayout", layout);
-    localStorage.setItem("bmusicselectedBg", selectedBg);
+    localStorage.setItem("selectedBg", selectedBg);
     localStorage.setItem("bmusicfontSize", fontSize);
   }, [fontSize, fontFamily, displayCount, layout, selectedBg]);
 
@@ -322,35 +317,41 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
               />
 
               <div className="flex items-center gap-2 ">
-                <div
-                  onClick={selectsongDir}
-                  className="w-4 h-4 p-4 cursor-pointer  bg-white/50  text-vmborder-vmprim text-[12px] rounded-full
+                <Tooltip title="Select songs Directory">
+                  <div
+                    onClick={selectsongDir}
+                    className="w-4 h-4 p-4 cursor-pointer  bg-white/50  text-vmborder-vmprim text-[12px] rounded-full
                                transition-all duration-300 flex items-center justify-center gap-2
                                focus:outline-none group"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
-                    borderStyle: "dashed",
-                  }}
-                >
-                  <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  {/* <span>Songs directory </span> */}
-                </div>
-                <div
-                  onClick={() => selectImagesPath()}
-                  className="w-4 h-4 cursor-pointer rounded-full p-4  bg-white/50 border-2 border-vmprim/20
+                    style={{
+                      borderWidth: 1,
+                      borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                      borderStyle: "dashed",
+                      color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    }}
+                  >
+                    <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    {/* <span>Songs directory </span> */}
+                  </div>
+                </Tooltip>
+                <Tooltip title="selected path for image backgrounds">
+                  <div
+                    onClick={() => selectImagesPath()}
+                    className="w-4 h-4 cursor-pointer rounded-full p-4  bg-white/50 border-2 border-vmprim/20
                                hover:border-vmprim text-vmborder-vmprim text-[12px] 
                                transition-all duration-300 flex items-center justify-center gap-2
                                focus:outline-none group"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
-                    borderStyle: "dashed",
-                  }}
-                >
-                  <Wallpaper className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  {/* <span>Presentation background path </span> */}
-                </div>
+                    style={{
+                      borderWidth: 1,
+                      borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                      borderStyle: "dashed",
+                      color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    }}
+                  >
+                    <Wallpaper className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    {/* <span>Presentation background path </span> */}
+                  </div>
+                </Tooltip>
 
                 <div
                   onClick={() => setLayout("table")}
@@ -366,6 +367,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                     borderWidth: 1,
                     borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
                     borderStyle: "dashed",
+                    color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
                   }}
                 >
                   <Grid className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -385,6 +387,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                     borderWidth: 1,
                     borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
                     borderStyle: "dashed",
+                    color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
                   }}
                 >
                   <List className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -495,10 +498,10 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
       //   fontFamily: fontFamily,
       //   fontSize: `${fontSize}px`,
       // }}
-      className="w-72 pt-2 border-r border-stone-300 bg-white/20 backdrop-blur-sm transition-all duration-300 ease-in-out overflow-y-auto no-scrollbar shadow"
+      className="w-72 pt-2 border-r border-stone-300 bg-white/20 backdrop-blur-sm transition-all duration-300 ease-in-out overflow-y-auto no-scrollbar shadow h-[98%]"
     >
       <div className="p-4 flex items-center justify-between">
-        <h2 className="font-serif text-xl s font-bold text-vmborder-vmprim flex items-center gap-2">
+        <h2 className="font-serif text-xl s font-bold text-vmprim border-vmprim flex items-center gap-2">
           <Music className="w-5 h-5 animate-bounce" />
           Soul healing music
           <Music className="w-5 h-5 animate-bounce" />
@@ -516,7 +519,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
             className={` py-2 rounded-md text-[12px] px-2 font-medium transition-colors flex items-center justify-center ${
               activeTab === "Song"
                 ? "bg-vmprim text-white"
-                : "text-stone-600 bg-white"
+                : "text-stone-600 bg-[#fdf4d0]"
             }`}
           >
             Song <FileMusic className="h-4 w-4" />
@@ -526,7 +529,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
             className={` py-2 rounded-md text-[12px] px-2  font-medium transition-colors flex items-center justify-center ${
               activeTab === "settings"
                 ? "bg-vmprim text-white"
-                : "text-stone-600 bg-white"
+                : "text-stone-600 bg-[#fdf4d0]"
             }`}
           >
             Settings <CogIcon className="h-4 w-4" />
@@ -536,7 +539,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
             className={`flex-1 py-2 rounded-md text-[12px] px-2 font-medium transition-colors flex items-center justify-center ${
               activeTab === "collections"
                 ? "bg-vmprim text-white"
-                : "text-stone-600 bg-white"
+                : "text-stone-600 bg-[#fdf4d0]"
             }`}
           >
             collections <Group className="h-4 w-4" />

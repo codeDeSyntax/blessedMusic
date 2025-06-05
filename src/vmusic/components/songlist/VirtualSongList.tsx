@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Song } from "@/types";
 import SongRow from "./SongRow";
+import { useBmusicContext } from "@/Provider/Bmusic";
 
 interface VirtualSongListProps {
   songs: Song[];
@@ -25,6 +26,7 @@ const VirtualSongList = React.memo(
     const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(
       null
     );
+    const { theme } = useBmusicContext();
 
     const visibleItems = useMemo(() => {
       const startIndex = Math.max(
@@ -55,12 +57,19 @@ const VirtualSongList = React.memo(
           ref={setContainerRef}
           className="overflow-y-auto w-full no-scrollbar h-full"
           onScroll={handleScroll}
-          style={{ height: containerHeight }}
+          style={{
+            height: containerHeight,
+          }}
         >
           <div style={{ height: totalHeight, position: "relative" }}>
             <div style={{ transform: `translateY(${offsetY}px)` }}>
               <table className="w-full table-auto rounded-md">
-                <thead className="rounded-md sticky top-0 bg-white z-10">
+                <thead
+                  className="rounded-md sticky top-0  z-10"
+                  style={{
+                    backgroundColor: theme === "creamy" ? "#fdf4d0" : "#f9f9f9",
+                  }}
+                >
                   <tr className="text-[#9a674a] rounded-md">
                     <th
                       className="px-4 text-left flex justify-between items-center"

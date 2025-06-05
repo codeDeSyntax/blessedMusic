@@ -159,7 +159,7 @@ const TitleBar: React.FC = () => {
         {/* Dropdown menu */}
         {showDropdown && (
           <div className="absolute top-5 left-0 bg-white dark:bg-bgray shadow-md rounded-md p-1 z-50 w-32">
-            <div
+            {/* <div
               className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
               onClick={() => {
                 setAndSaveCurrentScreen("hisvoice");
@@ -170,7 +170,7 @@ const TitleBar: React.FC = () => {
               <span className="text-xs text-stone-500 dark:text-gray-200">
                 His voice
               </span>
-            </div>
+            </div> */}
             <div
               className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
               onClick={() => {
