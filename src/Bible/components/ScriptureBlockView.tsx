@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Star,
-  StarOff,
-  Copy,
-  Monitor,
-} from "lucide-react";
+import { Star, StarOff, Copy, Monitor } from "lucide-react";
 
 interface Verse {
   verse: number;
@@ -109,17 +104,20 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
         fontWeight: fontWeight,
       }}
     >
-      {verses.map((verse) => (
+      {verses.map((verse, index) => (
         <div
           key={verse.verse.toString().trim()}
-          className="relative group py-1 px-2 rounded-md hover:bg-white dark:hover:bg-bgray/40 transition-colors duration-150 bg-transparent"
+          className={`relative group px-2 rounded-md hover:bg-white dark:hover:bg-bgray/40 transition-colors duration-150 bg-transparent ${
+            index === 0 ? "pt-1" : ""
+          } ${index === verses.length - 1 ? "pb-1" : ""}`}
           ref={(el) => (verseRefs.current[verse.verse] = el)}
+          // style={{ marginBottom: '1px' }}
         >
           <div className="flex items-start">
             {/* Verse number */}
             <div className="flex-shrink-0 text-center pt-1 ml-2">
               <span
-                className="text-primary font-cooper inline-block"
+                className="text-ltgray dark:text-yellow-700  font-archivo inline-block"
                 style={{ fontSize: "0.75em" }}
               >
                 {verse.verse}
@@ -129,7 +127,7 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
             {/* Verse text */}
             <div className="flex-grow">
               <p
-                className={`text-left leading-normal pb-0 px-3 ${
+                className={`text-left leading-normal px-3 ${
                   theme === "dark" ? "text-gray-50" : "text-red-500"
                 } scripturetext pr-10`}
                 style={{
@@ -140,6 +138,8 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                       : verseTextColor || "#78716c"),
                   fontSize: getFontSize(),
                   fontFamily: fontFamily,
+                  marginBottom: "4px",
+                  paddingBottom: 0,
                 }}
               >
                 {formatVerseText(
@@ -151,15 +151,13 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
           </div>
 
           {/* Action buttons - absolutely positioned */}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <div className="flex flex-row items-start gap-1">
               <button
                 onClick={() => toggleBookmark(verse.verse)}
                 className="flex outline-none border-none items-center justify-center h-6 w-6 shadow bg-white dark:bg-ltgray p-1 rounded-full dark:hover:bg-gray-800 hover:bg-gray-200"
                 title={
-                  isBookmarked(verse.verse)
-                    ? "Remove bookmark"
-                    : "Add bookmark"
+                  isBookmarked(verse.verse) ? "Remove bookmark" : "Add bookmark"
                 }
               >
                 {isBookmarked(verse.verse) ? (
@@ -193,8 +191,7 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                 {activeDropdownVerse === verse.verse && (
                   <div className="absolute top-8 right-0 bg-white dark:bg-gray-800 shadow-md rounded-md p-1 z-10 w-auto">
                     <div className="flex flex-row -space-x-2 overflow-x-auto py-1 px-1 max-w-40">
-                      {bibleBgs.length === 0 &&
-                        "No backgrounds available"}
+                      {bibleBgs.length === 0 && "No backgrounds available"}
                       {bibleBgs?.map((bg, index) => (
                         <img
                           key={index}
@@ -215,7 +212,11 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                           src={bg}
                           alt={`Bg ${index + 1}`}
                           className={`h-6 w-6 object-cover hover:cursor-pointer rounded-full border-2 border-white dark:border-gray-700
-                            ${selectedBg === bg ? "ring-2 ring-primary z-10" : ""}
+                            ${
+                              selectedBg === bg
+                                ? "ring-2 ring-primary z-10"
+                                : ""
+                            }
                             `}
                         />
                       ))}

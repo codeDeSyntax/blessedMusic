@@ -31,6 +31,7 @@ const ScriptureContent: React.FC = () => {
     fontFamily,
     fontWeight,
     verseTextColor,
+    setVerseTextColor,
     bookmarks,
     addBookmark,
     removeBookmark,
@@ -118,6 +119,15 @@ const ScriptureContent: React.FC = () => {
       setSelectedVerse(visibleVerseNumbers[0]);
     }
   };
+
+  // set versetextcolor on theme change
+  useEffect(() => {
+    if (isDarkMode) {
+      setVerseTextColor("#fcd8c0");
+    } else {
+      setVerseTextColor("#1d1c1c");
+    }
+  }, [isDarkMode, setVerseTextColor]);
 
   // Scroll event listener
   useEffect(() => {
@@ -408,7 +418,7 @@ const ScriptureContent: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-ltgray text-white font-serif">
+    <div className="flex flex-col justify-start items-center h-full bg-white dark:bg-ltgray text-white font-serif">
       <NavigationBar
         currentBook={currentBook}
         currentChapter={currentChapter}
@@ -447,7 +457,7 @@ const ScriptureContent: React.FC = () => {
 
       <div
         ref={contentRef}
-        className={`flex-1 p-4 md:p-6 lg:p-8 overflow-y-scroll no-scrollbar text-stone-500 relative ${
+        className={`flex-1 flex justify-center justify-st p-4 md:p-6 lg:p-8 overflow-y-scroll no-scrollbar text-stone-500 relative ${
           isDarkMode ? "dottedb1" : "dottedb"
         }`}
         onScroll={updateVisibleVerses}
@@ -503,7 +513,7 @@ const ScriptureContent: React.FC = () => {
             />
           )
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex w-full items-center justify-center h-full">
             <p className="text-gray-500">Loading scripture content...</p>
           </div>
         )}

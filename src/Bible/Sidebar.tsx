@@ -1,4 +1,4 @@
-import React, { useMemo,useEffect } from "react";
+import React, { useMemo, useEffect } from "react";
 import { Menu, X, Search, Star, RotateCcw, Book, Settings } from "lucide-react";
 import { useBibleContext } from "../Provider/Bible";
 
@@ -13,16 +13,16 @@ const BibleSidebar: React.FC = () => {
     theme,
   } = useBibleContext();
 
-   useEffect(() => {
-      const hisvoicediv = document.getElementById("hisvoicediv");
-      if (theme === "dark") {
-        hisvoicediv?.classList.add("dark");
-        localStorage.setItem("vsermontheme", theme);
-      } else {
-        hisvoicediv?.classList.remove("dark");
-        localStorage.setItem("vsermontheme", theme);
-      }
-    }, [theme]);
+  useEffect(() => {
+    const hisvoicediv = document.getElementById("hisvoicediv");
+    if (theme === "dark") {
+      hisvoicediv?.classList.add("dark");
+      localStorage.setItem("vsermontheme", theme);
+    } else {
+      hisvoicediv?.classList.remove("dark");
+      localStorage.setItem("vsermontheme", theme);
+    }
+  }, [theme]);
 
   // Generate random colors only once on component mount using useMemo
   const iconColors = useMemo(() => {
@@ -60,14 +60,14 @@ const BibleSidebar: React.FC = () => {
 
   return (
     <div
-      className={`bg-gray-50 dark:bg-black flex flex-col fixed left-0 top-8 h-[calc(100vh-2rem)] z-20 shadow-md transition-all duration-300 ${
+      className={`bg-gray-50 dark:bg-ltgray flex flex-col fixed left-0 top-8 h-[calc(100vh-2rem)] z-20 shadow-md transition-all duration-300 ${
         sidebarExpanded ? "w-48" : "w-12"
       }`}
     >
       {/* Top sidebar button */}
       <div
         onClick={toggleSidebar}
-        className="p-3 text-gray-900 dark:text-gray-300 hover:bg-gray-100 hover:cursor-pointer dark:hover:bg-gray-800/50 text-left"
+        className="p-3 text-gray-900 dark:text-gray-300 hover:bg-gray-100 hover:cursor-pointer dark:hover:bg-ltgray text-left"
       >
         {sidebarExpanded ? (
           <X size={20} color={iconColors.menu} />
@@ -77,11 +77,11 @@ const BibleSidebar: React.FC = () => {
       </div>
 
       {/* Sidebar menu items */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-white dark:bg-ltgray">
         <div
           onClick={toggleSearch}
-          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 ${
-            searchOpen ? "bg-gray-200 dark:bg-gray-800" : ""
+          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${
+            searchOpen ? "bg-gray-200 dark:bg-ltgray" : ""
           }`}
         >
           <Search size={20} color={iconColors.search} />
@@ -89,7 +89,7 @@ const BibleSidebar: React.FC = () => {
         </div>
         <div
           onClick={() => toggleFeature("favorites")}
-          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 ${
+          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${
             activeFeature === "favorites" ? "bg-gray-200 dark:bg-gray-800" : ""
           }`}
         >
@@ -98,7 +98,7 @@ const BibleSidebar: React.FC = () => {
         </div>
         <div
           onClick={() => toggleFeature("history")}
-          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 ${
+          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${
             activeFeature === "history" ? "bg-gray-200 dark:bg-gray-800" : ""
           }`}
         >
@@ -107,7 +107,7 @@ const BibleSidebar: React.FC = () => {
         </div>
         <div
           onClick={() => toggleFeature("library")}
-          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 ${
+          className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${
             activeFeature === "library" ? "bg-gray-200 dark:bg-gray-800" : ""
           }`}
         >
@@ -119,7 +119,7 @@ const BibleSidebar: React.FC = () => {
       {/* Settings at bottom */}
       <div
         onClick={() => toggleFeature("settings")}
-        className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 ${
+        className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${
           activeFeature === "settings" ? "bg-gray-200 dark:bg-gray-800" : ""
         }`}
       >

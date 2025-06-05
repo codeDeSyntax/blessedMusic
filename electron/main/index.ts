@@ -104,7 +104,7 @@ async function createMainWindow() {
     }
   });
   ipcMain.on("closeApp", () => {
-    mainWin?.close();
+    mainWin?.close()
   });
 
   return mainWin;

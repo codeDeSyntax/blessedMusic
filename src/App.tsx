@@ -62,8 +62,8 @@ const App = () => {
   }, []);
   return (
     <div
-      className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-[#292a2d]`}
-      style={{fontFamily:"Palatino"}}
+      className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-white dark:bg-ltgray `}
+      style={{ fontFamily: "Palatino" }}
     >
       {/* <BlessedMusic /> */}
       {currentScreen === "Home" ? (

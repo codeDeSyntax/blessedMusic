@@ -30,7 +30,7 @@ const Biblelayout: React.FC = () => {
 
   return (
     <div
-      className="h-screen flex flex-col  overflow-y-scroll bg-white dark:bg-bgray no-scrollbar text-gray-900 dark:text-gray-100"
+      className="h-screen flex flex-col  overflow-y-scroll bg-white dark:bg-ltgray no-scrollbar text-gray-900 dark:text-gray-100"
       id="biblediv"
     >
       <TitleBar />
@@ -46,7 +46,7 @@ const Biblelayout: React.FC = () => {
 
         {/* Main content */}
         <main
-          className={`flex-1 transition-all duration-300  ${getContentClass()}`}
+          className={`flex1 transition-all duration-300  ${getContentClass()}`}
         >
           <ScriptureContent />
         </main>

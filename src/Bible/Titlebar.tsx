@@ -84,82 +84,79 @@ const TitleBar: React.FC = () => {
   };
 
   return (
-   <div className="" 
-   style={{ WebkitAppRegion: 'drag' } as any}
-   >
-     <div
-      className="h-8 flex items-center flex-row-reverse px-4 border-b border-gray-300 dark:border-gray-700 select-none relative"
-      style={{
-        ...(!isDarkMode
-          ? {
-              backgroundImage: !isDarkMode
-                ? `linear-gradient(to bottom,
+    <div className="" style={{ WebkitAppRegion: "drag" } as any}>
+      <div
+        className="h-8 flex items-center flex-row-reverse px-4 border-b border-gray-300 dark:border-gray-700 select-none relative"
+        style={{
+          ...(!isDarkMode
+            ? {
+                backgroundImage: !isDarkMode
+                  ? `linear-gradient(to bottom,
              rgba(255, 255, 255, 0%) 0%,
              rgba(255, 255, 255, 5) 60%),
              ${selectedBg}`
-                : undefined,
-              backgroundRepeat: "repeat",
-              backgroundSize: "30px", // Adjust size to control repeat pattern
-            }
-          : {
-              backgroundImage:
-                theme === "dark"
-                  ? `linear-gradient(to bottom,
+                  : undefined,
+                backgroundRepeat: "repeat",
+                backgroundSize: "30px", // Adjust size to control repeat pattern
+              }
+            : {
+                backgroundImage:
+                  theme === "dark"
+                    ? `linear-gradient(to bottom,
              rgba(255, 255, 255, 0%) 0%,
              rgba(20, 20, 20, 5) 60%),
-             url(./snow2.jpg)`
-                  : undefined,
-              backgroundRepeat: "repeat",
-              backgroundSize: "200px", // Adjust size to control repeat pattern
-            }),
-            
-            
-      }}
-    >
-      <div className=" space-x-2 mr-4 flex items-center justify-center"
-      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+             url(./wood6.jpg)`
+                    : undefined,
+                backgroundRepeat: "repeat",
+                backgroundSize: "20px", // Adjust size to control repeat pattern
+              }),
+        }}
       >
-        {/* theme toggler */}
-        <ThemeToggle />
-        <Help />
-        {/* Close button */}
         <div
-          onClick={handleClose}
-          className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
+          className=" space-x-2 mr-4 flex items-center justify-center"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
-          <X className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+          {/* theme toggler */}
+          <ThemeToggle />
+          <Help />
+          {/* Close button */}
+          <div
+            onClick={handleClose}
+            className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
+          >
+            <X className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+          </div>
+          {/* Minimize button */}
+          <div
+            onClick={handleMinimize}
+            className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
+          >
+            <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+          </div>
+          {/* Maximize button */}
+          <div
+            onClick={handleMaximize}
+            className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
+          >
+            <Square className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
+          </div>
         </div>
-        {/* Minimize button */}
+        {/* Rest of the component remains the same */}
+        <div className="text-sm flex-1 text-center text-gray-900 dark:text-gray-300 font-cooper">
+          Bible 300
+        </div>
         <div
-          onClick={handleMinimize}
-          className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
+          onClick={toggleDropdown}
+          className="w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer flex items-center justify-center relative"
+          title="More tools"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
-          <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
-        </div>
-        {/* Maximize button */}
-        <div
-          onClick={handleMaximize}
-          className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
-        >
-          <Square className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
-        </div>
-      </div>
-      {/* Rest of the component remains the same */}
-      <div className="text-sm flex-1 text-center text-gray-900 dark:text-gray-300 font-cooper">
-        Bible 300
-      </div>
-      <div
-        onClick={toggleDropdown}
-        className="w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer flex items-center justify-center relative"
-        title="More tools"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-      >
-        <MoreHorizontal className="text-white z-20 size-3" />
+          <MoreHorizontal className="text-white z-20 size-3" />
 
-        {/* Dropdown menu */}
-        {showDropdown && (
-          <div className="absolute top-5 left-0 bg-white dark:bg-bgray shadow-md rounded-md p-1 z-50 w-32">
-            {/* <div
+          {/* Dropdown menu */}
+          {showDropdown && (
+            <div className="absolute top-5 left-0 bg-white dark:bg-bgray shadow-md rounded-md p-1 z-50 w-32">
+              {/* <div
               className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
               onClick={() => {
                 setAndSaveCurrentScreen("hisvoice");
@@ -171,53 +168,53 @@ const TitleBar: React.FC = () => {
                 His voice
               </span>
             </div> */}
-            <div
-              className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
-              onClick={() => {
-                setAndSaveCurrentScreen("Songs");
-                setShowDropdown(false);
-              }}
-            >
-              <img src="./music2.png" className="h-4 w-4  text-gray-600" />
-              <span className="text-xs text-stone-500 dark:text-gray-200">
-                Song app
-              </span>
-            </div>
-            <div
-              className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
-              onClick={() => {
-                setAndSaveCurrentScreen("bible");
-                setShowDropdown(false);
-              }}
-            >
-              <img src="./music3.png" className="h-4 w-4  text-gray-600" />
-              <span className="text-xs text-stone-500 dark:text-gray-200">
-                Bible
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer">
-              <Monitor
-                className="h-4 w-4  text-gray-600"
+              <div
+                className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
                 onClick={() => {
-                  setAndSaveCurrentScreen("mpresenter");
+                  setAndSaveCurrentScreen("Songs");
                   setShowDropdown(false);
                 }}
-              />
-              <span className="text-xs text-stone-500 dark:text-gray-200 ">
-                {selectedPath ? (
-                  <p>PMaster {selectedPath.slice(0, 8)}</p>
-                ) : (
-                  <p onClick={selectEvpd} className="underline">
-                    Choose Path (PM)
-                  </p>
-                )}
-              </span>
+              >
+                <img src="./music2.png" className="h-4 w-4  text-gray-600" />
+                <span className="text-xs text-stone-500 dark:text-gray-200">
+                  Song app
+                </span>
+              </div>
+              <div
+                className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
+                onClick={() => {
+                  setAndSaveCurrentScreen("bible");
+                  setShowDropdown(false);
+                }}
+              >
+                <img src="./music3.png" className="h-4 w-4  text-gray-600" />
+                <span className="text-xs text-stone-500 dark:text-gray-200">
+                  Bible
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer">
+                <Monitor
+                  className="h-4 w-4  text-gray-600"
+                  onClick={() => {
+                    setAndSaveCurrentScreen("mpresenter");
+                    setShowDropdown(false);
+                  }}
+                />
+                <span className="text-xs text-stone-500 dark:text-gray-200 ">
+                  {selectedPath ? (
+                    <p>PMaster {selectedPath.slice(0, 8)}</p>
+                  ) : (
+                    <p onClick={selectEvpd} className="underline">
+                      Choose Path (PM)
+                    </p>
+                  )}
+                </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
-   </div>
   );
 };
 

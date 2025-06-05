@@ -56,7 +56,7 @@ const SettingsPanel: React.FC = () => {
 
   return (
     <div
-      className="h-full p-4 bg-gray-50 dark:bg-black font-serif border-none overflow-hidden"
+      className="h-full p-4 bg-gray-50 dark:bg-ltgray font-serif border-none overflow-hidden"
       style={{
         borderRightWidth: 1,
         borderRightColor: theme === "dark" ? "#202020" : "#20202020",
@@ -64,8 +64,10 @@ const SettingsPanel: React.FC = () => {
       }}
     >
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white" style={{fontWeight:"bolder" ,fontFamily:fontFamily}}>
-          
+        <h2
+          className="text-lg font-semibold text-gray-900 dark:text-white"
+          style={{ fontWeight: "bolder", fontFamily: fontFamily }}
+        >
           Settings
         </h2>
         <button
@@ -79,7 +81,10 @@ const SettingsPanel: React.FC = () => {
       <div className="space-y-6">
         {/* Theme Setting */}
         <div>
-          <h3 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300" style={{fontWeight:"bolder" ,fontFamily:fontFamily}}>
+          <h3
+            className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+            style={{ fontWeight: "bolder", fontFamily: fontFamily }}
+          >
             Theme
           </h3>
           {/* <div className="flex space-x-2">

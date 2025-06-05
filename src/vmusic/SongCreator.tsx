@@ -32,17 +32,18 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
       }),
       Placeholder.configure({
         placeholder:
-          "Click to start typing...(paste verse/chorus indicator from the menubar",
+          "Click to start typing...(paste verse/chorus indicator from the menubar)",
         emptyEditorClass:
           "before:content-[attr(data-placeholder)] before:text-stone-500 dark:before:text-stone-600 placeholder:stone-stone-500 before:float-left before:pointer-events-none before:h-0",
       }),
     ],
-    content: formData.message,
+    content: formData.message || "",
     editorProps: {
       attributes: {
         class:
-          "dark:prose-invert prose-sm sm:prose-base text-text dark:text-dtext text-[14px] border placehoder:text-stone-500  text-black lg:prose-lg max-w-none  px-6 py-4 h-[70vh] w-full focus:outline-none ",
+          "dark:prose-invert prose-sm sm:prose-base text-text dark:text-dtext text-[14px] border placehoder:text-stone-500 text-black lg:prose-lg max-w-none px-6 py-4 w-full focus:outline-none font-[garamond] min-h-full",
         "data-placeholder": "Click to start typing...",
+        FontFace: "monospace",
         spellcheck: "false",
       },
     },
@@ -62,21 +63,34 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
     onClick,
     isActive = false,
     children,
+    tooltip,
   }: {
     onClick: () => void;
     isActive?: boolean;
     children: React.ReactNode;
+    tooltip?: string;
   }) => (
     <button
       onClick={onClick}
-      className={`p-2 px-2 rounded-lg bg-[#9a674a]/80 transition-all duration-200 ${
-        isActive
-          ? "bg-[#9a674a] text-stone-500"
-          : "hover:bg-gray-100 text-gray-700"
-      }`}
+      title={tooltip}
+      className={`
+        relative group p-2.5 rounded-xl transition-all duration-300 ease-out
+        ${
+          isActive
+            ? "bg-[#8b5a3c] text-white shadow-lg transform scale-105 shadow-[#8b5a3c]/25"
+            : "bg-[#9a674a]/70 text-white/90 hover:bg-[#8b5a3c] hover:text-white hover:shadow-lg hover:transform hover:scale-105 hover:shadow-[#8b5a3c]/25"
+        }
+        backdrop-blur-sm border border-white/10
+      `}
     >
-      {children}
+      <div className="relative z-10">{children}</div>
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </button>
+  );
+
+  const ToolbarDivider = () => (
+    <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent mx-1" />
   );
 
   const toggleCapitalize = () => {
@@ -94,76 +108,103 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
   };
 
   return (
-    <div className=" h-[95%] w-full overflow-x-hidden no-scrollbar ">
-      <div className="border border-gray-200 rounded-tr-lg rounded-tl-lg shadow-lg overflow-x-hidden h-full overflow-y-scroll no-scrollbar mx-2">
-        {/* Menu Bar */}
-        <div className="border-b bg-[#faeed1]   shadow-lg border-gray-200 p-2 mx-3 flex items-center gap-1 z-20 sticky top-0 rounded-lg">
-          <div className="flex items-center gap-1 pr-2 border-r border border-gray-200">
-            <MenuButton
-              onClick={() => editor.chain().focus().setTextAlign("left").run()}
-              isActive={editor.isActive({ textAlign: "left" })}
-            >
-              <AlignLeft className="w-3 h-3 text-white" />
-            </MenuButton>
-            <MenuButton
-              onClick={() =>
-                editor.chain().focus().setTextAlign("center").run()
-              }
-              isActive={editor.isActive({ textAlign: "center" })}
-            >
-              <AlignCenter className="w-3 h-3 text-white" />
-            </MenuButton>
-            <MenuButton
-              onClick={() => editor.chain().focus().setTextAlign("right").run()}
-              isActive={editor.isActive({ textAlign: "right" })}
-            >
-              <AlignRight className="w-3 h-3 text-white" />
-            </MenuButton>
-            <MenuButton
-              onClick={() =>
-                editor.chain().focus().setTextAlign("justify").run()
-              }
-              isActive={editor.isActive({ textAlign: "justify" })}
-            >
-              <AlignJustify className="w-3 h-3 text-white" />
-            </MenuButton>
-          </div>
+    <div className="h-full w-full overflow-hidden no-scrollbar font-[garamond] flex flex-col">
+      {/* Container with relative positioning for the toolbar */}
+      <div className="border border-gray-200/50 rounded-2xl shadow-2xl  overflow-hidden h-full w-full backdrop-blur-sm flex flex-col">
+        {/* Fixed Toolbar within the component */}
+        <div className="fixed w-full top-0 z-10 bg-[#faeed1] backdrop-blur-md border-b border-gray-200/30 p-3 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            {/* Alignment Controls */}
+            <div className="flex items-center gap-1.5 bg-[#faeed1] rounded-2xl p-1.5 backdrop-blur-sm border border-gray-200/30">
+              <MenuButton
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("left").run()
+                }
+                isActive={editor.isActive({ textAlign: "left" })}
+                tooltip="Align Left"
+              >
+                <AlignLeft className="w-4 h-4" />
+              </MenuButton>
+              <MenuButton
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("center").run()
+                }
+                isActive={editor.isActive({ textAlign: "center" })}
+                tooltip="Align Center"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </MenuButton>
+              <MenuButton
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("right").run()
+                }
+                isActive={editor.isActive({ textAlign: "right" })}
+                tooltip="Align Right"
+              >
+                <AlignRight className="w-4 h-4" />
+              </MenuButton>
+              <MenuButton
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("justify").run()
+                }
+                isActive={editor.isActive({ textAlign: "justify" })}
+                tooltip="Justify"
+              >
+                <AlignJustify className="w-4 h-4" />
+              </MenuButton>
+            </div>
 
-          <div className="flex items-center gap-1 px-2">
-            <MenuButton onClick={toggleCapitalize}>
-              <Type className="w-3 h-3 text-white" />
-            </MenuButton>
-          </div>
+            <ToolbarDivider />
 
-          <div className="flex items-center gap-1 pl-2 border-l border-gray-200">
-            <MenuButton onClick={clearContent}>
-              <X className="w-3 h-3" />
+            {/* Text Formatting */}
+            <div className="flex items-center gap-1.5 bg-gray-50/80 rounded-2xl p-1.5 backdrop-blur-sm border border-gray-200/30">
+              <MenuButton
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                isActive={editor.isActive("bold")}
+                tooltip="Bold"
+              >
+                <BoldOutlined className="w-4 h-4" />
+              </MenuButton>
+              <MenuButton
+                onClick={toggleCapitalize}
+                tooltip="Capitalize Selection"
+              >
+                <Type className="w-4 h-4" />
+              </MenuButton>
+            </div>
+
+            <ToolbarDivider />
+
+            {/* Content Actions */}
+            <div className="flex items-center gap-1.5 bg-gray-50/80 rounded-2xl p-1.5 backdrop-blur-sm border border-gray-200/30">
+              <VersePaste editor={editor} />
+              <ChorusPaste editor={editor} />
+            </div>
+
+            <ToolbarDivider />
+
+            {/* Clear Content */}
+            <MenuButton onClick={clearContent} tooltip="Clear All Content">
+              <X className="w-4 h-4" />
             </MenuButton>
           </div>
-          <MenuButton
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            // disabled={!editor.can().chain().focus().toggleBold().run()}
-          >
-            <BoldOutlined className="w-3 h-3 text-white" />
-          </MenuButton>
-          <VersePaste editor={editor} />
-          <ChorusPaste editor={editor} />
         </div>
 
-        {/* Editor Content */}
-        <EditorContent
-          editor={editor}
-          className=" max-w-[90%] p-4  focus:outline-none"
-        />
+        {/* Editor Content Area */}
+        <div
+          className="flex-1 overflow-y-auto no-scrollbar shadow-inner mt-20"
+          // style={{
+          //   borderWidth: 2,
+          //   borderColor: "#bc7b12",
+          //   borderStyle: "dotted",
+          // }}
+        >
+          <EditorContent
+            editor={editor}
+            className="h-full p-6 focus:outline-none"
+          />
+        </div>
       </div>
-
-      {/* Debug: Show stored content */}
-      {/* <div className="mt-4 p-4 rounded-lg bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">
-          Stored Content:
-        </h3>
-        <div className="text-sm text-gray-600">{content}</div>
-      </div> */}
     </div>
   );
 };

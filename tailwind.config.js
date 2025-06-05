@@ -9,9 +9,10 @@ export default {
       colors:{
         background:"#faeed1",
         primary: '#9a674a',
-        bgray:"#202020",
-        ltgray:"#080808",
+        bgray:"#292524",
+        ltgray:"#1c1917",
         vmprim:"#9a674a",
+        dtext:"#f2cdb4",
       },
       fontFamily: {
         anton: ['"Anton SC"', 'sans-serif'],

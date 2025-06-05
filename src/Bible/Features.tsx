@@ -30,7 +30,7 @@ const FeaturePanel: React.FC = () => {
 
   return (
     <div
-      className={`w-64 no-scrollbar md:w-80 border-r bg-white dark:bg-bgray border-gray-100 dark:border-gray-700 overflow-y-auto h-[calc(100vh-2rem)] fixed top-8 ${
+      className={`w-64 no-scrollbar md:w-80 border-r bg-white dark:bg-ltgray border-gray-100 dark:border-gray-700 overflow-y-auto h-[calc(100vh-2rem)] fixed top-8 ${
         sidebarExpanded ? "left-48" : "left-12"
       }  transition-all duration-300 z-10`}
       // style={{

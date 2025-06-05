@@ -65,7 +65,7 @@ export const BookmarkPanel: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full p-4 bg-gray-50 dark:bg-black font-serif overflow-y-auto no-scrollbar">
+    <div className="h-full p-4 bg-gray-50  dark:bg-black font-serif overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           Bookmarks

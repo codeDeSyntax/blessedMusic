@@ -73,7 +73,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   const newTestamentBooks = bookList.filter((book) => book.testament === "new");
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-white dark:bg-black">
+    <div className="w-[50%]  fixed flex items-center justify-between px-4 py-2 z-10 border-b border-gray-800 ">
       <button
         onClick={handlePreviousChapter}
         disabled={currentChapter <= 1}
@@ -286,8 +286,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
             onClick={() => setViewMode("block")}
             className={`p-1.5 rounded transition-colors duration-200 ${
               viewMode === "block"
-                ? "bg-white dark:bg-stone-700 text-stone-600 dark:text-gray-200 shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-stone-600 dark:hover:text-gray-200"
+                ? "bg-white dark:bg-ltgray text-stone-600 dark:text-gray-200 shadow-sm"
+                : "text-gray-500 bg-transparent dark:text-gray-400 hover:text-stone-600 dark:hover:text-gray-200"
             }`}
             title="Block view"
           >
@@ -297,8 +297,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
             onClick={() => setViewMode("paragraph")}
             className={`p-1.5 rounded transition-colors duration-200 ${
               viewMode === "paragraph"
-                ? "bg-white dark:bg-bgray text-stone-600 dark:text-gray-200 shadow-sm"
-                : "text-gray-500 bg-ltgray  dark:text-gray-400 hover:text-stone-600 dark:hover:text-gray-200"
+                ? "bg-white dark:bg-ltgray text-stone-600 dark:text-gray-200 shadow-sm"
+                : "text-gray-500 bg-transparent  dark:text-gray-400 hover:text-stone-600 dark:hover:text-gray-200"
             }`}
             title="Paragraph view"
           >
