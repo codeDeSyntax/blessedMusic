@@ -96,12 +96,12 @@ const TitleBar: React.FC = () => {
              rgba(255, 255, 255, 5) 60%),
              ${selectedBg}`
                   : undefined,
-    backgroundRepeat: "repeat",
-    backgroundSize: "30px", // Adjust size to control repeat pattern
-    backdropFilter: "blur(10px)",
-    backgroundColor: "rgba(0, 102, 255, 0.2)", // semi-transparent blue
-    zIndex: 10,
-  }
+                backgroundRepeat: "repeat",
+                backgroundSize: "30px", // Adjust size to control repeat pattern
+                backdropFilter: "blur(10px)",
+                backgroundColor: "rgba(0, 102, 255, 0.2)", // semi-transparent blue
+                zIndex: 10,
+              }
             : {
                 backgroundImage: isDarkMode
                   ? `linear-gradient(to bottom,
@@ -157,7 +157,7 @@ const TitleBar: React.FC = () => {
 
           {/* Dropdown menu */}
           {showDropdown && (
-            <div className="absolute top-5 left-0 bg-white dark:bg-bgray shadow-md rounded-md p-1 z-50 w-32">
+            <div className="absolute top-5 left-0 bg-white dark:bg-bgray shadow-md rounded-md p-1 z-20 w-32">
               {/* <div
               className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-ltgray rounded cursor-pointer"
               onClick={() => {

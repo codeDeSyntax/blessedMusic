@@ -60,7 +60,7 @@ const BibleSidebar: React.FC = () => {
 
   return (
     <div
-      className={`bg-gray-50 dark:bg-black flex flex-col fixed left-0 top-8 h-[calc(100vh-2rem)] z-20 shadow-md transition-all duration-300 ${
+      className={`bg-gray-50 dark:bg-black flex flex-col fixed left-0 top-8 h-[calc(100vh-2rem)]  shadow-md transition-all duration-300 ${
         sidebarExpanded ? "w-48" : "w-12"
       }`}
     >
