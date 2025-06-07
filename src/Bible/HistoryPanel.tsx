@@ -93,23 +93,25 @@ const HistoryPanel: React.FC = () => {
             <button
               key={index}
               onClick={() => handleHistoryClick(item.reference)}
-              className="flex flex-col group items-start p-2 px-4 bg-gray-100 dark:bg-bgray hover:bg-gray-200 dark:hover:bg-bgray/40 rounded-full text-left transition-colors "
+              className="flex flex-col group items-start p-2 px-4 shadow bg-gray-100 dark:bg-bgray hover:bg-gray-200 dark:hover:bg-bgray/40 rounded-full text-left transition-colors "
               style={{
-                backgroundColor: bgColors.cl3,
+                // backgroundColor: "#f9fafb",
                 fontFamily: "Palatino",
               }}
             >
               <span
-                className=" text-gray-900  text-[12px] font-bold shadow px-1 group-hover:bg-white rounded-full truncate"
+                className=" text-gray-900 dark:text-white  text-[12px] font-bold shadow px-1 bg-white dark:bg-primary  rounded-full truncate"
                 // style={{
                 //   color: bgColors.cl3,
                 // }}
               >
                 {item.reference}
               </span>
-              <span className="text-[10px] text-gray-500 dark:text-stone-400 bg-white rounded-full p-1 flex items-center mt-1"
-               style={{
-                  color: bgColors.cl3,
+              <span
+                className="text-[10px] text-gray-500 dark:text-white bg-white dark:bg-[#674f34]  rounded-full p-1 flex items-center mt-1"
+                style={{
+                  color: !isDarkMode ? bgColors.cl3 : "white",
+                  textShadow: "0px 0px 1px rgba(0, 0, 0, 0.9)",
                 }}
               >
                 {/* <Clock size={12} className="mr-1" />{" "} */}

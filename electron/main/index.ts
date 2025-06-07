@@ -229,6 +229,12 @@ ipcMain.handle("select-directory", async () => {
 ipcMain.handle("save-song", async (event, { directory, title, content }) => {
   try {
     const filePath = path.join(directory, `${title}.txt`);
+
+    // Check if the target file already exists
+    if (fs.existsSync(filePath)) {
+      throw new Error("File name already exists");
+    }
+
     fs.writeFileSync(filePath, content, "utf8");
     return filePath;
   } catch (error) {
@@ -236,7 +242,6 @@ ipcMain.handle("save-song", async (event, { directory, title, content }) => {
     throw error;
   }
 });
-
 // Handle fetching songs from a directory
 ipcMain.handle("fetch-songs", async (event, directory) => {
   try {

@@ -60,7 +60,7 @@ const BibleSidebar: React.FC = () => {
 
   return (
     <div
-      className={`bg-gray-50 dark:bg-ltgray flex flex-col fixed left-0 top-8 h-[calc(100vh-2rem)] z-20 shadow-md transition-all duration-300 ${
+      className={`bg-gray-50 dark:bg-black flex flex-col fixed left-0 top-8 h-[calc(100vh-2rem)] z-20 shadow-md transition-all duration-300 ${
         sidebarExpanded ? "w-48" : "w-12"
       }`}
     >
@@ -77,7 +77,7 @@ const BibleSidebar: React.FC = () => {
       </div>
 
       {/* Sidebar menu items */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-ltgray">
+      <div className="flex-1 flex flex-col bg-white dark:bg-black">
         <div
           onClick={toggleSearch}
           className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${

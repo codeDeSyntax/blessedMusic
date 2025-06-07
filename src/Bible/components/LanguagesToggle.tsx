@@ -39,46 +39,26 @@ const LanguageToggler = ({ color }: { color: string }) => {
   const languageOptions = [
     {
       id: 1,
-      icon: (
-        <Book
-          size={14}
-          className="text-indigo-500 dark:text-primary group-hover:text-white"
-        />
-      ),
+      icon: <Book size={14} className="text-primary" />,
       text: "KJV",
       onClick: switchToKJV,
       style: "rounded-tr-md",
     },
     {
       id: 2,
-      icon: (
-        <BookText
-          size={14}
-          className="text-indigo-500 dark:text-primary group-hover:text-white"
-        />
-      ),
+      icon: <BookText size={14} className="text-primary" />,
       text: "TWI",
       onClick: switchToTWI,
     },
     {
       id: 3,
-      icon: (
-        <BookOpen
-          size={14}
-          className="text-indigo-500 dark:text-primary group-hover:text-white"
-        />
-      ),
+      icon: <BookOpen size={14} className="text-primary" />,
       text: "EWE",
       onClick: switchToEWE,
     },
     {
       id: 4,
-      icon: (
-        <BookA
-          size={14}
-          className="text-indigo-500 dark:text-primary group-hover:text-white"
-        />
-      ),
+      icon: <BookA size={14} className="text-primary" />,
       text: "French",
       onClick: switchToFrench,
       style: "rounded-br-md",
@@ -92,16 +72,16 @@ const LanguageToggler = ({ color }: { color: string }) => {
   return (
     <div className="fixed bottom-10 md:bottom-24 right-20 z-50">
       <motion.button
-        className=" h-16 w-16 flex items-center justify-center  bg-gray-50 dark:bg-bgray text-indigo-500 dark:text-indigo-300 p-4 rounded-full shadow-lg hover:bg-indigo-500 hover:text-white dark:hover:bg-primary dark:hover:text-white transition-colors duration-300"
+        className=" h-16 w-16 flex items-center justify-center  bg-gray-50 dark:bg-bgray/90 text-indigo-500 dark:text-indigo-300 p-4 rounded-full shadow-lg  hover:text-white dark:hover:bg-primary dark:hover:text-white transition-colors duration-300"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={toggleLanguages}
         aria-label="Toggle Language Menu"
         style={{
           borderWidth: 3,
-          borderColor: color,
+          borderColor: "#9a674a ",
           borderStyle: "dashed",
-          color: color,
+          color: "#9a674a ",
         }}
       >
         <Languages size={20} />
@@ -120,7 +100,7 @@ const LanguageToggler = ({ color }: { color: string }) => {
               <motion.button
                 key={language.id}
                 onClick={language.onClick}
-                className={`flex justify-between group items-center w-40 h-10 px-4 bg-gray-50 dark:bg-ltgray hover:bg-indigo-500 hover:text-white dark:hover:bg-primary dark:hover:text-white text-gray-800 dark:text-gray-200 text-[12px] font-medium transition-colors rounded-full duration-300  ${language.style}`}
+                className={`flex justify-between shadow shadow-dark group items-center w-40 h-10 px-4 bg-gray-50 dark:bg-ltgray hover:bg-primary hover:text-white dark:text-white dark:hover:text-white  text-[12px] font-medium transition-colors rounded-full duration-300  ${language.style}`}
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}

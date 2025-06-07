@@ -106,7 +106,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
           </button>
 
           {isBookDropdownOpen && (
-            <div className="absolute left-0 mt-2 w-[40vw] bg-white dark:bg-bgray rounded-lg shadow-lg z-10 max-h-96 overflow-y-auto no-scrollbar">
+            <div className="absolute left-0 mt-2 w-[38vw] bg-gray-50 dark:bg-bgray rounded-lg shadow-lg z-10 max-h-96 overflow-y-auto no-scrollbar">
               <div className="p-3">
                 <h2 className="text-sm flex items-center justify-between font-semibold mb-2 font-serif text-stone-400">
                   Old Testament {"   "}
@@ -125,7 +125,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                   {oldTestamentBooks.map((book) => (
                     <div
                       key={book.name}
-                      className={`p-2 text-[12px] flex items-center justify-center dark:shadow-black shadow rounded transition-colors duration-150 ${
+                      className={`p-2 text-[12px] flex items-center justify-center bg-white dark:bg-transparent dark:shadow-black shadow rounded-full transition-colors duration-150 ${
                         currentBook === book.name
                           ? "bg-transparent text-stone-500 hover:text-stone-900 cursor-not-allowed dark:text-gray-50 font-medium"
                           : "text-stone-400 dark:text-gray-400 cursor-pointer hover:text-stone-500 dark:hover:text-gray-200"
@@ -137,7 +137,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                           currentBook === book.name ? "dotted" : "none",
                         borderColor:
                           currentBook === book.name
-                            ? iconColors.color1
+                            ? "#949495"
                             : iconColors.color2,
                       }}
                     >
@@ -152,7 +152,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                   {newTestamentBooks.map((book) => (
                     <div
                       key={book.name}
-                      className={`p-2 text-[12px] flex items-center justify-center dark:shadow-black cursor-pointer shadow rounded transition-colors duration-150 ${
+                      className={`p-2 text-[12px] flex items-center justify-center bg-white dark:bg-transparent dark:shadow-black cursor-pointer shadow rounded-full transition-colors duration-150 ${
                         currentBook === book.name
                           ? "bg-transparent text-stone-500 hover:text-stone-900 pointer-events-none dark:text-gray-50 font-medium"
                           : "text-stone-400 dark:text-gray-400 cursor-pointer hover:text-stone-500 dark:hover:text-gray-200"
@@ -241,7 +241,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
             }}
           >
             <span className="text-[12px] font-medium font-bitter text-stone-500 dark:text-gray-50">
-              v {selectedVerse || "🤐"}
+              v {selectedVerse || 1}
             </span>
             <ChevronDown
               size={14}

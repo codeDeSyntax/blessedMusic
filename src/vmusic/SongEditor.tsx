@@ -42,7 +42,7 @@ const SongEditor = ({ formData, setFormData }: SongEditorProps) => {
     editorProps: {
       attributes: {
         class:
-          "dark:prose-invert prose-sm sm:prose-base text-text dark:text-dtext text-[14px] border  text-black lg:prose-lg max-w-none  px-6 py-4 h-[70vh] w-full focus:outline-none ",
+          "dark:prose-invert prose-sm sm:prose-base text-text dark:text-dtext text-[14px] border  text-black lg:prose-lg max-w-none  px-6 py-4 h-[70vh] w-full focus:outline-none font-[garamond] ",
         "data-placeholder": "Click to start typing...",
         spellcheck: "false",
       },

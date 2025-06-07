@@ -46,7 +46,7 @@ const Biblelayout: React.FC = () => {
 
         {/* Main content */}
         <main
-          className={`flex1 transition-all duration-300  ${getContentClass()}`}
+          className={`flex-1 transition-all duration-300  ${getContentClass()}`}
         >
           <ScriptureContent />
         </main>

@@ -101,7 +101,7 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
 
   return (
     <div
-      className={`${getFontSize()} leading-relaxed`}
+      className={`${getFontSize()} leading-relaxed w-full`}
       style={{
         fontFamily: fontFamily,
         fontWeight: fontWeight,
@@ -123,7 +123,7 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
 
             {/* Verse number */}
             <sup
-              className="text-black dark:text-dtext font-anton font-bold cursor-pointer hover:bg-gray-200 bg-gray-100 dark:bg-bgray px-1 py-0.5 rounded mr-1 relative"
+              className="text-black dark:text-orange-300 font-anton font-bold cursor-pointer hover:bg-gray-200 bg-gray-100 dark:bg-bgray px-1 py-0.5 rounded mr-1 relative"
               style={{
                 fontSize: "0.6em",
                 // backgroundColor: hoveredVerse === verse.verse ? (theme === "dark" ? "#374151" : "#e5e7eb") : "transparent"

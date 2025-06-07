@@ -86,7 +86,7 @@ const TitleBar: React.FC = () => {
   return (
     <div className="" style={{ WebkitAppRegion: "drag" } as any}>
       <div
-        className="h-8 flex items-center flex-row-reverse px-4 border-b border-gray-300 dark:border-gray-700 select-none relative"
+        className="h-8 flex items-center flex-row-reverse px-4 border-b   border-gray-300 dark:border-gray-700 select-none relative"
         style={{
           ...(!isDarkMode
             ? {
@@ -96,17 +96,19 @@ const TitleBar: React.FC = () => {
              rgba(255, 255, 255, 5) 60%),
              ${selectedBg}`
                   : undefined,
-                backgroundRepeat: "repeat",
-                backgroundSize: "30px", // Adjust size to control repeat pattern
-              }
+    backgroundRepeat: "repeat",
+    backgroundSize: "30px", // Adjust size to control repeat pattern
+    backdropFilter: "blur(10px)",
+    backgroundColor: "rgba(0, 102, 255, 0.2)", // semi-transparent blue
+    zIndex: 10,
+  }
             : {
-                backgroundImage:
-                  theme === "dark"
-                    ? `linear-gradient(to bottom,
+                backgroundImage: isDarkMode
+                  ? `linear-gradient(to bottom,
              rgba(255, 255, 255, 0%) 0%,
-             rgba(20, 20, 20, 5) 60%),
+             rgba(0, 0, 0, 5) 60%),
              url(./wood6.jpg)`
-                    : undefined,
+                  : undefined,
                 backgroundRepeat: "repeat",
                 backgroundSize: "20px", // Adjust size to control repeat pattern
               }),

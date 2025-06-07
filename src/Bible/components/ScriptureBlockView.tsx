@@ -1,5 +1,6 @@
 import React from "react";
 import { Star, StarOff, Copy, Monitor } from "lucide-react";
+import { useTheme } from "@/Provider/Theme";
 
 interface Verse {
   verse: number;
@@ -51,6 +52,7 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
   selectedBg,
   highlightVerse,
 }) => {
+  const { isDarkMode } = useTheme();
   const formatVerseText = (text: string, highlightColor: string | null) => {
     const parts = text.trim().split(/[\u2039\u203a]/);
 
@@ -147,11 +149,27 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                   getVerseHighlight(verse.verse)
                 )}
               </p>
+              <div
+                className=""
+                style={{
+                  borderWidth: 2,
+                  borderColor: !isDarkMode ? "#e1e3e4" : "#432c14",
+                  borderStyle: "dashed",
+                }}
+              />
+              <div
+                className="mt-1 rounded-full"
+                style={{
+                  borderWidth: 2,
+                  borderColor: !isDarkMode ? "#e1e3e4" : "#432c14",
+                  borderStyle: "dashed",
+                }}
+              />
             </div>
           </div>
 
           {/* Action buttons - absolutely positioned */}
-          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <div className="flex flex-row items-start gap-1">
               <button
                 onClick={() => toggleBookmark(verse.verse)}

@@ -159,7 +159,10 @@ export default function CreateSong() {
       refetch();
     } catch (error) {
       console.error("Error saving song:", error);
-      showNotification("Failed to save song. Please try again.", "error");
+      showNotification(
+        error instanceof Error ? error.message : "An error occurred while saving the song.",
+        "error"
+      );
     } finally {
       setIsSaving(false);
     }
