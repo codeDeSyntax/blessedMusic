@@ -1,297 +1,289 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import TitleBar from "../shared/TitleBar";
 import Sidebar from "./Sidebar";
 import DeletePopup from "./DeletePopup";
 import HeaderControls from "./components/songlist/HeaderControls";
 import VirtualSongList from "./components/songlist/VirtualSongList";
 import LoadingError from "./components/songlist/LoadingError";
-import { useBmusicContext } from "@/Provider/Bmusic";
-import { Song } from "@/types";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { useTheme } from "@/Provider/Theme";
+import { Song } from "@/types";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
+import { ActiveTab } from "@/store/slices/songSlice";
+import AppTour from "../components/Tour/AppTour";
 
 const BlessedMusic = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("collections");
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleting, setShowDeleting] = useState(false);
-
-  // Get viewMode from localStorage only once on mount
-  const [viewMode, setViewMode] = useState(
-    () => localStorage.getItem("layout") || "table"
-  );
-
   const {
-    songRepo,
-    setSongRepo,
-    theme,
-    setTheme,
-    selectedSong,
-    setSelectedSong,
-    fetching,
-    favorites,
-    fetchError,
     songs,
-    refetch,
-  } = useBmusicContext();
+    filteredSongs,
+    selectedSong,
+    favorites,
+    searchQuery,
+    isLoading,
+    error,
+    viewMode,
+    activeTab,
+    isDeleting,
+    showDeleteDialog,
+    selectSong,
+    deselectSong,
+    loadSongs,
+    updateSearchQuery,
+    toggleSongFavorite,
+    changeViewMode,
+    presentSong,
+    goToPresentation,
+    presentSelectedSong,
+    goToEdit,
+    goToCreate,
+    changeDirectory,
+    deleteSelectedSong,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    changeActiveTab,
+  } = useSongOperations();
 
-  const { setCurrentScreen } = useEastVoiceContext();
-  const { isDarkMode } = useTheme();
+  const dispatch = useAppDispatch();
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  const [savedFavorites, setSavedFavorites] = useState<Song[]>(favorites);
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200
+  // Get song-specific theme from localStorage (independent of global Redux theme)
+  const [localTheme, setLocalTheme] = useState(
+    localStorage.getItem("bmusictheme") || "white"
   );
+  
+  // Use local theme for songs app instead of global theme
+  const theme = localTheme;
 
-  // Handle window resize for responsive columns
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Determine number of columns based on screen size
+  // Determine number of columns based on screen size and sidebar state - RESTORED ORIGINAL LOGIC
   const numberOfColumns = useMemo(() => {
-    return windowWidth >= 1024 ? 3 : 2; // 3 columns for lg and above, 2 for smaller screens
-  }, [windowWidth]);
+    const availableWidth = sidebarVisible ? windowWidth - 288 : windowWidth; // 288px is sidebar width (w-72 = 18rem = 288px)
+    return availableWidth >= 1024 ? 4 : availableWidth >= 768 ? 3 : 2; // 4 columns for lg and above, 3 for md, 2 for smaller screens
+  }, [windowWidth, sidebarVisible]);
 
-  // Memoized filtered songs calculation
-  const filteredSongs = useMemo(() => {
-    if (!searchQuery.trim()) return songs;
-
-    const query = searchQuery.toLowerCase();
-    return songs.filter(
-      (song) =>
-        song.title.toLowerCase().includes(query) ||
-        song.content.toLowerCase().includes(query)
-    );
-  }, [songs, searchQuery]);
-
-  // Memoized split songs calculation for multiple columns
+  // Memoized split songs calculation for multiple columns - RESTORED ORIGINAL LOGIC
   const columnSongs = useMemo(() => {
-    const songsPerColumn = Math.ceil(filteredSongs.length / numberOfColumns);
+    const songsToDisplay = activeTab === "favorites" ? favorites : filteredSongs;
+    const songsPerColumn = Math.ceil(songsToDisplay.length / numberOfColumns);
     const columns: Song[][] = [];
 
     for (let i = 0; i < numberOfColumns; i++) {
       const startIndex = i * songsPerColumn;
       const endIndex = Math.min(
         startIndex + songsPerColumn,
-        filteredSongs.length
+        songsToDisplay.length
       );
-      columns.push(filteredSongs.slice(startIndex, endIndex));
+      columns.push(songsToDisplay.slice(startIndex, endIndex));
     }
 
     return columns;
-  }, [filteredSongs, numberOfColumns]);
+  }, [filteredSongs, favorites, activeTab, numberOfColumns]);
 
-  // Update localStorage when viewMode changes
+  // Window resize handler
   useEffect(() => {
-    localStorage.setItem("bmusiclayout", viewMode);
-  }, [viewMode]);
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-  // Memoized callbacks to prevent unnecessary re-renders
-  const onSingleClick = useCallback(
-    (song: Song) => {
-      setSelectedSong(song);
-      setActiveTab("Song");
-      localStorage.setItem("selectedSong", JSON.stringify(song));
-    },
-    [setSelectedSong, setActiveTab]
-  );
+  // Load songs on component mount
+  useEffect(() => {
+    loadSongs();
+  }, [loadSongs]);
 
-  const onDoubleClick = useCallback(
-    (song: Song) => {
-      if (selectedSong) {
-        setCurrentScreen("Presentation");
-        localStorage.setItem("selectedSong", JSON.stringify(song));
-      }
-    },
-    [selectedSong, setCurrentScreen]
-  );
-
-  const presentSong = useCallback((selectedSong: any) => {
-    if (selectedSong) {
-      localStorage.setItem("selectedSong", JSON.stringify(selectedSong));
-      window.api.projectSong(selectedSong);
-      window.api.onDisplaySong((selectedSong) => {
-        console.log(`songData: ${selectedSong.title}`);
-      });
+  // Load saved sidebar state
+  useEffect(() => {
+    const savedSidebarState = localStorage.getItem("sidebarVisible");
+    if (savedSidebarState !== null) {
+      setSidebarVisible(JSON.parse(savedSidebarState));
     }
   }, []);
 
-  const changeDirectory = useCallback(async () => {
-    const path = await window.api.selectDirectory();
-    if (typeof path === "string") {
-      setSongRepo(path);
-      localStorage.setItem("bmusicsongdir", path);
-    }
-    const savedDirectory = localStorage.getItem("bmusicsongdir");
-    if (savedDirectory) {
-      setSongRepo(savedDirectory);
-    }
-  }, [setSongRepo]);
+  // Song repository and folder color from localStorage
+  const songRepo = localStorage.getItem("bmusicsongdir") || "";
+  const folderColor = localStorage.getItem("vmusicfoldercolor") || "#1f2937";
 
-  const deleteSong = useCallback(
-    async (filePath: string) => {
-      try {
-        setDeleting(true);
-        const response = await window.api.deleteSong(filePath);
-        console.log("Delete song response:", response);
-        setDeleting(false);
-        setShowDeleting(false);
-        refetch();
-      } catch (error) {
-        console.error("Failed to delete song:", error);
-      }
-    },
-    [refetch]
-  );
-
-  // Optimized keyboard event handler
+  // Load saved theme and listen for localStorage changes
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && selectedSong) {
-        presentSong(selectedSong);
+    const savedTheme = localStorage.getItem("bmusictheme");
+    if (savedTheme) {
+      setLocalTheme(savedTheme);
+    }
+
+    // Listen for localStorage changes (when theme is changed from TitleBar)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "bmusictheme" && e.newValue) {
+        setLocalTheme(e.newValue);
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selectedSong, presentSong]);
+    // Listen for custom storage events within the same window
+    const handleCustomStorageChange = (e: CustomEvent) => {
+      if (e.detail.key === "bmusictheme") {
+        setLocalTheme(e.detail.newValue);
+      }
+    };
 
-  // Optimized localStorage initialization
-  useEffect(() => {
-    const savedDirectory = localStorage.getItem("bmusic");
-    const savedTheme = localStorage.getItem("bmusic");
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("localStorageChange", handleCustomStorageChange as EventListener);
 
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    if (savedDirectory) {
-      setSongRepo(savedDirectory);
-      console.log("Saved directory:", savedDirectory);
-    }
-  }, [setTheme, setSongRepo]);
-
-  // Memoized button handlers
-  const handleEditClick = useCallback(() => {
-    setCurrentScreen("edit");
-  }, [setCurrentScreen]);
-
-  const handlePresentationClick = useCallback(() => {
-    setCurrentScreen("Presentation");
-  }, [setCurrentScreen]);
-
-  const handleDeleteClick = useCallback(() => {
-    setShowDeleting(true);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+    };
   }, []);
 
-  const handleDeselectClick = useCallback(() => {
-    setSelectedSong(null);
-  }, [setSelectedSong]);
+  // Keyboard shortcuts - RESTORED Enter key functionality and added new ones
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Delete" && selectedSong) {
+        showDeleteConfirmation();
+      }
+      // RESTORED: Enter key to present selected song
+      if (e.key === "Enter" && selectedSong) {
+        presentSong(selectedSong);
+      }
+      // Additional shortcuts
+      if (e.key === "Escape") {
+        deselectSong();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedSong, showDeleteConfirmation, presentSong, deselectSong]);
 
-  const handleCreateClick = useCallback(() => {
-    setCurrentScreen("create");
-  }, [setCurrentScreen]);
+  const handleSongClick = (song: Song) => {
+    selectSong(song);
+  };
 
-  const handlePresentSongClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      presentSong(selectedSong);
-    },
-    [presentSong, selectedSong]
-  );
+  const handleSongDoubleClick = (song: Song) => {
+    presentSong(song);
+  };
 
-  // Memoized random color for folder icon
-  const folderColor = useMemo(
-    () =>
-      `rgba(${Math.floor(Math.random() * 255)},${Math.floor(
-        Math.random() * 255
-      )},${Math.floor(Math.random() * 255)},1)`,
-    []
-  );
+  const handleViewModeChange = (mode: string) => {
+    changeViewMode(mode as "list" | "table");
+  };
+
+  const handleTabChange = (tab: string) => {
+    // FIXED: Update activeTab state properly
+    changeActiveTab(tab as ActiveTab);
+  };
+
+  const toggleSidebar = () => {
+    const newVisibility = !sidebarVisible;
+    setSidebarVisible(newVisibility);
+    localStorage.setItem("sidebarVisible", JSON.stringify(newVisibility));
+  };
+
+  // Navigation functions using dispatch
+  const handleEditClick = () => dispatch(setCurrentScreen("edit"));
+  const handleCreateClick = () => dispatch(setCurrentScreen("create"));
+  const handlePresentationClick = () => dispatch(setCurrentScreen("backgrounds"));
 
   return (
-    <div className="w-screen h-screen overflow-y-scroll no-scrollbar dark:bg-ltgray bg-cover">
-      <TitleBar />
-      {showDeleting && (
-        <DeletePopup
-          deleting={deleting}
-          setDeleting={setDeleting}
-          refetch={refetch}
-          showDeleting={showDeleting}
-          setShowDeleting={setShowDeleting}
-          songPath={selectedSong?.path || ""}
-          deleteSong={deleteSong}
-        />
-      )}
+    <AppTour>
       <div
-        className={`flex h-screen no-scrollbar ${
-          theme === "creamy" ? "gridb1" : "gridb"
-        }`}
+        className={`w-screen h-screen overflow-hidden transition-all duration-300 `}
+        style={{
+          backgroundColor: theme === "creamy" ? "#faeed1" : "white",
+        }}
       >
-        {/* Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          savedFavorites={savedFavorites}
-          setSavedFavorites={setSavedFavorites}
-        />
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto h-full no-scrollbar">
-          <div className="backdrop-blur-lg p-6">
-            {/* Header with Search Bar and View Toggle */}
-            <HeaderControls
-              selectedSong={selectedSong}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              songRepo={songRepo}
-              folderColor={folderColor}
-              onEditClick={handleEditClick}
-              onPresentationClick={handlePresentationClick}
-              onDeleteClick={handleDeleteClick}
-              onDeselectClick={handleDeselectClick}
-              onCreateClick={handleCreateClick}
-              onPresentSongClick={handlePresentSongClick}
-              onRefetch={refetch}
-              onChangeDirectory={changeDirectory}
+        <TitleBar />
+
+        <div className="flex h-[calc(100vh-2rem)] overflow-hidden">
+          {/* Sidebar with smooth toggle animation */}
+          <div
+            className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+              sidebarVisible ? 'w-72 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
+            data-tour="sidebar"
+          >
+            <Sidebar
+              activeTab={activeTab}
+              setActiveTab={handleTabChange}
+              savedFavorites={favorites}
+              setSavedFavorites={() => {}} // TODO: Implement favorites management
             />
+          </div>
+          
+          {/* Main Content with dynamic width adjustment */}
+          <div 
+            className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out`}
+          >
+            <div className="h-full overflow-y-auto no-scrollbar">
+              <div className="p-6">
+                {/* Header with Search Bar and View Toggle */}
+                <div data-tour="header-controls">
+                  <HeaderControls
+                    selectedSong={selectedSong}
+                    searchQuery={searchQuery}
+                    setSearchQuery={updateSearchQuery}
+                    viewMode={viewMode}
+                    setViewMode={handleViewModeChange}
+                    songRepo={songRepo}
+                    folderColor={folderColor}
+                    onEditClick={handleEditClick}
+                    onPresentationClick={handlePresentationClick}
+                    onDeleteClick={showDeleteConfirmation}
+                    onDeselectClick={deselectSong}
+                    onCreateClick={handleCreateClick}
+                    onPresentSongClick={presentSelectedSong}
+                    onRefetch={loadSongs}
+                    onChangeDirectory={changeDirectory}
+                    onToggleSidebar={toggleSidebar}
+                    sidebarVisible={sidebarVisible}
+                  />
+                </div>
 
-            {/* Multi-Column Content with Virtual Scrolling */}
-            <div
-              className={`flex gap-6 w-full h-[80vh] ${
-                numberOfColumns === 3 ? "grid-cols-3" : "grid-cols-2"
-              }`}
-            >
-              <LoadingError
-                fetching={fetching}
-                fetchError={fetchError}
-                songsLength={songs.length}
-              />
-
-              {!fetching && songs.length > 0 && (
-                <>
-                  {columnSongs.map((columnSongList, columnIndex) => (
-                    <div key={columnIndex} className="flex-1">
-                      <VirtualSongList
-                        songs={columnSongList}
-                        viewMode={viewMode}
-                        onSingleClick={onSingleClick}
-                        onDoubleClick={onDoubleClick}
-                        containerHeight={window.innerHeight * 0.8}
-                      />
+                {/* Multi-Column Content with Virtual Scrolling - RESTORED ORIGINAL LAYOUT */}
+                <div className="w-full" data-tour="song-list">
+                  <LoadingError 
+                    fetching={isLoading} 
+                    fetchError={error} 
+                    songsLength={songs.length}
+                  />
+                  
+                  {!isLoading && songs.length > 0 && (
+                    <div
+                      className={`flex gap-6 w-full h-[calc(100vh-12rem)] ${
+                        numberOfColumns === 3 ? "grid-cols-3" : "grid-cols-2"
+                      }`}
+                    >
+                      {columnSongs.map((columnSongList, columnIndex) => (
+                        <div key={columnIndex} className="flex-1 min-w-0">
+                          <VirtualSongList
+                            songs={columnSongList}
+                            viewMode={viewMode}
+                            onSingleClick={handleSongClick}
+                            onDoubleClick={handleSongDoubleClick}
+                            containerHeight={window.innerHeight * 0.7}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </>
-              )}
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteDialog && (
+          <DeletePopup
+            deleting={isDeleting}
+            setDeleting={() => {}}
+            refetch={loadSongs}
+            showDeleting={showDeleteDialog}
+            setShowDeleting={hideDeleteConfirmation}
+            songPath={selectedSong?.path || ""}
+            deleteSong={deleteSelectedSong}
+          />
+        )}
       </div>
-    </div>
+    </AppTour>
   );
 };
 
-export default BlessedMusic;
+export default BlessedMusic; 

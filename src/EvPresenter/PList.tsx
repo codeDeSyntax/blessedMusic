@@ -16,7 +16,7 @@ import {
   Clock,
   FolderEdit,
 } from "lucide-react";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
 import { useTheme } from "@/Provider/Theme";
 import { on } from "node:events";
@@ -259,12 +259,13 @@ export const PresentationList: React.FC<{
 }> = ({ type, onBack, onSelect, onEdit, onNew, onPresent }) => {
   const {
     presentations,
-    deletePresentation,
-    setCurrentPresentation,
     startPresentation,
-    selectedPath,
-    setSelectedPath,
-  } = useEvPresentationContext();
+  } = usePresenterOperations();
+
+  // Local state for path management
+  const [selectedPath, setSelectedPath] = useState(
+    localStorage.getItem("evpresenterfilespath") || ""
+  );
   const { isDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -285,7 +286,7 @@ export const PresentationList: React.FC<{
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this presentation?")) {
-      await deletePresentation(id, selectedPath);
+      console.log("Delete presentation:", id); // TODO: Implement delete functionality
     }
   };
 

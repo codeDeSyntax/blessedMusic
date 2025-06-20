@@ -1,48 +1,28 @@
 import React from "react";
-import { X, Search } from "lucide-react";
-import { useBibleContext } from "@/Provider/Bible";
-import { BookmarkPanel } from "./BookmarkPanel";
+import { useAppSelector } from "@/store";
+import SearchPanel from "./SearchPanel";
 import HistoryPanel from "./HistoryPanel";
-import LibraryPanel from "./LibraryPanel";
+import { BookmarkPanel } from "./BookmarkPanel";
 import SettingsPanel from "./SettingsPanel";
-// import { theme } from "antd";
+import LibraryPanel from "./LibraryPanel";
 
-const FeaturePanel: React.FC = () => {
-  const { activeFeature, setActiveFeature, theme, sidebarExpanded } =
-    useBibleContext();
+const Features: React.FC = () => {
+  const { activeFeature } = useAppSelector((state) => state.bible);
 
-  if (!activeFeature) return null;
-
-  const renderPanel = () => {
-    switch (activeFeature) {
-      case "favorites":
-        return <BookmarkPanel />;
-      case "history":
-        return <HistoryPanel />;
-      case "library":
-        return <LibraryPanel />;
-      case "settings":
-        return <SettingsPanel />;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div
-      className={`w-64 no-scrollbar md:w-80 border-r bg-white dark:bg-ltgray border-gray-100 dark:border-gray-700 overflow-y-auto h-[calc(100vh-2rem)] fixed top-8 ${
-        sidebarExpanded ? "left-48" : "left-12"
-      }  transition-all duration-300 `}
-      // style={{
-      //   scrollbarWidth: "thin",
-      //   scrollbarColor:
-      //     theme === "light" ? "#f9fafb #f3f4f6" : "#424242 #202020",
-      //   // scrollbarGutter: "stable",
-      // }}
-    >
-      {renderPanel()}
-    </div>
-  );
+  switch (activeFeature) {
+    case "search":
+      return <SearchPanel />;
+    case "history":
+      return <HistoryPanel />;
+    case "bookmarks":
+      return <BookmarkPanel />;
+    case "settings":
+      return <SettingsPanel />;
+    case "library":
+      return <LibraryPanel />;
+    default:
+      return null;
+  }
 };
 
-export default FeaturePanel;
+export default Features;

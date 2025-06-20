@@ -1,44 +1,39 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Search } from "lucide-react";
-import { useBibleContext } from "@/Provider/Bible";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { setSearchOpen, setCurrentLocation } from "@/store/slices/bibleSlice";
 
 const SearchPanel: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { searchOpen, sidebarExpanded } = useAppSelector((state) => state.bible);
   const {
-    searchOpen,
-    setSearchOpen,
-    searchTerm,
-    setSearchTerm,
-    performSearch,
+    searchQuery,
     searchResults,
-    setCurrentBook,
-    setCurrentChapter,
-    currentVerse,
-    setCurrentVerse,
-    exactMatch,
-    setExactMatch,
-    wholeWords,
-    setWholeWords,
-    sidebarExpanded,
-  } = useBibleContext();
+    updateSearchQuery,
+    performSearch,
+  } = useBibleOperations();
+
+  // Local state for search options
+  const [exactMatch, setExactMatch] = useState(false);
+  const [wholeWords, setWholeWords] = useState(false);
 
   // Perform search when search term changes
   useEffect(() => {
     const debounce = setTimeout(() => {
-      if (searchTerm) {
-        performSearch(searchTerm);
+      if (searchQuery) {
+        performSearch(searchQuery);
       }
     }, 300);
 
     return () => clearTimeout(debounce);
-  }, [searchTerm, exactMatch, wholeWords, performSearch]);
+  }, [searchQuery, exactMatch, wholeWords, performSearch]);
 
   if (!searchOpen) return null;
 
   const handleResultClick = (book: string, chapter: number, verse: number) => {
-    setCurrentBook(book);
-    setCurrentChapter(chapter);
-    setCurrentVerse(verse);
-    setSearchOpen(false);
+    dispatch(setCurrentLocation({ book, chapter, verse }));
+    dispatch(setSearchOpen(false));
     // Scroll to the selected verse
     const verseElement = document.getElementById(`verse-${verse}`);
     if (verseElement) {
@@ -60,7 +55,7 @@ const SearchPanel: React.FC = () => {
             Search
           </h2>
           <button
-            onClick={() => setSearchOpen(false)}
+            onClick={() => dispatch(setSearchOpen(false))}
             className="p-1 bg-gray-50 dark:bg-[#424242] shadow"
           >
             <X size={20} className="text-gray-500 dark:text-gray-500" />
@@ -70,8 +65,8 @@ const SearchPanel: React.FC = () => {
         <div className="relative">
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => updateSearchQuery(e.target.value)}
             placeholder="Search scripture..."
             className="w-[80%] p-2 pl-8  border-gray-300 dark:border-gray-600 border-none 
               rounded-md bg-white dark:bg-[#424242] shadow focus:outline-none focus:outline-gray-300 dark:focus:outline-[#424242] text-stone-500 dark:text-gray-100  "
@@ -128,7 +123,7 @@ const SearchPanel: React.FC = () => {
             ))}
           </div>
         ) : (
-          searchTerm && (
+          searchQuery && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No results found
             </div>

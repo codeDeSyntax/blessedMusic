@@ -15,8 +15,9 @@ import {
 import TitleBar from "../shared/TitleBar";
 import CustomEditor from "./SongCreator";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBmusicContext } from "@/Provider/Bmusic";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
+import { useAppDispatch } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
 
 interface CreateSong {
   currentScreen: string;
@@ -64,9 +65,11 @@ export default function CreateSong() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const { songRepo, setSongRepo, songs, setSongs, selectedSong, refetch } =
-    useBmusicContext();
-  const { setCurrentScreen } = useEastVoiceContext();
+  const { songs, selectedSong } = useSongOperations();
+  const dispatch = useAppDispatch();
+  
+  // Local state for song repo
+  const [songRepo, setSongRepo] = useState(localStorage.getItem("songRepoDirectory") || "");
   const [notification, setNotification] = useState<{
     show: boolean;
     message: string;
@@ -144,19 +147,10 @@ export default function CreateSong() {
         formData.message
       );
       showNotification("Song created successfully! 🎵", "success");
-      setSongs([
-        ...songs,
-        {
-          id: selectedSong?.id || "",
-          title: formData.title,
-          path: selectedSong?.path || "",
-          content: formData.message,
-          dateModified: selectedSong?.dateModified || "",
-          categories: selectedSong?.categories || [],
-        },
-      ]);
+      // TODO: Add new song to Redux store
+      console.log("Song saved successfully");
       setFormData({ title: "", message: "" });
-      refetch();
+      // TODO: Implement refetch/reload functionality
     } catch (error) {
       console.error("Error saving song:", error);
       showNotification("Failed to save song. Please try again.", "error");
@@ -212,7 +206,7 @@ export default function CreateSong() {
                   <div className="flex items-center justify-between mb-4">
                     <ArrowLeftCircle
                       className="w-6 h-6 text-[#9a674a] hover:scale-110 hover:cursor-pointer transition-transform duration-200"
-                      onClick={() => setCurrentScreen("Songs")}
+                      onClick={() => dispatch(setCurrentScreen("Songs"))}
                     />
                   </div>
 

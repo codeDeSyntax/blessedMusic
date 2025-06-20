@@ -12,14 +12,17 @@ import {
   CogIcon,
   Group,
   Wallpaper,
+  Sun,
+  Moon,
 } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { FolderOpen } from "lucide-react";
-import { useBmusicContext } from "@/Provider/Bmusic";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { motion } from "framer-motion";
-import { DeleteColumnOutlined } from "@ant-design/icons";
+import { DeleteColumnOutlined, MoonFilled } from "@ant-design/icons";
 import { Song, Collection } from "@/types";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
 import { Tooltip } from "antd";
 
 interface Option {
@@ -49,7 +52,11 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { theme } = useBmusicContext();
+  
+  // Access local theme from parent component instead of Redux
+  const [localTheme, setLocalTheme] = useState(
+    localStorage.getItem("bmusictheme") || "white"
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,7 +89,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full p-2 rounded-lg ${
-          theme === "creamy" ? "bg-vmprim/20 " : "bg-gray-50"
+          localTheme === "creamy" ? "bg-vmprim/20 " : "bg-gray-50"
         } text-[12px] border border-stone-200 flex items-center justify-between hover:bg-white/60 transition-colors`}
         style={{ fontFamily: label === "Font Family" ? value : undefined }}
       >
@@ -96,7 +103,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       {isOpen && (
         <div
           className={`absolute z-40 w-full mt-1 flex flex-col items-center gap-1  ${
-            theme === "creamy" ? "bg-yellow-800" : "bg-white"
+            localTheme === "creamy" ? "bg-yellow-800" : "bg-white"
           } rounded-lg shadow-lg border border-stone-200 py-1 max-h-48 overflow-y-auto no-scrollbar`}
         >
           {options.map((option, index) => (
@@ -109,7 +116,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
               className={`w-[90%] px-3 py-2 text-left  text-[12px   hover:[#9a674a]/40 hover:text-black  transition-colors ${
                 (option.value || option) === value
                   ? "bg-white/20 text-orange-400"
-                  : theme === "creamy"
+                  : localTheme === "creamy"
                   ? "bg-vmprim/20 text-white"
                   : "bg-gray-50 border text-stone-500"
               }`}
@@ -128,9 +135,30 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
 const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
   // const [activeTab, setActiveTab] = useState("recent");
-  const { setSongRepo, selectedSong, setSelectedHymnBackground, theme } =
-    useBmusicContext();
-  const { setCurrentScreen } = useEastVoiceContext();
+  const { selectedSong } = useSongOperations();
+  
+  // Local functions for missing operations
+  const setSongRepo = (path: string) => localStorage.setItem("bmusicsongdir", path);
+  const setSelectedHymnBackground = (bg: string) => localStorage.setItem("bmusicpresentationbg", bg);
+  const dispatch = useAppDispatch();
+  
+  // Add local theme state management
+  const [localTheme, setLocalTheme] = useState(
+    localStorage.getItem("bmusictheme") || "white"
+  );
+
+  // Theme toggle function for songs app
+  const toggleSongTheme = () => {
+    const newTheme = localTheme === "creamy" ? "white" : "creamy";
+    setLocalTheme(newTheme);
+    localStorage.setItem("bmusictheme", newTheme);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent("localStorageChange", {
+      detail: { key: "bmusictheme", newValue: newTheme }
+    }));
+  };
+
   const [fontSize, setFontSize] = useState(
     localStorage.getItem("bmusicfontSize") || "1.5"
   );
@@ -148,6 +176,27 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
   );
   const [imagesPath, setImagePath] = useState("");
   const [collections, setCollections] = useState<Collection[]>([]);
+
+  // Load saved theme on component mount and listen for changes
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("bmusictheme");
+    if (savedTheme) {
+      setLocalTheme(savedTheme);
+    }
+
+    // Listen for localStorage changes (when theme is changed from TitleBar)
+    const handleCustomStorageChange = (e: CustomEvent) => {
+      if (e.detail.key === "bmusictheme") {
+        setLocalTheme(e.detail.newValue);
+      }
+    };
+
+    window.addEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+
+    return () => {
+      window.removeEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+    };
+  }, []);
 
   const backgroundOptions = [
     {
@@ -204,9 +253,8 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
   const selectImagesPath = async () => {
     const path = await window.api.selectDirectory();
     if (typeof path === "string") {
-      // setSongRepo(path);
       localStorage.setItem("bmusicimages", path);
-      setCurrentScreen("backgrounds");
+      dispatch(setCurrentScreen("backgrounds"));
     }
   };
 
@@ -263,7 +311,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
       case "Song":
         return (
           <div className="flex items-start flex-col p-3">
-            <h3 className="text-lg text-left skew-x-12 italic underline text-stone-600 font-semibold">
+            <h3 className="text-lg text-left font-oswald underline text-stone-600 font-semibold">
               {selectedSong?.title}
             </h3>
             {/* clean song content with dangerously html*/}
@@ -325,9 +373,9 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                                focus:outline-none group"
                     style={{
                       borderWidth: 1,
-                      borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                      borderColor: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                       borderStyle: "dashed",
-                      color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                      color: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                     }}
                   >
                     <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -343,9 +391,9 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                                focus:outline-none group"
                     style={{
                       borderWidth: 1,
-                      borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                      borderColor: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                       borderStyle: "dashed",
-                      color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                      color: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                     }}
                   >
                     <Wallpaper className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -365,9 +413,9 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                                }`}
                   style={{
                     borderWidth: 1,
-                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    borderColor: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                     borderStyle: "dashed",
-                    color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    color: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                   }}
                 >
                   <Grid className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -385,9 +433,9 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                                }`}
                   style={{
                     borderWidth: 1,
-                    borderColor: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    borderColor: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                     borderStyle: "dashed",
-                    color: theme === "creamy" ? "#9a674a" : "#3e3e3e",
+                    color: localTheme === "creamy" ? "#9a674a" : "#3e3e3e",
                   }}
                 >
                   <List className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -402,7 +450,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
                       key={bg.id}
                       onClick={() => selectPresentationBackground(bg.thumbnail)}
                       className={`relative group p-1 rounded-lg ${
-                        theme === "creamy" ? "bg-vmprim/30" : "bg-white"
+                        localTheme === "creamy" ? "bg-vmprim/30" : "bg-white"
                       } border-2 transition-all ${
                         selectedBg === bg.id
                           ? "border-vmprim"
@@ -452,14 +500,14 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
               <div
                 key={index}
                 className={`px-3 ${
-                  theme === "creamy"
-                    ? "bg-gradient-to-r from-[#f1e0b8] via-[#efccb6] to-[#faeed1]"
+                  localTheme === "creamy"
+                    ? "bg-[#faeed1] "
                     : "bg-white/90"
                 } shadow rounded-lg backdrop-blur-sm transition-all hover:bg-white/40`}
               >
                 <div className="flex flex-col justify-between items-start">
                   <div className=" w-full">
-                    <h4 className="font-normal flex items-center gap-3 font-serif text-[12px]">
+                    <h4 className="font-bolder text-[#9a674a] flex items-center gap-3  text-[14px]" style={{fontFamily:"garamond"}}>
                       {collection.name}{" "}
                       <span>
                         <ExternalLink
@@ -494,30 +542,42 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
 
   return (
     <div
-      // style={{
-      //   fontFamily: fontFamily,
-      //   fontSize: `${fontSize}px`,
-      // }}
-      className="w-72 pt-2 border-r border-stone-300 bg-white/20 backdrop-blur-sm transition-all duration-300 ease-in-out overflow-y-auto no-scrollbar shadow h-[98%]"
+      className={`w-72 h-full pt-2 border-r border-stone-300 bg-white/20 backdrop-blur-sm transition-all duration-300 ease-in-out flex flex-col shadow ${localTheme === "creamy" ? "bg-[#f1e3ae]" : "bg-white/20"}`}
+      style={{
+        backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "white",
+      }}
     >
-      <div className="p-4 flex items-center justify-between">
-        <h2 className="font-serif text-xl s font-bold text-vmprim border-vmprim flex items-center gap-2">
+      <div className="p-4 flex items-center justify-between flex-shrink-0">
+        <h2 className="font-oswald text-[15px] s font-bold text-vmprim border-vmprim flex items-center gap-2">
           <Music className="w-5 h-5 animate-bounce" />
           Soul healing music
           <Music className="w-5 h-5 animate-bounce" />
         </h2>
+        <button
+          onClick={toggleSongTheme}
+          className={`p-2 rounded-full transition-colors ${
+            localTheme === "creamy" 
+              ? "bg-[#9a674a] text-white hover:bg-[#8a564a]" 
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          title={`Switch to ${localTheme === "creamy" ? "white" : "creamy"} theme`}
+        >
+          <div className="w-4 h-4 rounded-full border-2 border-current bg-[#9a674a]"> {localTheme === "creamy" ? <Sun className="w-4 h-4" /> : <MoonFilled className="w-4 h-4 text-[#faeed1]" />}</div>
+        </button>
       </div>
 
-      <div className="px-2 ">
+      <div className="px-2 flex-shrink-0">
         <div
           className={`flex space-x-2 ${
-            theme === "creamy" ? "bg-[#faeed1]" : "bg-[#ececeb]"
+            localTheme === "creamy" ? "bg-[#faeed1]" : "bg-[#ececeb]"
           } p-1 rounded-lg`}
         >
           <button
             onClick={() => setActiveTab("Song")}
             className={` py-2 rounded-md text-[12px] px-2 font-medium transition-colors flex items-center justify-center ${
-              activeTab === "Song"
+              activeTab === "Song" && localTheme === "creamy"
+                ? "bg-vmprim text-white"
+                : activeTab === "Song" && localTheme === "white"
                 ? "bg-vmprim text-white"
                 : "text-stone-600 bg-[#fdf4d0]"
             }`}
@@ -527,7 +587,9 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
           <button
             onClick={() => setActiveTab("settings")}
             className={` py-2 rounded-md text-[12px] px-2  font-medium transition-colors flex items-center justify-center ${
-              activeTab === "settings"
+              activeTab === "settings" && localTheme === "creamy"
+                ? "bg-vmprim text-white"
+                : activeTab === "settings" && localTheme === "white"
                 ? "bg-vmprim text-white"
                 : "text-stone-600 bg-[#fdf4d0]"
             }`}
@@ -537,7 +599,9 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
           <button
             onClick={() => setActiveTab("collections")}
             className={`flex-1 py-2 rounded-md text-[12px] px-2 font-medium transition-colors flex items-center justify-center ${
-              activeTab === "collections"
+              activeTab === "collections" && localTheme === "creamy"
+                ? "bg-vmprim text-white"
+                : activeTab === "collections" && localTheme === "white"
                 ? "bg-vmprim text-white"
                 : "text-stone-600 bg-[#fdf4d0]"
             }`}
@@ -547,7 +611,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
         </div>
       </div>
 
-      <div className="p-4 overflow-y-scroll no-scrollbar h-[70vh]">
+      <div className="p-4 flex-1 overflow-y-auto no-scrollbar">
         {renderContent()}
       </div>
     </div>

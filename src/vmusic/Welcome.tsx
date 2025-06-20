@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ChevronLeft, Plus, Minus, Square, X, Music, Book } from "lucide-react";
 import { motion } from "framer-motion";
-import { useBmusicContext } from "@/Provider/Bmusic";
-import { useSermonContext } from "@/Provider/Vsermons";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { setCurrentScreen, minimizeApp, maximizeApp, closeApp } from "@/store/slices/appSlice";
 
 // Define types in a separate file and import them to reduce parsing time
 interface Song {
@@ -74,10 +73,9 @@ const WorkspaceSelector = () => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [randomSong, setRandomSong] = useState<Song | null>(null);
   const [randomVerse, setRandomVerse] = useState("");
-  const { songs } = useBmusicContext();
-  const { setAndSaveCurrentScreen } = useEastVoiceContext();
-  const { allSermons } = useSermonContext();
-  // const { allSermons } = useSermonContext();
+  
+  const dispatch = useAppDispatch();
+  const songs = useAppSelector((state) => state.songs.songs);
 
   // Array of country gospel verses
   const verses = [
@@ -114,25 +112,25 @@ const WorkspaceSelector = () => {
 
   // Memoize event handlers to prevent unnecessary re-renders
   const handleMinimize = useCallback(() => {
-    window.api.minimizeApp();
-  }, []);
+    dispatch(minimizeApp());
+  }, [dispatch]);
 
   const handleMaximize = useCallback(() => {
-    window.api.maximizeApp();
-  }, []);
+    dispatch(maximizeApp());
+  }, [dispatch]);
 
   const handleClose = useCallback(() => {
-    window.api.closeApp();
-  }, []);
+    dispatch(closeApp());
+  }, [dispatch]);
 
   // Navigate to screens with memoized callbacks
   const navigateToSongs = useCallback(() => {
-    setAndSaveCurrentScreen("Songs");
-  }, [setAndSaveCurrentScreen]);
+    dispatch(setCurrentScreen("Songs"));
+  }, [dispatch]);
 
   const navigateToCreate = useCallback(() => {
-    setAndSaveCurrentScreen("create");
-  }, [setAndSaveCurrentScreen]);
+    dispatch(setCurrentScreen("create"));
+  }, [dispatch]);
 
   // Use will-change to optimize GPU rendering
   const willChangeStyle = { willChange: "transform, opacity" };
@@ -265,7 +263,7 @@ const WorkspaceSelector = () => {
               </div>
             </div>
             <button
-              onClick={() => setAndSaveCurrentScreen("hisvoice")}
+              onClick={() => dispatch(setCurrentScreen("bible"))}
               className={`px-4 py-2 ${colors.hdButton} text-white rounded-md hover:bg-[#a66c55] transition-colors duration-200 shadow-md font-serif text-[12px]`}
             >
               Open
@@ -287,7 +285,7 @@ const WorkspaceSelector = () => {
               </div>
             </div>
             <button
-              onClick={() => setAndSaveCurrentScreen("bible")}
+              onClick={() => dispatch(setCurrentScreen("bible"))}
               className={`px-4 py-2 ${colors.hdButton} text-white rounded-md hover:bg-[#a66c55] transition-colors duration-200 shadow-md font-serif text-[12px]`}
             >
               Open

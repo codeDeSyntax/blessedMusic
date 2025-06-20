@@ -15,8 +15,9 @@ import {
   Info,
   LayoutGrid,
 } from "lucide-react";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setCurrentScreen, CurrentScreen } from "@/store/slices/appSlice";
 import { useTheme } from "@/Provider/Theme";
 
 interface SlideProps {
@@ -75,9 +76,10 @@ const Slide: React.FC<SlideProps> = ({
 export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   onBack,
 }) => {
-  const { currentPresentation, stopPresentation } = useEvPresentationContext();
-  const { presentationbgs, setPresentationbgs, setCurrentScreen } =
-    useEastVoiceContext();
+  const { currentPresentation, stopPresentation } = usePresenterOperations();
+  const dispatch = useAppDispatch();
+  const [presentationbgs, setPresentationbgs] = useState<string[]>([]);
+  const changeScreen = (screen: CurrentScreen) => dispatch(setCurrentScreen(screen));
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
   const [slides, setSlides] = useState<React.ReactNode[]>([]);
@@ -568,7 +570,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2">
-              {presentationbgs.map((bg, idx) => (
+              {presentationbgs.map((bg: string, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => setBackgroundImage(bg)}

@@ -12,9 +12,10 @@ import {
   Users,
   HelpCircle,
 } from "lucide-react";
-import { useBmusicContext } from "@/Provider/Bmusic";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { HomeFilled } from "@ant-design/icons";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useAppDispatch } from "@/store";
+import { setCurrentScreen, CurrentScreen } from "@/store/slices/appSlice";
 
 // Type definitions
 interface SidebarItem {
@@ -33,7 +34,8 @@ const UserGuidePage: React.FC = () => {
     internal: true,
     external: false,
   });
-  const { setCurrentScreen } = useEastVoiceContext();
+  const dispatch = useAppDispatch();
+  const setCurrentScreenAction = (screen: CurrentScreen) => dispatch(setCurrentScreen(screen));
 
   const toggleGuide = (guide: string): void => {
     setExpandedGuides({
@@ -75,7 +77,7 @@ const UserGuidePage: React.FC = () => {
         <nav>
           <ul className="space-y-1">
             <button
-              onClick={() => setCurrentScreen("Songs")}
+                              onClick={() => setCurrentScreenAction("Songs" as CurrentScreen)}
               className={`w-full shadow bg-[#9a674a] text-white flex items-center gap-3 mb-3 space-x-2 p-2 rounded-md transition-colors text-xs}`}
             >
               Home

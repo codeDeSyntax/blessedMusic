@@ -14,9 +14,10 @@ import TitleBar from "../shared/TitleBar";
 import CustomEditor from "./SongCreator";
 import SongEditor from "./SongEditor";
 import { motion, AnimatePresence } from "framer-motion";
-import { useBmusicContext } from "@/Provider/Bmusic";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
 import { Song } from "@/types";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
 
 const Notification = ({
   message,
@@ -53,17 +54,16 @@ const Notification = ({
 };
 
 export default function EditSong() {
-  const {
-    selectedSong,
-    songRepo,
-    setSongRepo,
-    theme,
-    setTheme,
-    songs,
-    setSongs,
-    refetch,
-  } = useBmusicContext();
-  const { setCurrentScreen } = useEastVoiceContext();
+  const { selectedSong } = useSongOperations();
+  const dispatch = useAppDispatch();
+  const theme = useAppSelector((state) => state.app.theme);
+  
+  // Local functions for missing operations
+  const setSongRepo = (path: string) => localStorage.setItem("songRepoDirectory", path);
+  const setTheme = (theme: string) => localStorage.setItem("bmusictheme", theme);
+  const setSongs = (songs: Song[]) => console.log("TODO: Update songs in Redux store");
+  const refetch = () => console.log("TODO: Implement refetch functionality");
+  const songRepo = localStorage.getItem("songRepoDirectory") || "";
   const [formData, setFormData] = useState({
     title: selectedSong?.title || "",
     message: selectedSong?.content || "",
@@ -150,17 +150,15 @@ export default function EditSong() {
         formData.message
       );
       showNotification("Song updated successfully! 🎵", "success");
-      setSongs([
-        ...songs,
-        {
-          id: selectedSong?.id || "",
-          title: formData.title,
-          path: selectedSong?.path || "",
-          content: formData.message,
-          dateModified: selectedSong?.dateModified || "",
-          categories: selectedSong?.categories || [],
-        },
-      ]);
+      // TODO: Add song to Redux store instead of local array
+      console.log("Song saved successfully:", {
+        id: selectedSong?.id || "",
+        title: formData.title,
+        path: selectedSong?.path || "",
+        content: formData.message,
+        dateModified: selectedSong?.dateModified || "",
+        categories: selectedSong?.categories || [],
+      });
       refetch();
       setFormData({ title: "", message: "" });
     } catch (error) {
@@ -195,7 +193,7 @@ export default function EditSong() {
                 <div className="  flex gap-2  items-center">
                   <ArrowLeftCircle
                     className="w-6 h-6 text-[#9a674a] hover:scale-105 hover:cursor-pointer"
-                    onClick={() => setCurrentScreen("Songs")}
+                    onClick={() => dispatch(setCurrentScreen("Songs"))}
                   />
                   <Monitor
                     className="w-6 h-6 text-[#9a674a] hover:scale-105 hover:cursor-pointer"

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Monitor,
   Search,
@@ -9,11 +9,15 @@ import {
   X,
   RefreshCcw,
   Folder,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import { Song } from "@/types";
-import { useBmusicContext } from "../../../Provider/Bmusic";
+import { useSongOperations } from "../../../features/songs/hooks/useSongOperations";
+import { useAppSelector } from "../../../store";
 
 interface HeaderControlsProps {
   selectedSong: Song | null;
@@ -31,6 +35,8 @@ interface HeaderControlsProps {
   onPresentSongClick: (e: React.MouseEvent) => void;
   onRefetch: () => void;
   onChangeDirectory: () => void;
+  onToggleSidebar: () => void;
+  sidebarVisible: boolean;
 }
 
 const HeaderControls = React.memo(
@@ -50,21 +56,64 @@ const HeaderControls = React.memo(
     onPresentSongClick,
     onRefetch,
     onChangeDirectory,
+    onToggleSidebar,
+    sidebarVisible,
   }: HeaderControlsProps) => {
-    const { theme } = useBmusicContext();
+    // Local theme state management
+    const [localTheme, setLocalTheme] = useState(
+      localStorage.getItem("bmusictheme") || "white"
+    );
+
+    // Listen for theme changes
+    useEffect(() => {
+      const handleCustomStorageChange = (e: CustomEvent) => {
+        if (e.detail.key === "bmusictheme") {
+          setLocalTheme(e.detail.newValue);
+        }
+      };
+
+      window.addEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+
+      return () => {
+        window.removeEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+      };
+    }, []);
+
     return (
       <div className="flex flex-col justify-center mb-8">
         <div className="flex justify-between items-center space-x-4">
-          <h1 className="font-serif text-2xl md:text-xl text-left font-bold text-[#9a674a]">
-            Blessed Songs of Zion
-            <span
-              className={`ml-4 text-[.7rem] italic animate-pulse ${
-                selectedSong ? "" : "hidden"
-              }`}
-            >
-              {"--" + selectedSong?.title.slice(0, 32) + "--"}
-            </span>
-          </h1>
+          <div className="flex items-center space-x-3">
+            {/* Sidebar Toggle Button */}
+            <Tooltip title={sidebarVisible ? "Hide sidebar" : "Show sidebar"} placement="bottom">
+              <div
+                onClick={onToggleSidebar}
+                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-all duration-300"
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#3f2817",
+                  borderStyle: "dashed",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
+                }}
+              >
+                {sidebarVisible ? (
+                  <ChevronLeft className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </div>
+            </Tooltip>
+            
+            <h1 className="text-[1.3rem] font-oswald text-vmprim font-bold">
+               Songs of Zion
+              <span
+                className={`ml-4 text-[.7rem] italic animate-pulse ${
+                  selectedSong ? "" : "hidden"
+                }`}
+              >
+                {"--" + selectedSong?.title.slice(0, 32) + "--"}
+              </span>
+            </h1>
+          </div>
 
           <div
             className={`flex flex-col justify-center items-center ${
@@ -116,19 +165,16 @@ const HeaderControls = React.memo(
               placeholder="Search hymns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 w-64 bg-gray-50 rounded-full border-none border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#9a674a] focus:border-transparent"
+              className="pl-10 pr-4 py-3 w-64 rounded-full border-none border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#9a674a] focus:border-transparent"
               style={{
-                backgroundColor: theme === "creamy" ? "#fdf4d0" : "#f9fafb",
-                borderWidth: 1,
-                borderColor: "#3f2817",
-                borderStyle: "dashed",
+                backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
               }}
             />
             <Search className="absolute left-3 top-1.5 w-5 h-5 text-stone-500" />
           </div>
 
-          {/* View Toggle divs */}
-          <div className="flex space-x-2">
+          {/* View Toggle Controls */}
+          <div className="flex items-center space-x-2">
             <Tooltip title="Table view" placement="bottom">
               <div
                 onClick={() => setViewMode("table")}
@@ -138,10 +184,10 @@ const HeaderControls = React.memo(
                     : "  text-stone-500"
                 } hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors`}
                 style={{
-                  borderWidth: viewMode === "table" && 2 || undefined,
+                  borderWidth: viewMode === "table" ? 2 : 1,
                   borderColor: "#3f2817",
                   borderStyle: "dashed",
-                  backgroundColor: theme === "creamy" ? "tranparent" : "#f9fafb ",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
                 }}
               >
                 <Table className="w-3 h-3" />
@@ -157,10 +203,10 @@ const HeaderControls = React.memo(
                     : "  text-stone-500"
                 } hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors`}
                 style={{
-                  borderWidth: 1,
+                  borderWidth: viewMode === "list" ? 2 : 1,
                   borderColor: "#3f2817",
                   borderStyle: "dashed",
-                  backgroundColor: theme === "creamy" ? "tranparent" : "#f9fafb ",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
                 }}
               >
                 <List className="w-3 h-3" />
@@ -170,12 +216,12 @@ const HeaderControls = React.memo(
             <Tooltip title="Add new song" placement="bottom">
               <div
                 onClick={onCreateClick}
-                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center bg-gry-50 text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors"
+                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors"
                 style={{
                   borderWidth: 1,
                   borderColor: "#3f2817",
                   borderStyle: "dashed",
-                  backgroundColor: theme === "creamy" ? "tranparent" : "#f9fafb ",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
                 }}
               >
                 <PlusIcon className="w-3 h-3" />
@@ -185,56 +231,47 @@ const HeaderControls = React.memo(
             <Tooltip title="Present on external screen" placement="bottom">
               <div
                 onClick={onPresentSongClick}
-                className={`h-8 w-8 rounded-full flex items-center cursor-pointer justify-center bg-gry-50 text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors ${
+                className={`h-8 w-8 rounded-full flex items-center cursor-pointer justify-center text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors ${
                   selectedSong ? "block" : "hidden"
                 }`}
                 style={{
                   borderWidth: 1,
                   borderColor: "#3f2817",
                   borderStyle: "dashed",
-                  backgroundColor: theme === "creamy" ? "tranparent" : "#f9fafb ",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
                 }}
               >
                 <Monitor className="w-3 h-3" />
               </div>
             </Tooltip>
             
-            <Tooltip title="Reload songs" placement="bottom">
+            <Tooltip title="Refresh songs" placement="bottom">
               <div
                 onClick={onRefetch}
-                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center  text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors"
+                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors"
                 style={{
                   borderWidth: 1,
                   borderColor: "#3f2817",
                   borderStyle: "dashed",
-                  backgroundColor: theme === "creamy" ? "tranparent" : "#f9fafb ",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
                 }}
               >
                 <RefreshCcw className="w-3 h-3" />
               </div>
             </Tooltip>
             
-            <Tooltip title="Change directory" placement="bottom">
+            <Tooltip title="Change songs directory" placement="bottom">
               <div
                 onClick={onChangeDirectory}
-                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center  text-yellow-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors"
+                className="h-8 w-8 rounded-full flex items-center cursor-pointer justify-center text-stone-500 hover:bg-transparent hover:scale-105 hover:text-stone-500 transition-colors"
                 style={{
                   borderWidth: 1,
                   borderColor: "#3f2817",
                   borderStyle: "dashed",
-                  backgroundColor: theme === "creamy" ? "tranparent" : "#f9fafb ",
+                  backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9fafb",
                 }}
               >
                 <Folder className="w-3 h-3" />
-              </div>
-            </Tooltip>
-            
-            <Tooltip title={songRepo} placement="bottom">
-              <div
-                className="h-8 px-2 rounded-lg flex items-center justify-center font-thin text-[12px] text-gray-50 bg-vmprim hover:bg-vmprim hover:scale-105 hover:text-stone-100 transition-colors gap-2"
-              >
-                <Folder color={folderColor} size={14} />
-                {songRepo.slice(0, 13)}..
               </div>
             </Tooltip>
           </div>

@@ -17,32 +17,37 @@ import {
 import { HomeFilled } from "@ant-design/icons";
 import { Switch } from "antd";
 import { useEffect } from "react";
-import { useBmusicContext } from "@/Provider/Bmusic";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useAppSelector, useAppDispatch } from "@/store";
+import { setCurrentScreen, setTheme, minimizeApp, maximizeApp, closeApp } from "@/store/slices/appSlice";
 import { ThemeToggle } from "./ThemeToggler";
 
 const TitleBar = () => {
   const [isHovered, setIsHovered] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
-  const { setTheme, theme } = useBmusicContext();
-  const { setAndSaveCurrentScreen, currentScreen } = useEastVoiceContext();
+  
+  const dispatch = useAppDispatch();
+  const currentScreen = useAppSelector((state) => state.app.currentScreen);
+  const theme = useAppSelector((state) => state.app.theme);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("bmusictheme");
     if (savedTheme) {
-      setTheme(savedTheme);
+      dispatch(setTheme(savedTheme as any));
     }
-  }, []);
+  }, [dispatch]);
 
-  // function to set theme choie
+  // function to set theme choice for songs app
   const setThemeChoice = () => {
-    if (theme === "creamy") {
-      localStorage.setItem("bmusictheme", "light");
-      setTheme("light");
-    } else if (theme === "light") {
-      localStorage.setItem("bmusictheme", "creamy");
-      setTheme("creamy");
-    }
+    const currentSongTheme = localStorage.getItem("bmusictheme") || "white";
+    const newTheme = currentSongTheme === "creamy" ? "white" : "creamy";
+    
+    // Update localStorage
+    localStorage.setItem("bmusictheme", newTheme);
+    
+    // Dispatch custom event to notify other components of the change
+    window.dispatchEvent(new CustomEvent("localStorageChange", {
+      detail: { key: "bmusictheme", newValue: newTheme }
+    }));
   };
 
   const randombgs = `rgba(${Math.floor(Math.random() * 255)},${Math.floor(
@@ -50,15 +55,15 @@ const TitleBar = () => {
   )},${Math.floor(Math.random() * 255)},0.6)`;
 
   const handleMinimize = () => {
-    window.api.minimizeApp();
+    dispatch(minimizeApp());
   };
 
   const handleMaximize = () => {
-    window.api.maximizeApp();
+    dispatch(maximizeApp());
   };
 
   const handleClose = () => {
-    window.api.closeApp();
+    dispatch(closeApp());
   };
 
   const toggleDropdown = () => {
@@ -127,7 +132,7 @@ const TitleBar = () => {
           </div>
 
           <div
-            onClick={() => setAndSaveCurrentScreen("Home")}
+            onClick={() => dispatch(setCurrentScreen("Home"))}
             className="w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer flex items-center justify-center"
           >
             <HomeFilled
@@ -148,11 +153,10 @@ const TitleBar = () => {
             <SwitchCamera className="text-white z-20 size-3" />
           </div>
           <div
-            onClick={() => setAndSaveCurrentScreen("backgrounds")}
+            onClick={() => dispatch(setCurrentScreen("backgrounds"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer items-center justify-center flex 
                ${
-                 (currentScreen === "bible" || currentScreen === "hisvoice") &&
-                 "hidden"
+                 currentScreen === "bible" && "hidden"
                }
               `}
             title="Presentation backgrounds"
@@ -160,7 +164,7 @@ const TitleBar = () => {
             <GalleryHorizontal className="text-white z-20 size-3" />
           </div>
           <div
-            onClick={() => setAndSaveCurrentScreen("instRoom")}
+            onClick={() => dispatch(setCurrentScreen("instRoom"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer  
               items-center justify-center ${
                 currentScreen === "Songs" ? "flex" : "hidden"
@@ -170,7 +174,7 @@ const TitleBar = () => {
             <Guitar className="text-white z-20 size-3" />
           </div>
           <div
-            onClick={() => setAndSaveCurrentScreen("Songs")}
+            onClick={() => dispatch(setCurrentScreen("Songs"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer  
               items-center justify-center ${
                 currentScreen === "instRoom" ? "flex" : "hidden"
@@ -180,11 +184,10 @@ const TitleBar = () => {
             <ArrowLeftFromLine className="text-white z-20 size-3" />
           </div>
           <div
-            onClick={() => setAndSaveCurrentScreen("categorize")}
+            onClick={() => dispatch(setCurrentScreen("categorize"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer items-center justify-center flex 
               ${
-                (currentScreen === "bible" || currentScreen === "hisvoice") &&
-                "hidden"
+                currentScreen === "bible" && "hidden"
               }
               `}
             title="Music categories"
@@ -192,7 +195,7 @@ const TitleBar = () => {
             <Group className="text-white z-20 size-3" />
           </div>
           <div
-            onClick={() => setAndSaveCurrentScreen("userguide")}
+            onClick={() => dispatch(setCurrentScreen("userguide"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer  
               items-center justify-center flex ${
                 currentScreen !== "Songs" && "hidden"
@@ -225,21 +228,21 @@ const TitleBar = () => {
                 <div
                   className="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded cursor-pointer"
                   onClick={() => {
-                    setAndSaveCurrentScreen("Songs");
+                    dispatch(setCurrentScreen("Songs"));
                     setShowDropdown(false);
                   }}
                 >
-                  <img src="./music2.png" className="h-4 w-4 " />
+                  <img src="./music2.png" className="h-4 w-4" alt="Music icon" />
                   <span className="text-xs text-stone-500 dark:text-gray-600">Bmusic</span>
                 </div>
                 <div
                   className="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded cursor-pointer"
                   onClick={() => {
-                    setAndSaveCurrentScreen("bible");
+                    dispatch(setCurrentScreen("bible"));
                     setShowDropdown(false);
                   }}
                 >
-                  <img src="./music3.png" className="h-4 w-4 " />
+                  <img src="./music3.png" className="h-4 w-4" alt="Bible icon" />
                   <span className="text-xs text-stone-500 dark:text-gray-600">Bible</span>
                 </div>
               </div>

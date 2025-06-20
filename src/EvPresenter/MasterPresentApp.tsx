@@ -8,8 +8,10 @@ import { SermonForm, OtherForm } from "./PresentationForm";
 import { PresentationSlideshow } from "./PresentationSlideShow";
 import { Presentation } from "@/types";
 import { PresentationDetail } from "./PresentationDetail";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
 
 type ViewState =
@@ -22,8 +24,8 @@ type ViewState =
 
 const PresentationMasterPage: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>({ type: "categories" });
-  const { setCurrentScreen } = useEastVoiceContext();
-  const {currentPresentation,setCurrentPresentation}  = useEvPresentationContext()
+  const dispatch = useAppDispatch();
+  const { currentPresentation, selectPresentation } = usePresenterOperations();
 
   //listen for escape key
 
@@ -49,7 +51,7 @@ const PresentationMasterPage: React.FC = () => {
             }
             onPresent={(presentation) => {
               setViewState({type:"mpresenter", presentation});
-              setCurrentPresentation(presentation)
+              selectPresentation(presentation)
             }}
             onEdit={(presentation) =>
               setViewState({ type: "edit", presentation })
@@ -72,7 +74,7 @@ const PresentationMasterPage: React.FC = () => {
             }
             onPresent={(presentation) => {
               setViewState({type:"mpresenter", presentation});
-              setCurrentPresentation(presentation)
+              selectPresentation(presentation)
             }}
             onEdit={() =>
               setViewState({

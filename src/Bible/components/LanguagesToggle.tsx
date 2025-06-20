@@ -1,38 +1,36 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Languages, Book, BookText, BookOpen, BookA } from "lucide-react";
-import { useBibleContext } from "@/Provider/Bible";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
+import { useAppDispatch } from "@/store";
+import { setCurrentLanguage } from "@/store/slices/bibleSlice";
 
 const LanguageToggler = ({ color }: { color: string }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { setCurrentTranslation } = useBibleContext();
+  const dispatch = useAppDispatch();
 
   // You can replace these functions with your actual language switching logic
   const switchToKJV = () => {
     console.log("Switching to KJV");
-    // Implementation of language switch
-    setCurrentTranslation("KJV");
+    dispatch(setCurrentLanguage("english"));
     setIsOpen(false);
   };
 
   const switchToTWI = () => {
     console.log("Switching to TWI");
-    // Implementation of language switch
-    setCurrentTranslation("TWI");
+    dispatch(setCurrentLanguage("twi"));
     setIsOpen(false);
   };
 
   const switchToEWE = () => {
     console.log("Switching to EWE");
-    // Implementation of language switch
-    setCurrentTranslation("EWE");
+    dispatch(setCurrentLanguage("ewe"));
     setIsOpen(false);
   };
 
   const switchToFrench = () => {
     console.log("Switching to French");
-    // Implementation of language switch
-    setCurrentTranslation("FRENCH");
+    dispatch(setCurrentLanguage("french"));
     setIsOpen(false);
   };
 

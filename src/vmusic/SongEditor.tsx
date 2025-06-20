@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { ChorusPaste } from "./ChorusPaste";
 import { VersePaste } from "./VersePaste";
-import { useBmusicContext } from "@/Provider/Bmusic";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
+import { useAppSelector } from "@/store";
 
 import { Song } from "@/types";
 
@@ -23,7 +24,7 @@ interface SongEditorProps {
   setFormData: (data: any) => void;
 }
 const SongEditor = ({ formData, setFormData }: SongEditorProps) => {
-  const { selectedSong, setSelectedSong } = useBmusicContext();
+  const { selectedSong, selectSong } = useSongOperations();
 
   const editor = useEditor({
      extensions: [

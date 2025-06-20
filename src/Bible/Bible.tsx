@@ -3,13 +3,13 @@ import TitleBar from "./Titlebar";
 import BibleSidebar from "./Sidebar";
 import FeaturePanel from "./Features";
 import ScriptureContent from "./ScriptureContent";
-import { useBibleContext } from "@/Provider/Bible";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 import SearchPanel from "./SearchPanel";
 import Help from "@/shared/Help";
 
 const Biblelayout: React.FC = () => {
-  const { sidebarExpanded, activeFeature, searchOpen, theme, currentScreen } =
-    useBibleContext();
+  const { sidebarExpanded, activeFeature, searchOpen, theme } =
+    useBibleOperations();
 
   useEffect(() => {
     const hisvoicediv = document.getElementById("hisvoicediv");

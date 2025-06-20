@@ -18,19 +18,11 @@ import {
   Monitor,
   ExternalLinkIcon,
 } from "lucide-react";
-import { useBmusicContext } from "@/Provider/Bmusic";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import TitleBar from "../shared/TitleBar";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
-
-interface Song {
-  id: string; // Adding an ID for uniquely identifying songs
-  title: string;
-  path: string;
-  content: string;
-  message?: string;
-  dateModified: string;
-  categories?: string[]; // Array to track which categories a song belongs to
-}
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setCurrentScreen, CurrentScreen } from "@/store/slices/appSlice";
+import { Song } from "@/types";
 
 interface Collection {
   id: string;
@@ -41,15 +33,15 @@ interface Collection {
 
 const SongCollectionManager: React.FC = () => {
   // Sample songs (replace with your actual data)
-  const {
-    songs,
-    handleClose,
-    handleMinimize,
-    handleMaximize,
-    selectedSong,
-    setSelectedSong,
-  } = useBmusicContext();
-  const { setAndSaveCurrentScreen } = useEastVoiceContext();
+  const { songs, selectedSong, selectSong } = useSongOperations();
+  const dispatch = useAppDispatch();
+  
+  // Window controls
+  const handleClose = () => window.api?.closeApp();
+  const handleMinimize = () => window.api?.minimizeApp();
+  const handleMaximize = () => window.api?.maximizeApp();
+  const setSelectedSong = (song: Song) => selectSong(song);
+  const setAndSaveCurrentScreen = (screen: CurrentScreen) => dispatch(setCurrentScreen(screen));
   const [allMusic, setAllMusic] = useState<Song[]>(songs);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [searchTerm, setSearchTerm] = useState("");

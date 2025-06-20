@@ -43,6 +43,16 @@ export type Scripture = {
   text: string;
 };
 
+export interface Slide {
+  id: string;
+  type: 'title' | 'content' | 'scripture' | 'image';
+  title?: string;
+  content?: string;
+  background?: string;
+  animation?: string;
+  duration?: number;
+}
+
 export type EvSermon = {
   id: string;
   type: 'sermon';
@@ -52,6 +62,7 @@ export type EvSermon = {
   preacher: string;
   quote?: string;
   date: string;
+  slides: Slide[];
   createdAt: string;
   updatedAt: string;
 };
@@ -61,6 +72,7 @@ export type EvOther = {
   type: 'other';
   title: string;
   message: string;
+  slides: Slide[];
   createdAt: string;
   updatedAt: string;
 };

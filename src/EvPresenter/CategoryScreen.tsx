@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Film, Presentation, Book } from "lucide-react";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { useTheme } from "@/Provider/Theme";
 
 type CategoryCardProps = {
@@ -86,7 +86,7 @@ const PreviewMockup: React.FC<{
 export const CategorySelection: React.FC<{
   onCategorySelect: (type: "sermon" | "other") => void;
 }> = ({ onCategorySelect }) => {
-  const { presentations } = useEvPresentationContext();
+  const { presentations } = usePresenterOperations();
   const { isDarkMode } = useTheme();
 
   const sermonCount = presentations.filter((p) => p.type === "sermon").length;

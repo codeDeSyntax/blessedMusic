@@ -5,30 +5,22 @@ import EditSong from "./vmusic/EditForm";
 import WorkspaceSelector from "./vmusic/Welcome";
 import CreateSong from "./vmusic/Form";
 import SongPresentation from "./vmusic/PresentationMode";
-import { useBmusicContext } from "./Provider/Bmusic";
 import InstrumentShowroom from "./vmusic/InstrumentShowRoom";
 import SongCollectionManager from "./vmusic/Categorize";
 import UserGuidePage from "./vmusic/Userguide";
 import PresentationBackgroundSelector from "./vmusic/BackgroundChoose";
-import Hisvoice from "./Hisvoice/Hisvoice";
-import BibleApp from "./Bible/Bible";
 import Biblelayout from "./Bible/Bible";
-import { useEastVoiceContext } from "./Provider/EastVoice";
 import PresentationMasterPage from "./EvPresenter/MasterPresentApp";
+import { useAppSelector, useAppDispatch } from "./store";
+import { setCurrentScreen } from "./store/slices/appSlice";
 
 const App = () => {
-  const { currentScreen, setCurrentScreen } = useEastVoiceContext();
-
-  // Mock song data for demonstration
-  // const allSongs: Song[] = new Array(100).fill(null).map((_, index) => ({
-  //   id: index + 1,
-  //   title: `Song ${index + 1}`,
-  // }));
+  const currentScreen = useAppSelector((state) => state.app.currentScreen);
+  const dispatch = useAppDispatch();
 
   // set up key combinations to navigate between screens
   // ctrl + H ---- Home
-  // ctrl + B ---- Bible
-  // ctrl + W ---- Hisvoice
+  // ctrl + B ---- Bible  
   // ctrl + P ---- Presenter
   // ctrl + S ---- Songs
 
@@ -37,19 +29,17 @@ const App = () => {
       if (event.ctrlKey) {
         switch (event.key) {
           case "h":
-            setCurrentScreen("Home");
+            dispatch(setCurrentScreen("Home"));
             break;
           case "b":
-            setCurrentScreen("bible");
+            dispatch(setCurrentScreen("bible"));
             break;
           case "p":
-            setCurrentScreen("mpresenter");
+            dispatch(setCurrentScreen("mpresenter"));
             break;
           case "s":
-            setCurrentScreen("Songs");
-          // case "m":
-          //   setCurrentScreen("mpresenter");
-          //   break;
+            dispatch(setCurrentScreen("Songs"));
+            break;
           default:
             break;
         }
@@ -59,7 +49,7 @@ const App = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [dispatch]);
   return (
     <div
       className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-white dark:bg-ltgray `}
@@ -84,8 +74,6 @@ const App = () => {
         <UserGuidePage />
       ) : currentScreen === "backgrounds" ? (
         <PresentationBackgroundSelector />
-      ) : currentScreen === "hisvoice" ? (
-        <Hisvoice />
       ) : currentScreen === "bible" ? (
         <Biblelayout />
       ) : currentScreen === "mpresenter" ? (
@@ -93,7 +81,7 @@ const App = () => {
       ) : (
         <ArrowLeftCircle
           className="size-6 text-white"
-          onClick={() => setCurrentScreen("Home")}
+          onClick={() => dispatch(setCurrentScreen("Home"))}
         />
       )}
       {/* <SongPresentation/> */}

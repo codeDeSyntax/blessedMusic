@@ -1,17 +1,20 @@
 import React, { useMemo, useEffect } from "react";
 import { Menu, X, Search, Star, RotateCcw, Book, Settings } from "lucide-react";
-import { useBibleContext } from "../Provider/Bible";
+import { useBibleOperations } from "../features/bible/hooks/useBibleOperations";
+import { useAppSelector, useAppDispatch } from "../store";
+import { setSidebarExpanded, setActiveFeature, setSearchOpen, BibleFeature } from "../store/slices/bibleSlice";
 
 const BibleSidebar: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { sidebarExpanded, activeFeature, searchOpen } = useAppSelector((state) => state.bible);
+  const theme = useAppSelector((state) => state.app.theme);
   const {
-    sidebarExpanded,
-    setSidebarExpanded,
-    activeFeature,
-    setActiveFeature,
-    searchOpen,
-    setSearchOpen,
-    theme,
-  } = useBibleContext();
+    // Bible operations...
+  } = useBibleOperations();
+
+  const handleSetSidebarExpanded = (expanded: boolean) => dispatch(setSidebarExpanded(expanded));
+  const handleSetActiveFeature = (feature: BibleFeature) => dispatch(setActiveFeature(feature));
+  const handleSetSearchOpen = (open: boolean) => dispatch(setSearchOpen(open));
 
   useEffect(() => {
     const hisvoicediv = document.getElementById("hisvoicediv");
@@ -43,19 +46,19 @@ const BibleSidebar: React.FC = () => {
   }, []); // Empty dependency array ensures this only runs once on mount
 
   const toggleSidebar = () => {
-    setSidebarExpanded(!sidebarExpanded);
+    handleSetSidebarExpanded(!sidebarExpanded);
   };
 
-  const toggleFeature = (feature: string) => {
+  const toggleFeature = (feature: BibleFeature) => {
     if (activeFeature === feature) {
-      setActiveFeature(null);
+      handleSetActiveFeature(null);
     } else {
-      setActiveFeature(feature);
+      handleSetActiveFeature(feature);
     }
   };
 
   const toggleSearch = () => {
-    setSearchOpen(!searchOpen);
+    handleSetSearchOpen(!searchOpen);
   };
 
   return (
@@ -88,9 +91,9 @@ const BibleSidebar: React.FC = () => {
           {sidebarExpanded && <span className="ml-3">Search</span>}
         </div>
         <div
-          onClick={() => toggleFeature("favorites")}
+          onClick={() => toggleFeature("bookmarks")}
           className={`p-3 flex items-center font-serif text-gray-900 dark:text-gray-300 hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-ltgray ${
-            activeFeature === "favorites" ? "bg-gray-200 dark:bg-gray-800" : ""
+            activeFeature === "bookmarks" ? "bg-gray-200 dark:bg-gray-800" : ""
           }`}
         >
           <Star size={20} color={iconColors.bookmark} />

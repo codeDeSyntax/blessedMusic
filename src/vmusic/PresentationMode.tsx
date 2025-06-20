@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, AudioLines } from "lucide-react";
-import { useBmusicContext } from "@/Provider/Bmusic";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
 
 interface SongSection {
   type: "Verse" | "Chorus";
@@ -26,8 +27,9 @@ const SongPresentation = () => {
     }[]
   >([]);
   const [direction, setDirection] = useState(0);
-  const { selectedSong, selectedHymnBackground } = useBmusicContext();
-  const { setCurrentScreen } = useEastVoiceContext();
+  const { selectedSong } = useSongOperations();
+  const dispatch = useAppDispatch();
+  const selectedHymnBackground = null; // TODO: Implement selected background in Redux
 
   // Settings from local storage
   useEffect(() => {

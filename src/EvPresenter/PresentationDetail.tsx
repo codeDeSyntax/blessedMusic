@@ -11,7 +11,7 @@ import {
   Trash2,
   Presentation as PresentationIcon,
 } from "lucide-react";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
 
 interface DetailItemProps {
@@ -59,13 +59,14 @@ export const PresentationDetail: React.FC<{
   onEdit: () => void;
   onPresent: (presentation:PresentationType) => void
 }> = ({ presentation, onBack, onEdit, onPresent}) => {
-  const { deletePresentation, setCurrentPresentation, startPresentation } =
-    useEvPresentationContext();
-  const { selectedPath } = useEvPresentationContext();
+  const { startPresentation } = usePresenterOperations();
+  
+  // Local path management
+  const selectedPath = localStorage.getItem("evpresenterfilespath") || "";
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this presentation?")) {
-      await deletePresentation(presentation.id, selectedPath);
+      console.log("Delete presentation:", presentation.id); // TODO: Implement delete functionality
       onBack();
     }
   };

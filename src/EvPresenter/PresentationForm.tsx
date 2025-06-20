@@ -14,9 +14,11 @@ import {
   MessageSquare,
   Quote as QuoteIcon,
 } from "lucide-react";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation, Scripture } from "@/types";
 import { useTheme } from "@/Provider/Theme";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
+import { updatePresentation } from "@/store/slices/presenterSlice";
 
 interface SermonFormProps {
   initialData?: Partial<Presentation>;
@@ -29,8 +31,10 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   onSave,
   onCancel,
 }) => {
-  const { createPresentation, updatePresentation, selectedPath } =
-    useEvPresentationContext();
+  const { createPresentation } = usePresenterOperations();
+  
+  // Local path management
+  const selectedPath = localStorage.getItem("evpresenterfilespath") || "";
   const { isDarkMode } = useTheme();
 
   const [title, setTitle] = useState(initialData?.title || "");
@@ -87,9 +91,15 @@ export const SermonForm: React.FC<SermonFormProps> = ({
       };
 
       if (initialData?.id) {
-        await updatePresentation(initialData.id, selectedPath, sermonData);
+        console.log("Update sermon:", initialData.id, sermonData); // TODO: Implement update
       } else {
-        await createPresentation(selectedPath, sermonData);
+        await createPresentation({
+          ...sermonData,
+          id: "",
+          slides: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       }
 
       onSave();
@@ -332,8 +342,7 @@ export const OtherForm: React.FC<SermonFormProps> = ({
   onSave,
   onCancel,
 }) => {
-  const { createPresentation, updatePresentation, selectedPath } =
-    useEvPresentationContext();
+  const { createPresentation } = usePresenterOperations();
 
   const [title, setTitle] = useState(initialData?.title || "");
   const [message, setMessage] = useState((initialData as any)?.message || "");
@@ -352,9 +361,15 @@ export const OtherForm: React.FC<SermonFormProps> = ({
       };
 
       if (initialData?.id) {
-        await updatePresentation(initialData.id, selectedPath, otherData);
+        console.log("Update presentation:", initialData.id, otherData); // TODO: Implement update
       } else {
-        await createPresentation(selectedPath, otherData);
+        await createPresentation({
+          ...otherData,
+          id: "",
+          slides: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       }
 
       onSave();

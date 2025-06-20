@@ -1,24 +1,42 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Minus, Square, Monitor } from "lucide-react";
-import { useBibleContext } from "@/Provider/Bible";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
+import { useAppDispatch } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
 import { MoreHorizontal } from "lucide-react";
 import { ThemeToggle } from "@/shared/ThemeToggler";
 import { useTheme } from "@/Provider/Theme";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import Help from "@/shared/Help";
 
+// Ensure JSX intrinsic elements are recognized
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      img: React.DetailedHTMLProps<React.ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>;
+    }
+  }
+}
+
 const TitleBar: React.FC = () => {
-  const { handleClose, handleMaximize, handleMinimize, theme } =
-    useBibleContext();
-  const { setAndSaveCurrentScreen } = useEastVoiceContext();
-  const { selectedPath, setSelectedPath } = useEvPresentationContext();
+  const dispatch = useAppDispatch();
   const { isDarkMode } = useTheme();
+  
+  // Local window control functions
+  const handleClose = () => window.api?.closeApp?.();
+  const handleMaximize = () => window.api?.maximizeApp?.();
+  const handleMinimize = () => window.api?.minimizeApp?.();
+  const setAndSaveCurrentScreen = (screen: any) => dispatch(setCurrentScreen(screen));
+  
+  // Local state for EvPresenter path
+  const [selectedPath, setSelectedPath] = useState(
+    localStorage.getItem("evpresenterfilespath") || ""
+  );
+  
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [selectedBg, setSelectedBg] = useState<string>('url("./wood2.jpg")');
   const [nextBg, setNextBg] = useState<string>('url("./wood7.png")');
   const [bgOpacity, setBgOpacity] = useState<number>(1);
-  // const [selectedPath, setSelectedPath] = useState<string>("");
 
   const ltImages = [
     'url("./wood2.jpg")',
@@ -28,9 +46,7 @@ const TitleBar: React.FC = () => {
     'url("./wood6.jpg")',
   ];
 
-  // check for selectedPath from local storage
-
-  //function choose path an set it to local storage
+  // function choose path an set it to local storage
   const selectEvpd = async () => {
     const path = await window.api.selectDirectory();
     if (typeof path === "string") {

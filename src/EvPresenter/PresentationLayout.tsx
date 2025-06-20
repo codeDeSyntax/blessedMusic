@@ -1,10 +1,11 @@
 // components/PresentationLayout.tsx
 
 import React, { useEffect } from "react";
-import { useEvPresentationContext } from "@/Provider/EvPresent";
+import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 // import { usePresentationContext } from '@/contexts/PresentationContext';
 import { X, Minus, Maximize2, ArrowLeft } from "lucide-react";
-import { useEastVoiceContext } from "@/Provider/EastVoice";
+import { useAppDispatch } from "@/store";
+import { setCurrentScreen } from "@/store/slices/appSlice";
 import { ThemeToggle } from "@/shared/ThemeToggler";
 
 type PresentationLayoutProps = {
@@ -20,8 +21,11 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
   hasBackButton = false,
   onBackClick,
 }) => {
-  const { handleClose, handleMaximize, handleMinimize, setCurrentScreen } =
-    useEastVoiceContext();
+  const dispatch = useAppDispatch();
+  
+  const handleClose = () => window.api?.closeApp?.();
+  const handleMaximize = () => window.api?.maximizeApp?.();
+  const handleMinimize = () => window.api?.minimizeApp?.();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -33,7 +37,7 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
       //     break;
       // }
       if (event.key === "Space") {
-        setCurrentScreen("bible");
+        dispatch(setCurrentScreen("bible"));
       }
     };
     window.addEventListener("keydown", handleKeyDown);
