@@ -97,7 +97,7 @@ const Help: React.FC = () => {
 
   return (
     <>
-      {/* Minimal Help Button */}
+     
       <div
         onClick={toggleHelp}
         className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer  hover:bg-gray-50 dark:hover:bg-bgray"
@@ -108,7 +108,7 @@ const Help: React.FC = () => {
 
       {/* Full Screen Help Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-white dark:bg-ltgray z-50 overflow-y-auto no-scrollbar transition-all duration-200">
+        <div className="absolute left-0 top-0 h-screen w-screen  bg-white dark:bg-ltgray  overflow-y-auto no-scrollbar transition-all duration-200">
           <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
             {/* Header */}
             <div className="flex justify-between items-center mb-6 sm:mb-8">
@@ -131,7 +131,11 @@ const Help: React.FC = () => {
             {/* Help Content */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               <div className="bg-gray-50 dark:bg-bgray/20 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden transition-all hover:shadow-sm dark:hover:shadow-gray-800/10">
-               <img src="./something-lost.png" className="w-full h-32 object-cover" alt="Help Center" />
+                <img
+                  src="./something-lost.png"
+                  className="w-full h-32 object-cover"
+                  alt="Help Center"
+                />
                 <div className="p-4">
                   <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                     Help Center

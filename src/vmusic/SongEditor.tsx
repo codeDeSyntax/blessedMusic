@@ -26,27 +26,28 @@ const SongEditor = ({ formData, setFormData }: SongEditorProps) => {
   const { selectedSong, setSelectedSong } = useBmusicContext();
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TextAlign.configure({
-        types: ["paragraph", "heading", "placeholder"],
-        alignments: ["left", "center", "right", "justify"],
-      }),
-      Placeholder.configure({
-        placeholder: "Click to start typing...",
-        emptyEditorClass:
-          "before:content-[attr(data-placeholder)] before:text-stone-300 dark:before:text-stone-600 before:float-left before:pointer-events-none before:h-0",
-      }),
-    ],
-    content: `<p></p>${formData.message}`,
-    editorProps: {
-      attributes: {
-        class:
-          "dark:prose-invert prose-sm sm:prose-base text-text dark:text-dtext text-[14px] border  text-black lg:prose-lg max-w-none  px-6 py-4 h-[70vh] w-full focus:outline-none font-[garamond] ",
-        "data-placeholder": "Click to start typing...",
-        spellcheck: "false",
-      },
-    },
+     extensions: [
+          StarterKit,
+          TextAlign.configure({
+            types: ["paragraph", "heading", "placeholder"],
+            alignments: ["left", "center", "right", "justify"],
+          }),
+          Placeholder.configure({
+            placeholder:
+              "Click to start typing...(paste verse/chorus indicator from the menubar)",
+            emptyEditorClass:
+              "before:content-[attr(data-placeholder)] before:text-stone-500 dark:before:text-stone-600 placeholder:stone-stone-500 before:float-left before:pointer-events-none before:h-0",
+          }),
+        ],
+        content: formData.message || "",
+        editorProps: {
+          attributes: {
+            class:
+              "   text-[15px] border placehoder:text-stone-500 text-black  max-w-none px-6 py-4 w-full focus:outline-none font-[garamond] min-h-full",
+            "data-placeholder": "Click to start typing...",
+            spellcheck: "false",
+          },
+        },
     onUpdate: ({ editor }) => {
       setFormData?.({
         ...formData,
@@ -156,6 +157,7 @@ const SongEditor = ({ formData, setFormData }: SongEditorProps) => {
           editor={editor}
           className=" max-w-[90%] p-4  focus:outline-none"
         />
+        
       </div>
 
       {/* Debug: Show stored content */}

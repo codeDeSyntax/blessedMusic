@@ -104,7 +104,7 @@ async function createMainWindow() {
     }
   });
   ipcMain.on("closeApp", () => {
-    mainWin?.close()
+    mainWin?.close();
   });
 
   return mainWin;
@@ -228,20 +228,69 @@ ipcMain.handle("select-directory", async () => {
 // Handle saving a song as a text file
 ipcMain.handle("save-song", async (event, { directory, title, content }) => {
   try {
-    const filePath = path.join(directory, `${title}.txt`);
-
-    // Check if the target file already exists
-    if (fs.existsSync(filePath)) {
-      throw new Error("File name already exists");
+    // Validate inputs
+    if (!directory || !title || content === undefined) {
+      throw new Error("Missing required fields: directory, title, and content are required.");
     }
 
+    // Validate title format
+    if (title.trim().length === 0) {
+      throw new Error("Song title cannot be empty.");
+    }
+
+
+    // Check if directory exists
+    if (!fs.existsSync(directory)) {
+      throw new Error("The specified directory does not exist. Please select a valid folder.");
+    }
+
+    // Check directory permissions
+    try {
+      fs.accessSync(directory, fs.constants.W_OK);
+    } catch (permissionError) {
+      throw new Error("Permission denied. You don't have write access to the selected directory.");
+    }
+
+    const filePath = path.join(directory, `${title.trim()}.txt`);
+    const fileExists = fs.existsSync(filePath);
+    
+    // Write the file (create new or overwrite existing)
     fs.writeFileSync(filePath, content, "utf8");
-    return filePath;
+    
+    return {
+      success: true,
+      filePath,
+      isNewFile: !fileExists,
+      message: fileExists 
+        ? `Song "${title}" has been successfully updated.`
+        : `Song "${title}" has been successfully created.`
+    };
   } catch (error) {
     console.error("Error saving song:", error);
+    
+    // Handle specific error types
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as any).code === "string"
+    ) {
+      const code = (error as any).code;
+      if (code === 'ENOENT') {
+        throw new Error("The file path is invalid or the directory no longer exists.");
+      } else if (code === 'EACCES' || code === 'EPERM') {
+        throw new Error("Permission denied. Cannot write to the selected location.");
+      } else if (code === 'ENOSPC') {
+        throw new Error("Not enough disk space to save the file.");
+      } else if (code === 'EMFILE' || code === 'ENFILE') {
+        throw new Error("Too many files are open. Please close some applications and try again.");
+      }
+    }
+    // Re-throw custom validation errors or unknown errors
     throw error;
   }
 });
+
 // Handle fetching songs from a directory
 ipcMain.handle("fetch-songs", async (event, directory) => {
   try {

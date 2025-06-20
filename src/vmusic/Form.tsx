@@ -129,7 +129,7 @@ export default function CreateSong() {
     }
   };
 
-  const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
+ const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateSongData()) {
@@ -159,10 +159,7 @@ export default function CreateSong() {
       refetch();
     } catch (error) {
       console.error("Error saving song:", error);
-      showNotification(
-        error instanceof Error ? error.message : "An error occurred while saving the song.",
-        "error"
-      );
+      showNotification("Failed to save song. Please try again.", "error");
     } finally {
       setIsSaving(false);
     }

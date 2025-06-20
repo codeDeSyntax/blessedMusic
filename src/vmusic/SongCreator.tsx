@@ -41,9 +41,8 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
     editorProps: {
       attributes: {
         class:
-          "dark:prose-invert prose-sm sm:prose-base text-text dark:text-dtext text-[14px] border placehoder:text-stone-500 text-black lg:prose-lg max-w-none px-6 py-4 w-full focus:outline-none font-[garamond] min-h-full",
+          "   text-[15px] border placehoder:text-stone-500 text-black  max-w-none px-6 py-4 w-full focus:outline-none font-[garamond] min-h-full",
         "data-placeholder": "Click to start typing...",
-        FontFace: "monospace",
         spellcheck: "false",
       },
     },
@@ -80,7 +79,7 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
             ? "bg-[#8b5a3c] text-white shadow-lg transform scale-105 shadow-[#8b5a3c]/25"
             : "bg-[#9a674a]/70 text-white/90 hover:bg-[#8b5a3c] hover:text-white hover:shadow-lg hover:transform hover:scale-105 hover:shadow-[#8b5a3c]/25"
         }
-        backdrop-blur-sm border border-white/10
+        backdrop-blr-sm border border-white/10
       `}
     >
       <div className="relative z-10">{children}</div>
@@ -110,9 +109,9 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
   return (
     <div className="h-full w-full overflow-hidden no-scrollbar font-[garamond] flex flex-col">
       {/* Container with relative positioning for the toolbar */}
-      <div className="border border-gray-200/50 rounded-2xl shadow-2xl  overflow-hidden h-full w-full backdrop-blur-sm flex flex-col">
+      <div className="border border-gray-200/50 rounded-2xl shadow-2xl my-2  overflow-hidden h-full w-full backdrop-blur-sm flex flex-col">
         {/* Fixed Toolbar within the component */}
-        <div className="fixed w-full top-0 z-10 bg-[#faeed1] backdrop-blur-md border-b border-gray-200/30 p-3 shrink-0">
+        <div className="fixed w-full  z-10 bg-[#faeed1] backdrop-blur-md border-b border-gray-200/30 p-3 shrink-0">
           <div className="flex items-center gap-2 flex-wrap justify-center">
             {/* Alignment Controls */}
             <div className="flex items-center gap-1.5 bg-[#faeed1] rounded-2xl p-1.5 backdrop-blur-sm border border-gray-200/30">
@@ -191,14 +190,19 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
         </div>
 
         {/* Editor Content Area */}
-        <div
-          className="flex-1 overflow-y-auto no-scrollbar shadow-inner mt-20"
-          // style={{
-          //   borderWidth: 2,
-          //   borderColor: "#bc7b12",
-          //   borderStyle: "dotted",
-          // }}
-        >
+        <div className="flex-1 overflow-y-auto no-scrollbar shadow-inner mt-20">
+          <style>
+            {`
+              .ProseMirror p {
+                color: black !important;
+              }
+              @media (prefers-color-scheme: dark) {
+                .ProseMirror p {
+                  color: black !important;
+                }
+              }
+            `}
+          </style>
           <EditorContent
             editor={editor}
             className="h-full p-6 focus:outline-none"

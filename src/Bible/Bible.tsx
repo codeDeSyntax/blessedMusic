@@ -5,6 +5,7 @@ import FeaturePanel from "./Features";
 import ScriptureContent from "./ScriptureContent";
 import { useBibleContext } from "@/Provider/Bible";
 import SearchPanel from "./SearchPanel";
+import Help from "@/shared/Help";
 
 const Biblelayout: React.FC = () => {
   const { sidebarExpanded, activeFeature, searchOpen, theme, currentScreen } =
@@ -34,6 +35,7 @@ const Biblelayout: React.FC = () => {
       id="biblediv"
     >
       <TitleBar />
+      {/* <Help/> */}
 
       <div className="flex-1 flex overflow-hidden">
         <BibleSidebar />

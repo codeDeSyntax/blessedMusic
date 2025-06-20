@@ -63,7 +63,7 @@ export default function EditSong() {
     setSongs,
     refetch,
   } = useBmusicContext();
-  const {setCurrentScreen}  = useEastVoiceContext()
+  const { setCurrentScreen } = useEastVoiceContext();
   const [formData, setFormData] = useState({
     title: selectedSong?.title || "",
     message: selectedSong?.content || "",
@@ -135,7 +135,7 @@ export default function EditSong() {
     }
   };
 
-  const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
+ const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateSongData()) {
@@ -280,6 +280,18 @@ export default function EditSong() {
                 </div>
               </div>
               <div className="w-[70%] h-[100%]  flex items-center justify-start overflow-x-hidden">
+                <style>
+                  {`
+              .ProseMirror p {
+                color: black !important;
+              }
+              @media (prefers-color-scheme: dark) {
+                .ProseMirror p {
+                  color: black !important;
+                }
+              }
+            `}
+                </style>
                 <SongEditor formData={formData} setFormData={setFormData} />
               </div>
             </div>

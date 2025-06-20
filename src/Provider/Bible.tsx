@@ -180,6 +180,7 @@ const TRANSLATIONS = {
 export const BibleProvider = ({ children }: BibleProviderProps) => {
   // App state
   const [currentScreen, setCurrentScreen] = useState("Home");
+  // const [currentBibleScreen, setCurrentBibleScreen] = useState("scriptures");
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("bibleTheme") || "dark";
   });
