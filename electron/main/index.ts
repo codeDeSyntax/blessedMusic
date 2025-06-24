@@ -5,6 +5,7 @@ import {
   ipcMain,
   dialog,
   nativeImage,
+  screen,
 } from "electron";
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -68,6 +69,7 @@ async function createMainWindow() {
       // devTools: false,
       nodeIntegration: false,
       contextIsolation: true,
+      zoomFactor: 1.0
     },
   });
 
@@ -76,6 +78,7 @@ async function createMainWindow() {
     mainWin.maximize();
     mainWin.setMenuBarVisibility(false);
     mainWin.webContents.openDevTools();
+    mainWin.webContents.setZoomFactor(1.0);
   } else {
     mainWin.maximize();
     mainWin.setMenuBarVisibility(false);
@@ -111,25 +114,41 @@ async function createMainWindow() {
 }
 
 async function createProjectionWindow() {
+  const displays = screen.getAllDisplays();
+  let projectionDisplay = null;
+
+    // Find external display (projector)
+    if (displays.length > 1) {
+      projectionDisplay = displays.find(display => 
+        display.bounds.x !== 0 || display.bounds.y !== 0
+      );
+    }
   // Create a new projection window
   projectionWin = new BrowserWindow({
     title: "Projection",
+    x: projectionDisplay?.bounds.x,
+    y: projectionDisplay?.bounds.y,
+    width: projectionDisplay?.bounds.width,
+    height: projectionDisplay?.bounds.height,
     frame: false,
-    show: true,
-    minimizable: true,
+    show: false,
+    minimizable: false,
     fullscreen: true,
     alwaysOnTop: false,
+    skipTaskbar: true,
     icon: path.join("./dist/", "music2.png"),
     webPreferences: {
       preload,
       devTools: false,
       nodeIntegration: true,
       contextIsolation: true,
+      zoomFactor: 1.0
     },
   });
 
   if (VITE_DEV_SERVER_URL) {
     projectionWin.loadURL(`${VITE_DEV_SERVER_URL}/projection.html`);
+    projectionWin.setSkipTaskbar(true);
     // projectionWin.webContents.openDevTools();
   } else {
     projectionWin.loadFile(projectionHtml);

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setActiveFeature } from '@/store/slices/bibleSlice';
-import { BookOpen, ChevronDown, Grid3X3, AlignLeft, Bookmark, History, Search, Library, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, ChevronDown, Grid3X3, AlignLeft, Bookmark, History, Search, Library, LayoutGrid, ChevronLeft, ChevronRight, Keyboard } from 'lucide-react';
 import { ViewMode } from "../ScriptureContent";
 import { useTheme } from "@/Provider/Theme";
 import { motion, AnimatePresence } from 'framer-motion';
+import ShortcutsModal from './ShortcutsModal';
 
 interface FloatingActionBarProps {
   currentBook: string;
@@ -360,6 +361,16 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 }`}
               >
                 <Library size={16} />
+              </button>
+              <button
+                onClick={() => toggleFeature('shortcuts')}
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  activeFeature === 'shortcuts'
+                    ? 'bg-primary text-white shadow'
+                    : 'text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary'
+                }`}
+              >
+                <Keyboard size={16} />
               </button>
             </div>
           </motion.div>

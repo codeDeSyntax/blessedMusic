@@ -20,10 +20,7 @@ export const CustomSelect = ({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        selectRef.current &&
-        !selectRef.current.contains(event.target as Node)
-      ) {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -35,53 +32,51 @@ export const CustomSelect = ({
   }, []);
 
   // Find the selected option text
-  const selectedOptionText =
-    options.find((option) => option.value === value)?.text || placeholder;
+  const selectedOptionText = options.find((option) => option.value === value)?.text || placeholder;
 
   return (
-    <div ref={selectRef} className="relative w-full ">
+    <div ref={selectRef} className="relative w-full">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between p-2 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-bgray text-gray-900 dark:text-white ${className}`}
+        className={`w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-700/50 
+          bg-white dark:bg-black/20 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-black/30 
+          transition-all duration-200 ${className}`}
       >
-        <span className="truncate" style={{ fontFamily: "Palatino" }}>
-          {selectedOptionText}
-        </span>
+        <span className="truncate text-sm">{selectedOptionText}</span>
         <ChevronDown
-          size={18}
+          size={16}
           className={`transform transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
-          } text-gray-500`}
+          } text-gray-400 dark:text-gray-500`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-bgray border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto no-scrollbar">
-          {options.map((option) => (
-            <div
-              key={option.value}
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className={`
-                px-3 py-2 cursor-pointer flex items-center justify-between 
-                hover:bg-gray-100 dark:hover:bg-ltgray text-[12px]
-                ${
-                  value === option.value
-                    ? "bg-gray-100 dark:bg-bgray/50 text-primary"
-                    : "text-gray-900 dark:text-white"
-                }
-              `}
-            >
-              <span className="truncate" style={{ fontFamily: option.value }}>
-                {option.text}
-              </span>
-              {value === option.value && (
-                <Check size={16} className="text-primary" />
-              )}
-            </div>
-          ))}
+        <div className="absolute z-10 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700/50 
+          rounded-xl shadow-lg overflow-hidden">
+          <div className="max-h-60 overflow-y-auto no-scrollbar py-1">
+            {options.map((option) => (
+              <div
+                key={option.value}
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={`px-4 py-2.5 cursor-pointer flex items-center justify-between text-sm
+                  transition-colors duration-200
+                  ${value === option.value
+                    ? "bg-primary/5 dark:bg-primary/10 text-primary dark:text-primary"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-black/20"
+                  }`}
+                style={{ fontFamily: option.value }}
+              >
+                <span className="truncate">{option.text}</span>
+                {value === option.value && (
+                  <Check size={14} className="text-primary ml-2 flex-shrink-0" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

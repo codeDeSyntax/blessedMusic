@@ -39,15 +39,15 @@ const LibraryPanel: React.FC = () => {
     dispatch(setActiveFeature(null));
   };
 
-  const renderTestament = (books: any[], title: string) => (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 px-2 py-4">
+  const renderTestamentTable = (books: any[], title: string) => (
+    <div className="flex-1">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {title}
       </h2>
-      <div className="overflow-hidden rounded-xl bg-gray-50 dark:bg-black/20">
+      <div className="overflow-hidden rounded-xl bg-white dark:bg-black/20">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700/50 bg-gray-100 dark:bg-black/40">
+            <tr className="border-b border-gray-200 dark:border-gray-700/50 bg-gray-50 dark:bg-black/40">
               <th className="text-left py-3 pl-4 pr-2 text-sm font-medium text-gray-500 dark:text-gray-400">Book</th>
               <th className="text-left py-3 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Chapters</th>
               <th className="w-8"></th>
@@ -112,20 +112,23 @@ const LibraryPanel: React.FC = () => {
       
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-        <div className="bg-white dark:bg-[#1a1a1a]/80 rounded-3xl w-2/3 h-[70vh] overflow-hidden pointer-events-auto font-garamond">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-3xl w-[60%] h-[80vh] overflow-hidden pointer-events-auto">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700/50">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bible Library</h2>
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Bible Library</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Browse through books of the Bible</p>
+            </div>
             <button
               onClick={() => dispatch(setActiveFeature(null))}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-black/20 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-black/20 rounded-xl transition-colors"
             >
               <X size={20} className="text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-4 overflow-y-auto no-scrollbar" style={{ height: 'calc(70vh - 4rem)' }}>
+          <div className="p-6 overflow-y-auto no-scrollbar" style={{ height: 'calc(80vh - 5rem)' }}>
             {/* Translation selector */}
             <div className="mb-6 bg-gray-50 dark:bg-black/20 p-4 rounded-xl">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -140,9 +143,9 @@ const LibraryPanel: React.FC = () => {
             </div>
 
             {/* Books tables */}
-            <div className="space-y-8">
-              {renderTestament(oldTestament, "Old Testament")}
-              {renderTestament(newTestament, "New Testament")}
+            <div className="flex gap-6">
+              {renderTestamentTable(oldTestament, "Old Testament")}
+              {renderTestamentTable(newTestament, "New Testament")}
             </div>
           </div>
         </div>

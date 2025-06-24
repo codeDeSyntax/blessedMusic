@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.4.0",
+    "@electron-toolkit/preload": "^3.0.2",
     "@reactour/tour": "^3.8.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/vite": "^4.0.4",

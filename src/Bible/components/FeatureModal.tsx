@@ -6,6 +6,7 @@ import { BookmarkPanel } from '../BookmarkPanel';
 import HistoryPanel from '../HistoryPanel';
 import SearchPanel from '../SearchPanel';
 import LibraryPanel from '../LibraryPanel';
+import ShortcutsModal from './ShortcutsModal';
 
 const FeatureModal: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,6 +24,8 @@ const FeatureModal: React.FC = () => {
         return <SearchPanel />;
       case 'library':
         return <LibraryPanel />;
+      case 'shortcuts':
+        return <ShortcutsModal />;
       default:
         return null;
     }

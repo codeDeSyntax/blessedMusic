@@ -27,7 +27,7 @@ const ScriptureContent: React.FC = () => {
   const currentVerse = useAppSelector((state) => state.bible.currentVerse);
   const theme = useAppSelector((state) => state.bible.theme);
   const fontSize = useAppSelector((state) => state.bible.fontSize);
-  const fontFamily = useAppSelector((state) => state.bible.fontFamily);
+  const fontFamily = useAppSelector((state) => state.bible.fontFamily) ;
   const fontWeight = useAppSelector((state) => state.bible.fontWeight);
   const verseTextColor = useAppSelector((state) => state.bible.verseTextColor);
   const bookmarks = useAppSelector((state) => state.bible.bookmarks);

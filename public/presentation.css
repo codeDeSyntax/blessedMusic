@@ -204,8 +204,9 @@ body {
   margin: 0;
   text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.9);
   font-weight: bolder;
-  /* line-height: 1.4; */
-  word-wrap: break-word;
+  line-height: 1.4;
+  word-break: break-word;
+  -webkit-hyphens: auto;
   hyphens: auto;
   display: block;
   width: 100%;
@@ -228,7 +229,7 @@ body {
   height: 3rem;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); */
   border: 2px solid rgba(255, 255, 255, 0.2);
   color: white;
   cursor: pointer;
@@ -255,7 +256,7 @@ body {
   top: 3.5rem;
   left: 0;
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
+  /* backdrop-filter: blur(12px); */
   border-radius: 12px;
   padding: 1rem;
   display: flex;
@@ -371,7 +372,7 @@ body {
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
+  /* backdrop-filter: blur(4px); */
   border: none;
   cursor: pointer;
   color: white;
@@ -405,7 +406,7 @@ body {
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: bold;
-  backdrop-filter: blur(4px);
+  /* backdrop-filter: blur(4px); */
 }
 
 /* Animations */

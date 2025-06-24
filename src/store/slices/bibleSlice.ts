@@ -129,16 +129,16 @@ const initialState: BibleState = {
   currentTranslation: localStorage.getItem("bibleCurrentTranslation") || "KJV",
   availableTranslations: [],
   translationsLoaded: {},
-  currentBook: localStorage.getItem("bibleCurrentBook") || "1 Timothy",
+  currentBook: localStorage.getItem("bibleCurrentBook") || "Revelation",
   currentChapter: parseInt(localStorage.getItem("bibleCurrentChapter") || "3"),
   currentVerse: null,
   bookList: allBooks,
 
   // User preferences
-  fontSize: localStorage.getItem("bibleFontSize") || "medium",
+  fontSize: localStorage.getItem("bibleFontSize") || "small",
   fontWeight: localStorage.getItem("bibleFontWeight") || "normal",
-  fontFamily: localStorage.getItem("bibleFontFamily") || "serif",
-  verseTextColor: localStorage.getItem("bibleVerseTextColor") || "#808080",
+  fontFamily: localStorage.getItem("bibleFontFamily") || "garamond",
+  verseTextColor: localStorage.getItem("bibleVerseTextColor") || "#8a8a8a",
 
   // Bookmarks
   bookmarks: (() => {
@@ -337,11 +337,11 @@ const bibleSlice = createSlice({
         theme: localStorage.getItem("bibleTheme") || "dark",
         sidebarExpanded: localStorage.getItem("bibleSidebarExpanded") !== "false",
         currentTranslation: localStorage.getItem("bibleCurrentTranslation") || "KJV",
-        currentBook: localStorage.getItem("bibleCurrentBook") || "1 Timothy",
+        currentBook: localStorage.getItem("bibleCurrentBook") || "Revelations",
         currentChapter: parseInt(localStorage.getItem("bibleCurrentChapter") || "3"),
-        fontSize: localStorage.getItem("bibleFontSize") || "medium",
+        fontSize: localStorage.getItem("bibleFontSize") || "small",
         fontWeight: localStorage.getItem("bibleFontWeight") || "normal",
-        fontFamily: localStorage.getItem("bibleFontFamily") || "serif",
+        fontFamily: localStorage.getItem("bibleFontFamily") || "garamond",
         verseTextColor: localStorage.getItem("bibleVerseTextColor") || "#808080",
       };
       Object.assign(state, newState);
