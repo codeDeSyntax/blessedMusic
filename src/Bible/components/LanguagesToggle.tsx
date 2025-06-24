@@ -1,118 +1,114 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Languages, Book, BookText, BookOpen, BookA } from "lucide-react";
-import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
-import { useAppDispatch } from "@/store";
-import { setCurrentLanguage } from "@/store/slices/bibleSlice";
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { setCurrentTranslation } from '@/store/slices/bibleSlice';
+import { useTheme } from '@/Provider/Theme';
 
-const LanguageToggler = ({ color }: { color: string }) => {
+interface LanguageTogglerProps {
+  // No props needed
+}
+
+const LanguageToggler: React.FC<LanguageTogglerProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dispatch = useAppDispatch();
+  const currentTranslation = useAppSelector((state) => state.bible.currentTranslation);
+  const { isDarkMode } = useTheme();
+  const togglerRef = useRef<HTMLDivElement>(null);
 
-  // You can replace these functions with your actual language switching logic
-  const switchToKJV = () => {
-    console.log("Switching to KJV");
-    dispatch(setCurrentLanguage("english"));
-    setIsOpen(false);
-  };
-
-  const switchToTWI = () => {
-    console.log("Switching to TWI");
-    dispatch(setCurrentLanguage("twi"));
-    setIsOpen(false);
-  };
-
-  const switchToEWE = () => {
-    console.log("Switching to EWE");
-    dispatch(setCurrentLanguage("ewe"));
-    setIsOpen(false);
-  };
-
-  const switchToFrench = () => {
-    console.log("Switching to French");
-    dispatch(setCurrentLanguage("french"));
-    setIsOpen(false);
-  };
-
-  const languageOptions = [
-    {
-      id: 1,
-      icon: <Book size={14} className="text-primary" />,
-      text: "KJV",
-      onClick: switchToKJV,
-      style: "rounded-tr-md",
-    },
-    {
-      id: 2,
-      icon: <BookText size={14} className="text-primary" />,
-      text: "TWI",
-      onClick: switchToTWI,
-    },
-    {
-      id: 3,
-      icon: <BookOpen size={14} className="text-primary" />,
-      text: "EWE",
-      onClick: switchToEWE,
-    },
-    {
-      id: 4,
-      icon: <BookA size={14} className="text-primary" />,
-      text: "French",
-      onClick: switchToFrench,
-      style: "rounded-br-md",
-    },
+  const languages = [
+    { id: 'KJV', label: 'KJV' },
+    { id: 'TWI', label: 'TWI' },
+    { id: 'EWE', label: 'EWE' },
+    { id: 'FRENCH', label: 'FRENCH' }
   ];
 
-  const toggleLanguages = () => {
-    setIsOpen(!isOpen);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (togglerRef.current && !togglerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { 
+      opacity: 0,
+      y: 20,
+      scale: 0.8
+    },
+    visible: { 
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24
+      }
+    }
   };
 
   return (
-    <div className="fixed bottom-10 md:bottom-24 right-20 z-50">
+    <div className="relative" ref={togglerRef}>
       <motion.button
-        className=" h-16 w-16 flex items-center justify-center  bg-gray-50 dark:bg-bgray/90 text-indigo-500 dark:text-indigo-300 p-4 rounded-full shadow-lg  hover:text-white dark:hover:bg-primary dark:hover:text-white transition-colors duration-300"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={toggleLanguages}
-        aria-label="Toggle Language Menu"
-        style={{
-          borderWidth: 3,
-          borderColor: "#9a674a ",
-          borderStyle: "dashed",
-          color: "#9a674a ",
-        }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`p-3 rounded-full shadow-lg ${
+          isDarkMode 
+            ? 'bg-[#3d332a] text-stone-300 hover:bg-[#4a3e34]' 
+            : 'bg-white text-stone-700 hover:bg-stone-50'
+        } transition-colors duration-200`}
       >
-        <Languages size={20} />
+        {currentTranslation}
       </motion.button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="absolute bottom-16 -left-6 space-y-2 mb-4"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={containerVariants}
+            className="absolute bottom-full right-0 mb-4 flex flex-col gap-3"
           >
-            {languageOptions.map((language, index) => (
+            {languages.map((lang, index) => (
               <motion.button
-                key={language.id}
-                onClick={language.onClick}
-                className={`flex justify-between shadow shadow-dark group items-center w-40 h-10 px-4 bg-gray-50 dark:bg-ltgray hover:bg-primary hover:text-white dark:text-white dark:hover:text-white  text-[12px] font-medium transition-colors rounded-full duration-300  ${language.style}`}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{
-                  delay: index * 0.1,
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 20,
+                key={lang.id}
+                custom={index}
+                variants={itemVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  dispatch(setCurrentTranslation(lang.id));
+                  setIsOpen(false);
                 }}
-                style={{ fontFamily: "Palatino", fontWeight: "bolder" }}
-                aria-label={`Switch to ${language.text} language`}
+                className={`p-3 rounded-full shadow-lg min-w-[80px] transition-colors duration-200 ${
+                  currentTranslation === lang.id
+                    ? isDarkMode
+                      ? 'bg-primary text-stone-200'
+                      : 'bg-primary text-white'
+                    : isDarkMode
+                    ? 'bg-[#3d332a] text-stone-400 hover:bg-[#4a3e34] hover:text-stone-200'
+                    : 'bg-white text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                }`}
               >
-                {language.text}
-                {language.icon}
+                {lang.label}
               </motion.button>
             ))}
           </motion.div>

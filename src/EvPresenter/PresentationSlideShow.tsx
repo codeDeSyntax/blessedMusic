@@ -113,6 +113,44 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     }
   }, [backgroundImage]);
 
+  // Add this effect to load custom images
+  useEffect(() => {
+    const loadCustomImages = async () => {
+      const customImagesPath = localStorage.getItem("vmusicimages");
+      if (customImagesPath) {
+        try {
+          const images = await window.api.getImages(customImagesPath);
+          setPresentationbgs(images);
+        } catch (error) {
+          console.error("Failed to load custom images:", error);
+          // Load default backgrounds if custom images fail
+          setPresentationbgs([
+            "./wood2.jpg",
+            "./snow1.jpg",
+            "./wood6.jpg",
+            "./wood7.png",
+            "./pic2.jpg",
+            "./wood10.jpg",
+            "./wood11.jpg"
+          ]);
+        }
+      } else {
+        // Load default backgrounds if no custom path
+        setPresentationbgs([
+          "./wood2.jpg",
+          "./snow1.jpg",
+          "./wood6.jpg",
+          "./wood7.png",
+          "./pic2.jpg",
+          "./wood10.jpg",
+          "./wood11.jpg"
+        ]);
+      }
+    };
+
+    loadCustomImages();
+  }, []);
+
   // Function to break text into slides if too long
   const createContentSlides = (text: string, title?: string) => {
     const wordLimit = 100; // Adjust based on your visual preference

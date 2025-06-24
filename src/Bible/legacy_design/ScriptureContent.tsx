@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import PresentationOverlay from "./PresentationOverlay";
 import { useTheme } from "@/Provider/Theme";
 import LanguageToggler from "./components/LanguagesToggle";
-import FloatingActionBar from "./components/FloatingActionBar";
+import NavigationBar from "./components/Navigator";
 import ScriptureBlockView from "./components/ScriptureBlockView";
 import ScriptureParagraphView from "./components/ScriptureParagraphView";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
@@ -414,7 +414,7 @@ const ScriptureContent: React.FC = () => {
 
   return (
     <div className="flex flex-col justify-start items-center h-full bg-white dark:bg-ltgray text-white font-serif">
-      <FloatingActionBar
+      <NavigationBar
         currentBook={currentBook}
         currentChapter={currentChapter}
         currentVerse={currentVerse}
@@ -428,15 +428,15 @@ const ScriptureContent: React.FC = () => {
         setIsChapterDropdownOpen={setIsChapterDropdownOpen}
         isVerseDropdownOpen={isVerseDropdownOpen}
         setIsVerseDropdownOpen={setIsVerseDropdownOpen}
+        handlePreviousChapter={handlePreviousChapter}
+        handleNextChapter={handleNextChapter}
         handleBookSelect={handleBookSelect}
         handleChapterSelect={handleChapterSelect}
         handleVerseSelect={handleVerseSelect}
         getChapters={getChapters}
         getVerses={getVerses}
         bookList={bookList}
-        isDarkMode={isDarkMode}
-        handlePreviousChapter={handlePreviousChapter}
-        handleNextChapter={handleNextChapter}
+        iconColors={iconColors}
       />
 
       <PresentationOverlay
@@ -457,9 +457,7 @@ const ScriptureContent: React.FC = () => {
         }`}
         onScroll={updateVisibleVerses}
       >
-        <div className="fixed bottom-6 right-6 z-50">
-          <LanguageToggler />
-        </div>
+        <LanguageToggler color={iconColors.color2} />
 
         {verses.length > 0 ? (
           viewMode === "block" ? (
@@ -514,23 +512,6 @@ const ScriptureContent: React.FC = () => {
             <p className="text-gray-500">Loading scripture content...</p>
           </div>
         )}
-
-        <div
-          className=""
-          style={{
-            borderWidth: 1,
-            borderColor: !isDarkMode ? "#e1e3e410" : "#432c1410",
-            borderStyle: "dashed",
-          }}
-        />
-        <div
-          className="mt-1 rounded-full"
-          style={{
-            borderWidth: 1,
-            borderColor: !isDarkMode ? "#e1e3e410" : "#432c1410",
-            borderStyle: "dashed",
-          }}
-        />
       </div>
     </div>
   );

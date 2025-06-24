@@ -1,136 +1,155 @@
-import React, { useEffect, useState } from "react";
-import { X, Search } from "lucide-react";
-import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
-import { useAppSelector, useAppDispatch } from "@/store";
-import { setSearchOpen, setCurrentLocation } from "@/store/slices/bibleSlice";
+import React, { useEffect } from "react";
+import { Search as SearchIcon, X, ToggleLeft, ToggleRight, ChevronRight } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import {
+  setSearchTerm,
+  setCurrentBook,
+  setCurrentChapter,
+  setCurrentVerse,
+  setExactMatch,
+  setWholeWords,
+  setActiveFeature,
+} from "@/store/slices/bibleSlice";
+import { performSearch } from "@/store/slices/bibleThunks";
 
 const SearchPanel: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { searchOpen, sidebarExpanded } = useAppSelector((state) => state.bible);
   const {
-    searchQuery,
+    searchTerm,
     searchResults,
-    updateSearchQuery,
-    performSearch,
-  } = useBibleOperations();
-
-  // Local state for search options
-  const [exactMatch, setExactMatch] = useState(false);
-  const [wholeWords, setWholeWords] = useState(false);
+    exactMatch,
+    wholeWords,
+  } = useAppSelector((state) => state.bible);
 
   // Perform search when search term changes
   useEffect(() => {
     const debounce = setTimeout(() => {
-      if (searchQuery) {
-        performSearch(searchQuery);
+      if (searchTerm) {
+        dispatch(performSearch(searchTerm));
       }
     }, 300);
 
     return () => clearTimeout(debounce);
-  }, [searchQuery, exactMatch, wholeWords, performSearch]);
-
-  if (!searchOpen) return null;
+  }, [searchTerm, exactMatch, wholeWords, dispatch]);
 
   const handleResultClick = (book: string, chapter: number, verse: number) => {
-    dispatch(setCurrentLocation({ book, chapter, verse }));
-    dispatch(setSearchOpen(false));
-    // Scroll to the selected verse
-    const verseElement = document.getElementById(`verse-${verse}`);
-    if (verseElement) {
-      verseElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    dispatch(setCurrentBook(book));
+    dispatch(setCurrentChapter(chapter));
+    dispatch(setCurrentVerse(verse));
+    dispatch(setActiveFeature(null));
   };
 
   return (
-    <div
-      className={`fixed top-8 font-serif ${
-        sidebarExpanded ? "left-48" : "left-12"
-      } w-64 md:w-80 bg-white dark:bg-[#121212] h-[calc(100vh-2rem)] 
-      border-r border-gray-300 dark:border-gray-700 
-      transition-all duration-300 z-10 overflow-hidden flex flex-col`}
-    >
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-500 dark:text-gray-50">
-            Search
-          </h2>
-          <button
-            onClick={() => dispatch(setSearchOpen(false))}
-            className="p-1 bg-gray-50 dark:bg-[#424242] shadow"
-          >
-            <X size={20} className="text-gray-500 dark:text-gray-500" />
-          </button>
-        </div>
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/10 dark:bg-black/20 backdrop-blur-sm z-40"
+        onClick={() => dispatch(setActiveFeature(null))}
+      />
+      
+      {/* Modal */}
+      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none px-4">
+        <div className="bg-white dark:bg-[#1a1a1a]/80 rounded-3xl w-full max-w-4xl h-[62vh] overflow-hidden pointer-events-auto font-garamond">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Search</h2>
+              {searchResults.length > 0 && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">({searchResults.length} results)</span>
+              )}
+            </div>
+            <button
+              onClick={() => dispatch(setActiveFeature(null))}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-black/20 rounded-full transition-colors"
+            >
+              <X size={20} className="text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
 
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => updateSearchQuery(e.target.value)}
-            placeholder="Search scripture..."
-            className="w-[80%] p-2 pl-8  border-gray-300 dark:border-gray-600 border-none 
-              rounded-md bg-white dark:bg-[#424242] shadow focus:outline-none focus:outline-gray-300 dark:focus:outline-[#424242] text-stone-500 dark:text-gray-100  "
-            spellCheck={false}
-          />
-          <Search size={18} className="absolute left-2 top-2.5 text-gray-500" />
-        </div>
-
-        <div className="flex flex-col mt-3 space-y-2">
-          <label className="flex items-center space-x-2 text-sm">
-            <input
-              type="checkbox"
-              checked={exactMatch}
-              onChange={() => setExactMatch(!exactMatch)}
-              className="rounded text-blue-600"
-            />
-            <span>Exact match</span>
-          </label>
-
-          <label className="flex items-center space-x-2 text-sm">
-            <input
-              type="checkbox"
-              checked={wholeWords}
-              onChange={() => setWholeWords(!wholeWords)}
-              className="rounded text-blue-600"
-            />
-            <span>Whole words only</span>
-          </label>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-          {searchResults.length} results found
-        </div>
-
-        {searchResults.length > 0 ? (
-          <div className="space-y-4">
-            {searchResults.map((result, index) => (
-              <div
-                key={index}
-                className="p-3 bg-gray-100 dark:bg-[#42424240] rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-[#42424270] transition-colors"
-                onClick={() =>
-                  handleResultClick(result.book, result.chapter, result.verse)
-                }
+          {/* Search Input */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700/50">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => dispatch(setSearchTerm(e.target.value))}
+                placeholder="Search scripture..."
+                className="w-[80%] border-none rounded-full px-4 py-3 pl-10 bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 font-garamond"
+              />
+              <SearchIcon size={18} className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" />
+            </div>
+            <div className="flex items-center space-x-4 mt-2">
+              <button
+                onClick={() => dispatch(setExactMatch(!exactMatch))}
+                className="flex bg-gray-50 dark:bg-black/20 rounded-full  pl-10 items-center space-x-2 text-sm text-gray-600 dark:text-gray-300"
               >
-                <div className="font-medium text-stone-500 dark:text-gray-50 text-[12px]">
-                  {result.book} {result.chapter}:{result.verse}
-                </div>
-                <p className="text mt-1 line-clamp-2 text-stone-500 dark:text-gray-50 text-[12px]">
-                  {result.text}
+                {exactMatch ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} />}
+                <span>Exact match</span>
+              </button>
+              <button
+                onClick={() => dispatch(setWholeWords(!wholeWords))}
+                className="flex bg-gray-50 dark:bg-black/20 rounded-full  pl-10 items-center space-x-2 text-sm text-gray-600 dark:text-gray-300"
+              >
+                {wholeWords ? <ToggleRight size={16} className="text-primary" /> : <ToggleLeft size={16} />}
+                <span>Whole words</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 overflow-y-auto no-scrollbar" style={{ height: 'calc(60vh - 12rem)' }}>
+            {searchResults.length > 0 ? (
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left border-b border-gray-200 dark:border-gray-700/50">
+                    <th className="pb-2 pl-4 text-sm font-medium text-gray-500 dark:text-gray-400">Reference</th>
+                    <th className="pb-2 text-sm font-medium text-gray-500 dark:text-gray-400">Text</th>
+                    <th className="pb-2 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {searchResults.map((result, index) => (
+                    <tr
+                      key={index}
+                      onClick={() => handleResultClick(result.book, result.chapter, result.verse)}
+                      className="group cursor-pointer font-[garamond] hover:bg-primary/5 dark:hover:bg-white/5 transition-all duration-200"
+                    >
+                      <td className="py-3 pl-4">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {result.book} {result.chapter}:{result.verse}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-8">
+                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{result.text}</p>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <ChevronRight size={14} className="text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : searchTerm ? (
+              <div className="flex flex-col items-center justify-center h-full text-center font-garamond">
+                <SearchIcon size={48} className="text-gray-300 dark:text-gray-600 mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No results found</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Try adjusting your search terms
                 </p>
               </div>
-            ))}
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center font-garamond">
+                <SearchIcon size={48} className="text-gray-300 dark:text-gray-600 mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">Enter a search term</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Search through scripture content
+                </p>
+              </div>
+            )}
           </div>
-        ) : (
-          searchQuery && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              No results found
-            </div>
-          )
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

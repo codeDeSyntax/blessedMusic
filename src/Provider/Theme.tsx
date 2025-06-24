@@ -1,13 +1,20 @@
 // contexts/ThemeContext.tsx
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useAppDispatch } from '@/store';
+import { setActiveFeature } from '@/store/slices/bibleSlice';
 
 type ThemeContextType = {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+  toggleActiveFeature: (feature: string | null) => void;
 };
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({
+  isDarkMode: false,
+  toggleDarkMode: () => {},
+  toggleActiveFeature: () => {},
+});
 
 type ThemeProviderProps = {
   children: ReactNode;
@@ -15,6 +22,7 @@ type ThemeProviderProps = {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     // Check if user has a preference stored
@@ -42,10 +50,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => !prev);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', (!isDarkMode).toString());
+  };
+
+  const toggleActiveFeature = (feature: string | null) => {
+    dispatch(setActiveFeature(feature));
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, toggleActiveFeature }}>
       {children}
     </ThemeContext.Provider>
   );

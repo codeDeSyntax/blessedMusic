@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { X, Minus, Square, Monitor, Settings } from "lucide-react";
+import { X, Minus, Square, Monitor } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { MoreHorizontal } from "lucide-react";
 import { ThemeToggle } from "@/shared/ThemeToggler";
@@ -7,7 +7,6 @@ import { useTheme } from "@/Provider/Theme";
 import Help from "@/shared/Help";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 import { setCurrentScreen } from "@/store/slices/appSlice";
-import { setActiveFeature } from "@/store/slices/bibleSlice";
 
 const TitleBar: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -120,13 +119,6 @@ const TitleBar: React.FC = () => {
           {/* theme toggler */}
           <ThemeToggle />
           <Help />
-          {/* Settings button */}
-          <div
-            onClick={() => dispatch(setActiveFeature('settings'))}
-            className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer hover:bg-gray-50 dark:hover:bg-bgray"
-          >
-            <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
-          </div>
           {/* Close button */}
           <div
             onClick={handleClose}

@@ -17,11 +17,11 @@ body {
 }
 
 .dottedb {
-  background: radial-gradient(circle, #29282820 1px, white 0); /* Dots */
+  background: radial-gradient(circle, #29282810 1px, white 0); /* Dots - reduced opacity from 20 to 10 */
   background-size: 20px 20px; /* Adjust the size of the background pattern */
 }
 .dottedb1 {
-  background: radial-gradient(circle, #2c2b2b20 1px, #000000 0); /* Dots */
+  background: radial-gradient(circle, #2c2b2b10 1px, #000000 0); /* Dots - reduced opacity from 20 to 10 */
   background-size: 20px 20px; /* Adjust the size of the background pattern */
 }
 .gridb {
