@@ -58,6 +58,12 @@ minimizeProjection: () => ipcRenderer.send('minimizeProjection'),
       ipcRenderer.removeAllListeners("display-song");
     };
   },
+  onDisplayInfo: (callback: (info: { isExternalDisplay: boolean, displayBounds: any }) => void) => {
+    ipcRenderer.on("display-info", (event, info) => callback(info));
+    return () => {
+      ipcRenderer.removeAllListeners("display-info");
+    };
+  },
   getImages: (dirPath:string) => ipcRenderer.invoke('get-images', dirPath),
   loadEvPresentations: (path:string) => ipcRenderer.invoke('load-presentations',path),
   createEvPresentation: (path:string,presentation: Omit<Presentation, 'id' | 'createdAt' | 'updatedAt'>) => 

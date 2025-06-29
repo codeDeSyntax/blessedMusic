@@ -1,8 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import appSlice from './slices/appSlice';
+import appSlice, { AppState } from './slices/appSlice';
 import presenterSlice from './slices/presenterSlice';
-import bibleSlice from './slices/bibleSlice';
+import bibleSlice, { loadBibleState } from './slices/bibleSlice';
 import songSlice from './slices/songSlice';
 
 /**
@@ -37,6 +37,9 @@ export const store = configureStore({
       },
     }),
 });
+
+// Load persisted state
+store.dispatch(loadBibleState());
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

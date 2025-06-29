@@ -6,10 +6,11 @@ import LanguageToggler from "./components/LanguagesToggle";
 import FloatingActionBar from "./components/FloatingActionBar";
 import ScriptureBlockView from "./components/ScriptureBlockView";
 import ScriptureParagraphView from "./components/ScriptureParagraphView";
+import VerseByVerseView from "./components/VerseByVerseView";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 import { setCurrentBook, setCurrentChapter, setCurrentVerse, setVerseTextColor, addBookmark, removeBookmark, addToHistory } from "@/store/slices/bibleSlice";
 
-export type ViewMode = "block" | "paragraph";
+export type ViewMode = "block" | "paragraph" | "verse-by-verse";
 
 interface Book {
   name: string;
@@ -35,6 +36,10 @@ const ScriptureContent: React.FC = () => {
   const bibleData = useAppSelector((state) => state.bible.bibleData);
   const currentTranslation = useAppSelector((state) => state.bible.currentTranslation);
   const bibleBgs = useAppSelector((state) => state.app.bibleBgs);
+  const verseByVerseMode = useAppSelector((state) => state.bible.verseByVerseMode);
+  const isFullScreen = useAppSelector((state) => state.bible.isFullScreen);
+  const imageBackgroundMode = useAppSelector((state) => state.bible.imageBackgroundMode);
+  const selectedBackground = useAppSelector((state) => state.bible.selectedBackground);
 
   const { isDarkMode } = useTheme();
 
@@ -412,126 +417,164 @@ const ScriptureContent: React.FC = () => {
     };
   }, []);
 
-  return (
-    <div className="flex flex-col justify-start items-center h-full bg-white dark:bg-ltgray text-white font-serif">
-      <FloatingActionBar
-        currentBook={currentBook}
-        currentChapter={currentChapter}
-        currentVerse={currentVerse}
-        selectedVerse={selectedVerse}
-        chapterCount={chapterCount}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        isBookDropdownOpen={isBookDropdownOpen}
-        setIsBookDropdownOpen={setIsBookDropdownOpen}
-        isChapterDropdownOpen={isChapterDropdownOpen}
-        setIsChapterDropdownOpen={setIsChapterDropdownOpen}
-        isVerseDropdownOpen={isVerseDropdownOpen}
-        setIsVerseDropdownOpen={setIsVerseDropdownOpen}
-        handleBookSelect={handleBookSelect}
-        handleChapterSelect={handleChapterSelect}
-        handleVerseSelect={handleVerseSelect}
-        getChapters={getChapters}
-        getVerses={getVerses}
-        bookList={bookList}
-        isDarkMode={isDarkMode}
-        handlePreviousChapter={handlePreviousChapter}
-        handleNextChapter={handleNextChapter}
-      />
+  // Handle verse-by-verse navigation
+  const handleVerseByVerseNavigation = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      handlePreviousChapter();
+    } else {
+      handleNextChapter();
+    }
+  };
 
+  // Initialize current verse if not set
+  useEffect(() => {
+    if (!currentVerse) {
+      dispatch(setCurrentVerse(1));
+    }
+  }, [currentVerse, dispatch]);
+
+  return (
+    <div
+      className={`h-screen flex flex-col overflow-y-scroll bg-white dark:bg-ltgray no-scrollbar text-gray-900 dark:text-gray-100`}
+      id="biblediv"
+      ref={contentRef}
+      style={{
+        backgroundImage: verseByVerseMode && imageBackgroundMode && selectedBackground ? `url(${selectedBackground})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Language Toggler - Fixed Position */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <LanguageToggler />
+      </div>
+
+      {!verseByVerseMode ? (
+        <>
+          <div className="absolute top-12 left-0 right-0 z-40">
+            <FloatingActionBar
+              currentBook={currentBook}
+              currentChapter={currentChapter}
+              currentVerse={currentVerse}
+              selectedVerse={selectedVerse}
+              chapterCount={chapterCount}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              isBookDropdownOpen={isBookDropdownOpen}
+              setIsBookDropdownOpen={setIsBookDropdownOpen}
+              isChapterDropdownOpen={isChapterDropdownOpen}
+              setIsChapterDropdownOpen={setIsChapterDropdownOpen}
+              isVerseDropdownOpen={isVerseDropdownOpen}
+              setIsVerseDropdownOpen={setIsVerseDropdownOpen}
+              handleBookSelect={handleBookSelect}
+              handleChapterSelect={handleChapterSelect}
+              handleVerseSelect={handleVerseSelect}
+              getChapters={getChapters}
+              getVerses={getVerses}
+              bookList={bookList}
+              isDarkMode={isDarkMode}
+              handlePreviousChapter={handlePreviousChapter}
+              handleNextChapter={handleNextChapter}
+            />
+          </div>
+
+          <div className="flex-1 ">
+            {viewMode === "block" ? (
+              <ScriptureBlockView
+                verses={verses}
+                verseRefs={verseRefs}
+                selectedVerse={selectedVerse}
+                getFontSize={() => `${fontSize}rem`}
+                fontFamily={fontFamily}
+                fontWeight={fontWeight}
+                theme={theme}
+                verseTextColor={verseTextColor}
+                getVerseHighlight={getVerseHighlight}
+                isBookmarked={isBookmarked}
+                toggleBookmark={toggleBookmark}
+                handleShare={handleShare}
+                currentBook={currentBook}
+                currentChapter={currentChapter}
+                toggleShowPresentationBgs={toggleShowPresentationBgs}
+                activeDropdownVerse={activeDropdownVerse}
+                bibleBgs={bibleBgs}
+                handlePresentVerse={handlePresentVerse}
+                selectedBg={selectedBg}
+                highlightVerse={highlightVerse}
+                imageBackgroundMode={imageBackgroundMode}
+                isFullScreen={isFullScreen}
+              />
+            ) : (
+              <ScriptureParagraphView
+                verses={verses}
+                verseRefs={verseRefs}
+                selectedVerse={selectedVerse}
+                getFontSize={() => `${fontSize}rem`}
+                fontFamily={fontFamily}
+                fontWeight={fontWeight}
+                theme={theme}
+                verseTextColor={verseTextColor}
+                getVerseHighlight={getVerseHighlight}
+                isBookmarked={isBookmarked}
+                toggleBookmark={toggleBookmark}
+                handleShare={handleShare}
+                currentBook={currentBook}
+                currentChapter={currentChapter}
+                toggleShowPresentationBgs={toggleShowPresentationBgs}
+                activeDropdownVerse={activeDropdownVerse}
+                bibleBgs={bibleBgs}
+                handlePresentVerse={handlePresentVerse}
+                selectedBg={selectedBg}
+                highlightVerse={highlightVerse}
+                imageBackgroundMode={imageBackgroundMode}
+                isFullScreen={isFullScreen}
+              />
+            )}
+          </div>
+        </>
+      ) : (
+        <VerseByVerseView 
+          onNavigate={handleVerseByVerseNavigation}
+          currentBook={currentBook}
+          currentChapter={currentChapter}
+          currentVerse={currentVerse || 1}
+          selectedVerse={selectedVerse}
+          chapterCount={chapterCount}
+          isBookDropdownOpen={isBookDropdownOpen}
+          setIsBookDropdownOpen={setIsBookDropdownOpen}
+          isChapterDropdownOpen={isChapterDropdownOpen}
+          setIsChapterDropdownOpen={setIsChapterDropdownOpen}
+          isVerseDropdownOpen={isVerseDropdownOpen}
+          setIsVerseDropdownOpen={setIsVerseDropdownOpen}
+          handleBookSelect={handleBookSelect}
+          handleChapterSelect={handleChapterSelect}
+          handleVerseSelect={handleVerseSelect}
+          getChapters={getChapters}
+          getVerses={getVerses}
+          bookList={bookList}
+          isDarkMode={isDarkMode}
+          handlePreviousChapter={handlePreviousChapter}
+          handleNextChapter={handleNextChapter}
+          imageBackgroundMode={imageBackgroundMode}
+          isFullScreen={isFullScreen}
+          getFontSize={() => `${fontSize}rem`}
+          fontFamily={fontFamily}
+          fontWeight={fontWeight}
+        />
+      )}
+
+      {/* Presentation Overlay */}
       <PresentationOverlay
-        backgroundSrc={presentationBg}
-        text={presentationText}
         isPresenting={isPresentingVerse}
         onClose={() => setIsPresentingVerse(false)}
+        text={presentationText}
+        backgroundSrc={presentationBg}
+        currentVerse={presentationCurrentVerse}
+        totalVerses={verses.length}
         onNext={() => handlePresentationNavigation("next")}
         onPrev={() => handlePresentationNavigation("prev")}
-        currentVerse={presentationCurrentVerse}
-        totalVerses={getCurrentChapterVerses().length}
       />
-
-      <div
-        ref={contentRef}
-        className={`flex-1 flex justify-center justify-st p-4 md:p-6 lg:p-8 overflow-y-scroll no-scrollbar text-stone-500 relative ${
-          isDarkMode ? "dottedb1" : "dottedb"
-        }`}
-        onScroll={updateVisibleVerses}
-      >
-        <div className="fixed bottom-6 right-6 z-50">
-          <LanguageToggler />
-        </div>
-
-        {verses.length > 0 ? (
-          viewMode === "block" ? (
-            <ScriptureBlockView
-              verses={verses}
-              verseRefs={verseRefs}
-              selectedVerse={selectedVerse}
-              getFontSize={getFontSize}
-              fontFamily={fontFamily}
-              fontWeight={fontWeight}
-              theme={theme}
-              verseTextColor={verseTextColor}
-              getVerseHighlight={getVerseHighlight}
-              isBookmarked={isBookmarked}
-              toggleBookmark={toggleBookmark}
-              handleShare={handleShare}
-              currentBook={currentBook}
-              currentChapter={currentChapter}
-              toggleShowPresentationBgs={toggleShowPresentationBgs}
-              activeDropdownVerse={activeDropdownVerse}
-              bibleBgs={bibleBgs}
-              handlePresentVerse={handlePresentVerse}
-              selectedBg={selectedBg}
-              highlightVerse={highlightVerse}
-            />
-          ) : (
-            <ScriptureParagraphView
-              verses={verses}
-              verseRefs={verseRefs}
-              selectedVerse={selectedVerse}
-              getFontSize={getFontSize}
-              fontFamily={fontFamily}
-              fontWeight={fontWeight}
-              theme={theme}
-              verseTextColor={verseTextColor}
-              getVerseHighlight={getVerseHighlight}
-              isBookmarked={isBookmarked}
-              toggleBookmark={toggleBookmark}
-              handleShare={handleShare}
-              currentBook={currentBook}
-              currentChapter={currentChapter}
-              toggleShowPresentationBgs={toggleShowPresentationBgs}
-              activeDropdownVerse={activeDropdownVerse}
-              bibleBgs={bibleBgs}
-              handlePresentVerse={handlePresentVerse}
-              selectedBg={selectedBg}
-              highlightVerse={highlightVerse}
-            />
-          )
-        ) : (
-          <div className="flex w-full items-center justify-center h-full">
-            <p className="text-gray-500">Loading scripture content...</p>
-          </div>
-        )}
-
-        <div
-          className=""
-          style={{
-            borderWidth: 1,
-            borderColor: !isDarkMode ? "#e1e3e410" : "#432c1410",
-            borderStyle: "dashed",
-          }}
-        />
-        <div
-          className="mt-1 rounded-full"
-          style={{
-            borderWidth: 1,
-            borderColor: !isDarkMode ? "#e1e3e410" : "#432c1410",
-            borderStyle: "dashed",
-          }}
-        />
-      </div>
     </div>
   );
 };

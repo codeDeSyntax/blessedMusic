@@ -3,9 +3,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export type CurrentScreen = 'Home' | 'Songs' | 'create' | 'edit' | 'Presentation' | 
   'instRoom' | 'categorize' | 'userguide' | 'backgrounds' | 'bible' | 'mpresenter';
 
-export type Theme = 'light' | 'dark' | 'creamy';
+export type Theme = 'dark' | 'light' | 'creamy';
 
-interface AppState {
+export interface AppState {
   currentScreen: CurrentScreen;
   theme: Theme;
   presentationbgs: string[];
@@ -21,7 +21,7 @@ const initialState: AppState = {
   currentScreen: (localStorage.getItem("lastScreen") as CurrentScreen) || "Home",
   theme: (localStorage.getItem("theme") as Theme) || "creamy",
   presentationbgs: [],
-  bibleBgs: [],
+  bibleBgs: [], // Initialize as empty since we'll only use custom images
   isFullscreen: false,
   windowDimensions: {
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
@@ -47,6 +47,9 @@ const appSlice = createSlice({
     setBibleBgs: (state, action: PayloadAction<string[]>) => {
       state.bibleBgs = action.payload;
     },
+    clearBibleBgs: (state) => {
+      state.bibleBgs = [];
+    },
     setWindowDimensions: (state, action: PayloadAction<{ width: number; height: number }>) => {
       state.windowDimensions = action.payload;
     },
@@ -71,6 +74,7 @@ export const {
   setTheme,
   setPresentationBgs,
   setBibleBgs,
+  clearBibleBgs,
   setWindowDimensions,
   toggleFullscreen,
   minimizeApp,

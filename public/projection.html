@@ -115,6 +115,7 @@
       let songTitle = "";
       let fontSizeMultiplier = 0.05;
       let baseFontSize = 30; // Much larger base font size for visibility
+      let isExternalDisplay = false;
 
       // Helper function to safely access localStorage
       const getLocalStorageItem = (key, defaultValue = null) => {
@@ -666,6 +667,54 @@
         loadBackgroundImage();
         window.api.onDisplaySong(handleSongData);
       }
+
+      // Add display info listener
+      window.api.onDisplayInfo((info) => {
+        isExternalDisplay = info.isExternalDisplay;
+        const container = document.getElementById('contentContainer');
+        
+        if (!isExternalDisplay) {
+          // Show warning if not using external display
+          container.innerHTML = `
+            <div class="display-warning">
+              <h2>Test Mode - No External Display</h2>
+              <p>Currently running in test mode on the main display.</p>
+              <p>Connect an external display (projector/screen) for full projection mode.</p>
+              <p>This window will automatically use the external display when connected.</p>
+            </div>
+          `;
+        }
+      });
+
+      // Update the display-song handler to show display status
+      window.api.onDisplaySong((songData) => {
+        if (!songData) {
+          console.error("No song data received");
+          return;
+        }
+
+        try {
+          songTitle = songData.title || "Untitled";
+          const content = songData.content;
+          
+          // Parse and display the song content
+          songSections = parseSongContent(content);
+          displayCurrentSection();
+          
+          // Show display mode indicator briefly
+          const container = document.getElementById('contentContainer');
+          const modeIndicator = document.createElement('div');
+          modeIndicator.className = 'mode-indicator';
+          modeIndicator.textContent = isExternalDisplay ? 'External Display Mode' : 'Test Mode';
+          container.appendChild(modeIndicator);
+          
+          setTimeout(() => {
+            modeIndicator.remove();
+          }, 2000);
+        } catch (error) {
+          console.error("Error processing song data:", error);
+        }
+      });
     </script>
   </body>
 </html>

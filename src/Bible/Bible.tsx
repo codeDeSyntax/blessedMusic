@@ -6,12 +6,13 @@ import SettingsModal from "./components/SettingsModal";
 import ShortcutsModal from "./components/ShortcutsModal";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
-import { TRANSLATIONS, setActiveFeature } from "@/store/slices/bibleSlice";
+import { TRANSLATIONS, setActiveFeature, setFullScreen } from "@/store/slices/bibleSlice";
 import { setBibleBgs } from "@/store/slices/appSlice";
 
 const Biblelayout: React.FC = () => {
   const dispatch = useAppDispatch();
   const { theme, currentTranslation, activeFeature } = useAppSelector((state) => state.bible);
+  const isFullScreen = useAppSelector((state) => state.bible.isFullScreen);
   const { initializeBibleData } = useBibleOperations();
   const initializationRef = useRef(false);
 
@@ -101,24 +102,34 @@ const Biblelayout: React.FC = () => {
         case '?':
           dispatch(setActiveFeature(activeFeature === 'shortcuts' ? null : 'shortcuts'));
           break;
+        case 'f':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            dispatch(setFullScreen(!isFullScreen));
+          }
+          break;
         case 'escape':
-          dispatch(setActiveFeature(null));
+          if (isFullScreen) {
+            dispatch(setFullScreen(false));
+          } else {
+            dispatch(setActiveFeature(null));
+          }
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dispatch, activeFeature]);
+  }, [dispatch, activeFeature, isFullScreen]);
 
   return (
     <div
-      className="h-screen flex flex-col overflow-y-scroll bg-white dark:bg-ltgray no-scrollbar text-gray-900 dark:text-gray-100"
+      className={`h-screen flex flex-col overflow-hidden bg-white dark:bg-ltgray no-scrollbar text-gray-900 dark:text-gray-100`}
       id="biblediv"
     >
-      <TitleBar />
+      {!isFullScreen && <TitleBar />}
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className={`flex-1 flex overflow-hidden ${isFullScreen ? '' : 'mt-1'}`}>
         {/* Main content */}
         <main className="flex-1">
           <ScriptureContent />

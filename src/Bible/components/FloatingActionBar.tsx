@@ -30,6 +30,7 @@ interface FloatingActionBarProps {
   isDarkMode: boolean;
   handlePreviousChapter: () => void;
   handleNextChapter: () => void;
+  hideLayoutButtons?: boolean;
 }
 
 const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
@@ -55,6 +56,7 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   isDarkMode,
   handlePreviousChapter,
   handleNextChapter,
+  hideLayoutButtons = false,
 }) => {
   const { toggleActiveFeature } = useTheme();
   const dispatch = useAppDispatch();
@@ -293,29 +295,31 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
               </button>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-2">
-              <button
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  viewMode === "block"
-                    ? "bg-primary text-white shadow"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-                onClick={() => setViewMode("block")}
-              >
-                <LayoutGrid size={16} />
-              </button>
-              <button
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  viewMode === "paragraph"
-                    ? "bg-primary text-white shadow"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-                onClick={() => setViewMode("paragraph")}
-              >
-                <AlignLeft size={16} />
-              </button>
-            </div>
+            {/* Layout Controls - Only show if not hidden */}
+            {!hideLayoutButtons && (
+              <div className="flex items-center gap-2 ml-2">
+                <button
+                  onClick={() => setViewMode("block")}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    viewMode === "block"
+                      ? "bg-primary text-white"
+                      : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
+                  }`}
+                >
+                  <Grid3X3 size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode("paragraph")}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    viewMode === "paragraph"
+                      ? "bg-primary text-white"
+                      : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
+                  }`}
+                >
+                  <AlignLeft size={16} />
+                </button>
+              </div>
+            )}
 
             {/* Divider */}
             <div className="h-6 mx-2 w-px bg-gray-200 dark:bg-gray-700" />

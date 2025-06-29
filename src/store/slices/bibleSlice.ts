@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { AppDispatch } from '..';
 
 // Define types for our Bible data
 export interface Verse {
@@ -71,7 +72,7 @@ const newTestamentBooks: Book[] = [
 
 const allBooks: Book[] = [...oldTestamentBooks, ...newTestamentBooks];
 
-interface BibleState {
+export interface BibleState {
   // App state
   theme: string;
   currentScreen: string;
@@ -112,6 +113,14 @@ interface BibleState {
   // Loading states
   isLoading: boolean;
   error: string | null;
+
+  // New state fields
+  verseByVerseMode: boolean;
+  isFullScreen: boolean;
+  imageBackgroundMode: boolean;
+
+  // New state fields
+  selectedBackground: string | null;
 }
 
 const initialState: BibleState = {
@@ -169,6 +178,14 @@ const initialState: BibleState = {
   // Loading states
   isLoading: false,
   error: null,
+
+  // New state fields
+  verseByVerseMode: false,
+  isFullScreen: false,
+  imageBackgroundMode: false,
+
+  // New state fields
+  selectedBackground: null,
 };
 
 const bibleSlice = createSlice({
@@ -346,6 +363,26 @@ const bibleSlice = createSlice({
       };
       Object.assign(state, newState);
     },
+
+    // New state actions
+    setVerseByVerseMode: (state, action: PayloadAction<boolean>) => {
+      state.verseByVerseMode = action.payload;
+      localStorage.setItem('bibleVerseByVerseMode', String(action.payload));
+    },
+    setImageBackgroundMode: (state, action: PayloadAction<boolean>) => {
+      state.imageBackgroundMode = action.payload;
+      localStorage.setItem('bibleImageBackgroundMode', String(action.payload));
+    },
+    setFullScreen: (state, action: PayloadAction<boolean>) => {
+      state.isFullScreen = action.payload;
+      localStorage.setItem('bibleFullScreen', String(action.payload));
+    },
+
+    // New state actions
+    setSelectedBackground: (state, action: PayloadAction<string | null>) => {
+      state.selectedBackground = action.payload;
+      localStorage.setItem('bibleSelectedBackground', action.payload || '');
+    },
   },
 });
 
@@ -383,6 +420,38 @@ export const {
   setError,
   navigateToVerse,
   resetBibleState,
+  setVerseByVerseMode,
+  setImageBackgroundMode,
+  setFullScreen,
+  setSelectedBackground,
 } = bibleSlice.actions;
+
+export const loadBibleState = () => {
+  return (dispatch: AppDispatch) => {
+    // Load verse-by-verse mode
+    const savedVerseByVerseMode = localStorage.getItem('bibleVerseByVerseMode');
+    if (savedVerseByVerseMode !== null) {
+      dispatch(setVerseByVerseMode(savedVerseByVerseMode === 'true'));
+    }
+
+    // Load image background mode
+    const savedImageBackgroundMode = localStorage.getItem('bibleImageBackgroundMode');
+    if (savedImageBackgroundMode !== null) {
+      dispatch(setImageBackgroundMode(savedImageBackgroundMode === 'true'));
+    }
+
+    // Load fullscreen mode
+    const savedFullScreen = localStorage.getItem('bibleFullScreen');
+    if (savedFullScreen !== null) {
+      dispatch(setFullScreen(savedFullScreen === 'true'));
+    }
+
+    // Load selected background
+    const savedBackground = localStorage.getItem('bibleSelectedBackground');
+    if (savedBackground) {
+      dispatch(setSelectedBackground(savedBackground));
+    }
+  };
+};
 
 export default bibleSlice.reducer;

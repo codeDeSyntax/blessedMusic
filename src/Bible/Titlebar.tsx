@@ -105,7 +105,7 @@ const TitleBar: React.FC = () => {
                 backgroundImage: isDarkMode
                   ? `linear-gradient(to bottom,
              rgba(255, 255, 255, 0%) 0%,
-             rgba(0, 0, 0, 5) 60%),
+             rgba(25, 28, 23, 5) 60%),
              url(./wood6.jpg)`
                   : undefined,
                 backgroundRepeat: "repeat",

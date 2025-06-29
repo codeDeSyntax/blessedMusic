@@ -116,43 +116,64 @@ async function createMainWindow() {
 async function createProjectionWindow() {
   const displays = screen.getAllDisplays();
   let projectionDisplay = null;
+  let useMainDisplay = false;
 
-    // Find external display (projector)
-    if (displays.length > 1) {
-      projectionDisplay = displays.find(display => 
-        display.bounds.x !== 0 || display.bounds.y !== 0
-      );
-    }
+  // Find external display (projector)
+  if (displays.length > 1) {
+    projectionDisplay = displays.find(display => 
+      display.bounds.x !== 0 || display.bounds.y !== 0
+    );
+  } else {
+    // Fallback to main display if no external display is found
+    useMainDisplay = true;
+    projectionDisplay = displays[0];
+  }
+
   // Create a new projection window
   projectionWin = new BrowserWindow({
     title: "Projection",
-    x: projectionDisplay?.bounds.x,
-    y: projectionDisplay?.bounds.y,
-    width: projectionDisplay?.bounds.width,
-    height: projectionDisplay?.bounds.height,
+    x: useMainDisplay ? undefined : projectionDisplay?.bounds.x,
+    y: useMainDisplay ? undefined : projectionDisplay?.bounds.y,
+    width: projectionDisplay?.bounds.width || 800,
+    height: projectionDisplay?.bounds.height || 600,
     frame: false,
-    show: false,
-    minimizable: false,
-    fullscreen: true,
+    show: true,
+    minimizable: true,
+    fullscreen: true, // Only go fullscreen on external display
     alwaysOnTop: false,
-    skipTaskbar: true,
-    icon: path.join("./dist/", "music2.png"),
+    skipTaskbar: false, // Show in taskbar for easier access
+    icon: path.join(process.env.VITE_PUBLIC || "", "icon.png"),
     webPreferences: {
       preload,
-      devTools: false,
-      nodeIntegration: true,
+      nodeIntegration: false,
       contextIsolation: true,
       zoomFactor: 1.0
     },
   });
 
+  // Send display info to renderer
+  projectionWin.webContents.on('did-finish-load', () => {
+    projectionWin?.webContents.send('display-info', {
+      isExternalDisplay: !useMainDisplay,
+      displayBounds: projectionDisplay?.bounds
+    });
+  });
+
   if (VITE_DEV_SERVER_URL) {
     projectionWin.loadURL(`${VITE_DEV_SERVER_URL}/projection.html`);
-    projectionWin.setSkipTaskbar(true);
-    // projectionWin.webContents.openDevTools();
   } else {
     projectionWin.loadFile(projectionHtml);
   }
+
+  // Show window once loaded
+  projectionWin.once('ready-to-show', () => {
+    projectionWin?.show();
+    // If using main display, position it nicely
+    if (useMainDisplay) {
+      projectionWin?.setSize(800, 600);
+      projectionWin?.center();
+    }
+  });
 
   // Track window state changes
   projectionWin.on("minimize", () => {
@@ -163,21 +184,9 @@ async function createProjectionWindow() {
     isProjectionMinimized = false;
   });
 
-  // Critical: Reset reference when window is closed
   projectionWin.on("closed", () => {
     projectionWin = null;
     isProjectionMinimized = false;
-  });
-
-  projectionWin.webContents.on("before-input-event", (event, input) => {
-    if (
-      input.key === "F12" || // Disable F12 for dev tools
-      (input.key === "I" && input.control && input.shift) || // Disable Ctrl+Shift+I or Cmd+Opt+I
-      (input.key === "R" && input.control) || // Disable Ctrl+R for reload
-      (input.key === "R" && input.meta) // Disable Cmd+R for reload on macOS
-    ) {
-      event.preventDefault();
-    }
   });
 
   return projectionWin;
