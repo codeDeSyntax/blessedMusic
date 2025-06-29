@@ -218,12 +218,13 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
       <div className="flex-1 flex items-center justify-center w-full px-4 md:px-8 lg:px-8">
         <div 
           className={`text-center max-w-6xl leading-relaxed font-bold  ${
-            showBackground ? 'text-white' : 'text-black dark:text-white'
+            showBackground ? 'text-white' : 'text-[#535353] dark:text-white'
           }`}
           style={{
             fontFamily: fontFamily,
             fontWeight: fontWeight,
             // color: verseTextColor,
+            lineHeight: '1.4',
             fontSize: `${getFontSize()}`
           }}
         >
@@ -232,7 +233,7 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
       </div>
 
       {/* Navigation Controls */}
-      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-8">
+      <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 flex items-center gap-8">
         <button
           onClick={handlePrevVerse}
           disabled={currentVerse === 1 && currentChapter === 1}

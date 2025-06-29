@@ -147,8 +147,8 @@ const SettingsModal: React.FC = () => {
                 <input
                   type="range"
                   min={2}
-                  max={8}
-                  step={1}
+                  max={10}
+                  // step={1}
                   value={parseInt(fontSize)}
                   onChange={(e) => dispatch(setFontSize(e.target.value))}
                   className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"

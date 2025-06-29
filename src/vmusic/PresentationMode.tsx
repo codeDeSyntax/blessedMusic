@@ -149,12 +149,12 @@ const SongPresentation = () => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.key === "ArrowRight") handleNext();
       else if (event.key === "ArrowLeft") handlePrev();
-      else if (event.key === "Escape") setCurrentScreen("Songs");
+      else if (event.key === "Escape") dispatch(setCurrentScreen("Songs"));
     };
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [handleNext, handlePrev, setCurrentScreen]);
+  }, [handleNext, handlePrev, dispatch]);
 
   // Loading state
   if (!selectedSong || songPages.length === 0) {

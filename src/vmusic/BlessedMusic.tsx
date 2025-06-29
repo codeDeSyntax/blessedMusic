@@ -179,7 +179,7 @@ const BlessedMusic = () => {
   // Navigation functions using dispatch
   const handleEditClick = () => dispatch(setCurrentScreen("edit"));
   const handleCreateClick = () => dispatch(setCurrentScreen("create"));
-  const handlePresentationClick = () => dispatch(setCurrentScreen("backgrounds"));
+  const handlePresentationClick = () => dispatch(setCurrentScreen("Presentation"));
 
   return (
     <AppTour>

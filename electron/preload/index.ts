@@ -1,5 +1,6 @@
 import { ipcRenderer, contextBridge, dialog } from "electron";
 import { Presentation } from "@/types";
+import { DisplayInfo } from "@/types/electron-api";
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args: Parameters<typeof ipcRenderer.on>) {
@@ -58,7 +59,7 @@ minimizeProjection: () => ipcRenderer.send('minimizeProjection'),
       ipcRenderer.removeAllListeners("display-song");
     };
   },
-  onDisplayInfo: (callback: (info: { isExternalDisplay: boolean, displayBounds: any }) => void) => {
+  onDisplayInfo: (callback: (info: DisplayInfo) => void) => {
     ipcRenderer.on("display-info", (event, info) => callback(info));
     return () => {
       ipcRenderer.removeAllListeners("display-info");

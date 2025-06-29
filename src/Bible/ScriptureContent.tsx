@@ -485,7 +485,7 @@ const ScriptureContent: React.FC = () => {
                 verses={verses}
                 verseRefs={verseRefs}
                 selectedVerse={selectedVerse}
-                getFontSize={() => `${fontSize}rem`}
+                getFontSize={() => `${Number(fontSize) - 1.5}rem`}
                 fontFamily={fontFamily}
                 fontWeight={fontWeight}
                 theme={theme}
