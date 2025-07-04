@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { setCurrentChapter, setCurrentVerse } from '@/store/slices/bibleSlice';
-import { useBibleOperations } from '@/features/bible/hooks/useBibleOperations';
-import FloatingActionBar from './FloatingActionBar';
+import React, { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { setCurrentChapter, setCurrentVerse } from "@/store/slices/bibleSlice";
+import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
+import FloatingActionBar from "./FloatingActionBar";
 
 interface VerseByVerseViewProps {
-  onNavigate: (direction: 'prev' | 'next') => void;
+  onNavigate: (direction: "prev" | "next") => void;
   currentBook: string;
   currentChapter: number;
   currentVerse: number | null;
@@ -70,38 +70,46 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { getCurrentChapterVerses } = useBibleOperations();
-  
-//   const fontSize = useAppSelector((state) => state.bible.fontSize);
-//   const fontWeight = useAppSelector((state) => state.bible.fontWeight);
-//   const fontFamily = useAppSelector((state) => state.bible.fontFamily);
+
+  //   const fontSize = useAppSelector((state) => state.bible.fontSize);
+  //   const fontWeight = useAppSelector((state) => state.bible.fontWeight);
+  //   const fontFamily = useAppSelector((state) => state.bible.fontFamily);
   const verseTextColor = useAppSelector((state) => state.bible.verseTextColor);
   const bibleBgs = useAppSelector((state) => state.app.bibleBgs);
 
   const [currentChapterVerses, setCurrentChapterVerses] = useState<any[]>([]);
-  const selectedBackground = useAppSelector((state) => state.bible.selectedBackground);
+  const selectedBackground = useAppSelector(
+    (state) => state.bible.selectedBackground
+  );
 
   // Initialize with first verse if none selected
   useEffect(() => {
     const verses = getCurrentChapterVerses();
     setCurrentChapterVerses(verses || []);
-    
+
     // If no verse is selected, select the first verse
     if (!currentVerse && verses && verses.length > 0) {
       dispatch(setCurrentVerse(1));
     }
-  }, [currentBook, currentChapter, getCurrentChapterVerses, currentVerse, dispatch]);
+  }, [
+    currentBook,
+    currentChapter,
+    getCurrentChapterVerses,
+    currentVerse,
+    dispatch,
+  ]);
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') {
+    if (e.key === "ArrowLeft") {
       handlePrevVerse();
-    } else if (e.key === 'ArrowRight') {
+    } else if (e.key === "ArrowRight") {
       handleNextVerse();
     }
   };
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentVerse, currentChapter]);
 
   const getChapterVerseCount = (chapter: number) => {
@@ -119,17 +127,18 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
       dispatch(setCurrentVerse(currentVerse - 1));
     } else if (currentChapter > 1) {
       const prevChapter = currentChapter - 1;
-      
+
       dispatch(setCurrentChapter(prevChapter));
-      
+
       setTimeout(() => {
         const verses = getCurrentChapterVerses();
         if (verses && verses.length > 0) {
           const lastVerseOfPrevChapter = verses.length;
           dispatch(setCurrentVerse(1));
-          
-          const notification = document.createElement('div');
-          notification.className = 'fixed top-4 right-4 bg-black/80 text-white px-4 py-2 rounded-lg z-50';
+
+          const notification = document.createElement("div");
+          notification.className =
+            "fixed top-4 right-4 bg-black/80 text-white px-4 py-2 rounded-lg z-50";
           notification.textContent = `Moving to ${currentBook} ${prevChapter}:${lastVerseOfPrevChapter}`;
           document.body.appendChild(notification);
           setTimeout(() => notification.remove(), 2000);
@@ -144,13 +153,14 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
       dispatch(setCurrentVerse(currentVerse + 1));
     } else if (currentChapter < chapterCount) {
       const nextChapter = currentChapter + 1;
-      
+
       dispatch(setCurrentChapter(nextChapter));
-      
+
       dispatch(setCurrentVerse(1));
-      
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 right-4 bg-black/80 text-white px-4 py-2 rounded-lg z-50';
+
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-black/80 text-white px-4 py-2 rounded-lg z-50";
       notification.textContent = `Moving to ${currentBook} ${nextChapter}:1`;
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 2000);
@@ -160,33 +170,43 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
   // Get current verses for display and navigation
   const verses = getCurrentChapterVerses();
   const totalVerses = verses ? verses.length : 0;
-  
+
   // Always ensure we have a verse to display
   const displayVerse = currentVerse || 1;
-  const currentVerseText = verses && verses[displayVerse - 1] ? 
-    typeof verses[displayVerse - 1] === 'string' ? 
-      String(verses[displayVerse - 1]) : 
-      String((verses[displayVerse - 1] as Verse).text || '') : '';
+  const currentVerseText =
+    verses && verses[displayVerse - 1]
+      ? typeof verses[displayVerse - 1] === "string"
+        ? String(verses[displayVerse - 1])
+        : String((verses[displayVerse - 1] as Verse).text || "")
+      : "";
 
   // Only allow background if in fullscreen
   const showBackground = imageBackgroundMode && isFullScreen;
 
- 
-
   return (
-    <div 
+    <div
       className={`relative flex flex-col items-center justify-start min-h-screen w-full overflow-x-hidden overflow-y-scroll no-scrollbar ${
-        showBackground ? 'bg-cover bg-center bg-no-repeat' : 'bg-white dark:bg-ltgray'
+        showBackground
+          ? "bg-cover bg-center bg-no-repeat"
+          : "bg-white dark:bg-ltgray"
       }`}
-      style={showBackground ? { 
-        backgroundImage: `url(${selectedBackground || bibleBgs[0]})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      } : {}}
+      style={
+        showBackground
+          ? {
+              backgroundImage: `url(${selectedBackground || bibleBgs[0]})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }
+          : {}
+      }
     >
       {/* Floating Action Bar */}
-      <div className={`absolute ${isFullScreen ? 'top-0' : 'top-12'} left-0 right-0 z-40`}>
+      <div
+        className={`absolute ${
+          isFullScreen ? "top-0" : "top-12"
+        } left-0 right-0 z-40`}
+      >
         <FloatingActionBar
           currentBook={currentBook}
           currentChapter={currentChapter}
@@ -211,25 +231,38 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
           handlePreviousChapter={handlePreviousChapter}
           handleNextChapter={handleNextChapter}
           hideLayoutButtons={true}
+          isVerseByVerseView={true}
+          hasBackgroundImage={showBackground}
         />
       </div>
 
       {/* Verse Display */}
-      <div className="flex-1 flex items-center justify-center w-full px-4 md:px-8 lg:px-8">
-        <div 
-          className={`text-center max-w-6xl leading-relaxed font-bold  ${
-            showBackground ? 'text-white' : 'text-[#535353] dark:text-white'
-          }`}
-          style={{
-            fontFamily: fontFamily,
-            fontWeight: fontWeight,
-            // color: verseTextColor,
-            lineHeight: '1.4',
-            fontSize: `${getFontSize()}`
-          }}
-        >
-          {currentVerseText}
-        </div>
+      <div className="flex-1 flex items-center justify-center w-full px-8 md:px-8 lg:px-8">
+        <AnimatePresence>
+          {!(
+            isBookDropdownOpen ||
+            isChapterDropdownOpen ||
+            isVerseDropdownOpen
+          ) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`text-center max-w-3xl px-4 md:max-w-6xl leading-relaxed font-bold ${
+                showBackground ? "text-white" : "text-[#535353] dark:text-white"
+              }`}
+              style={{
+                fontFamily: fontFamily,
+                fontWeight: fontWeight,
+                lineHeight: "1.4",
+                fontSize: `${getFontSize()}`,
+              }}
+            >
+              {currentVerseText}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Navigation Controls */}
@@ -238,20 +271,30 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
           onClick={handlePrevVerse}
           disabled={currentVerse === 1 && currentChapter === 1}
           className={`p-4 rounded-full ${
-            showBackground ? 'bg-black/40 text-white' : 'bg-white dark:bg-[#3d332a] text-stone-600 dark:text-stone-300'
+            showBackground
+              ? "bg-black/40 text-white"
+              : "bg-white dark:bg-[#3d332a] text-stone-600 dark:text-stone-300"
           } hover:bg-opacity-80 transition-colors duration-200 ${
-            currentVerse === 1 && currentChapter === 1 ? 'opacity-50 cursor-not-allowed' : ''
+            currentVerse === 1 && currentChapter === 1
+              ? "opacity-50 cursor-not-allowed"
+              : ""
           }`}
         >
           <ChevronLeft size={24} />
         </button>
         <button
           onClick={handleNextVerse}
-          disabled={currentVerse === totalVerses && currentChapter === chapterCount}
+          disabled={
+            currentVerse === totalVerses && currentChapter === chapterCount
+          }
           className={`p-4 rounded-full ${
-            showBackground ? 'bg-black/40 text-white' : 'bg-white dark:bg-[#3d332a] text-stone-600 dark:text-stone-300'
+            showBackground
+              ? "bg-black/40 text-white"
+              : "bg-white dark:bg-[#3d332a] text-stone-600 dark:text-stone-300"
           } hover:bg-opacity-80 transition-colors duration-200 ${
-            currentVerse === totalVerses && currentChapter === chapterCount ? 'opacity-50 cursor-not-allowed' : ''
+            currentVerse === totalVerses && currentChapter === chapterCount
+              ? "opacity-50 cursor-not-allowed"
+              : ""
           }`}
         >
           <ChevronRight size={24} />
@@ -260,7 +303,11 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
 
       {/* Display current verse number and total verses */}
       <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 text-sm">
-        <span className={showBackground ? 'text-white' : 'text-gray-600 dark:text-gray-300'}>
+        <span
+          className={
+            showBackground ? "text-white" : "text-gray-600 dark:text-gray-300"
+          }
+        >
           Verse {displayVerse} of {totalVerses}
         </span>
       </div>
@@ -268,4 +315,4 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
   );
 };
 
-export default VerseByVerseView; 
+export default VerseByVerseView;

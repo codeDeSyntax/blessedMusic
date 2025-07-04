@@ -18,7 +18,7 @@ type PresentationLayoutProps = {
 export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
   children,
   title,
-  hasBackButton = false,
+  hasBackButton = true,
   onBackClick,
 }) => {
   const dispatch = useAppDispatch();
@@ -26,25 +26,26 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
   const handleClose = () => window.api?.closeApp?.();
   const handleMaximize = () => window.api?.maximizeApp?.();
   const handleMinimize = () => window.api?.minimizeApp?.();
+  
+  const handleBack = () => {
+    if (onBackClick) {
+      onBackClick();
+    } else {
+      dispatch(setCurrentScreen("bible"));
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // switch (event.key) {
-      //   case "Esc":
-      //     setCurrentScreen("bible");
-      //     break;
-      //   default:
-      //     break;
-      // }
       if (event.key === "Space") {
-        dispatch(setCurrentScreen("bible"));
+        handleBack();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [onBackClick]);
   //   const { isPresentationMode } = usePresentationContext();/
 
   // Don't show window controls in presentation mode
@@ -53,37 +54,37 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
   //   }
 
   return (
-    <div className="flex flex-col h-screen  bg-white dark:bg-black text-black dark:text-white">
+    <div className="flex flex-col h-screen bg-black text-[#9a674a] dark:text-white">
       {/* Window Controls */}
-      <div className="flex items-center justify-between px-2 h-[5%] z-40 bg-gray-100 dark:bg-ltgray">
-        <div className="flex items-center">
+      <div className="flex items-center justify-between px-2 h-[5%] z-40 bg-transparent">
+        <div className="flex items-center gap-3">
           {hasBackButton && (
             <button
-              onClick={onBackClick}
-              className="mr-4 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800"
+              onClick={handleBack}
+              className="p-2 rounded-full hover:bg-[#9a674a]/10 dark:hover:bg-gray-800 text-[#9a674a] dark:text-white transition-colors duration-200"
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={18} />
             </button>
           )}
-          <h1 className="text-lg font-semibold">{title}</h1>
+          <h1 className="text-lg font-semibold text-[#9a674a] dark:text-white">{title}</h1>
         </div>
-        <div className="flex space-x-2 items-center justce">
+        <div className="flex space-x-2 items-center">
           <ThemeToggle />
           <div
             onClick={handleMinimize}
-            className=" rounded-full h-6 w-6 flex items-center justify-center  hover:bg-gray-200 dark:hover:bg-gray-800"
+            className="rounded-full h-6 w-6 flex items-center justify-center text-[#9a674a] dark:text-white hover:bg-[#9a674a]/10 dark:hover:bg-gray-800"
           >
             <Minus size={16} />
           </div>
           <div
             onClick={handleMaximize}
-            className=" rounded-full h-6 w-6 flex items-center justify-center  hover:bg-gray-200 dark:hover:bg-gray-800"
+            className="rounded-full h-6 w-6 flex items-center justify-center text-[#9a674a] dark:text-white hover:bg-[#9a674a]/10 dark:hover:bg-gray-800"
           >
             <Maximize2 size={16} />
           </div>
           <div
             onClick={handleClose}
-            className=" rounded-full h-6 w-6 flex items-center justify-center   hover:bg-red-200 dark:hover:bg-red-900"
+            className="rounded-full h-6 w-6 flex items-center justify-center text-[#9a674a] dark:text-white hover:bg-red-200 dark:hover:bg-red-900"
           >
             <X size={16} />
           </div>
@@ -91,7 +92,7 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <div className=" overflow-y-scroll no-scrollbar p-3 h-[95%]">
+      <div className="overflow-y-hidden no-scrollbar px-3 h-[94%]  rounded-t-3xl  bg-black">
         {children}
       </div>
     </div>

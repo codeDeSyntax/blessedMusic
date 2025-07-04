@@ -31,6 +31,8 @@ interface FloatingActionBarProps {
   handlePreviousChapter: () => void;
   handleNextChapter: () => void;
   hideLayoutButtons?: boolean;
+  isVerseByVerseView?: boolean;
+  hasBackgroundImage?: boolean;
 }
 
 const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
@@ -57,11 +59,16 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   handlePreviousChapter,
   handleNextChapter,
   hideLayoutButtons = false,
+  isVerseByVerseView = false,
+  hasBackgroundImage = false,
 }) => {
   const { toggleActiveFeature } = useTheme();
   const dispatch = useAppDispatch();
   const activeFeature = useAppSelector((state) => state.bible.activeFeature);
   const [isVisible, setIsVisible] = useState(false);
+  const [bookSearchQuery, setBookSearchQuery] = useState('');
+  const [filteredOldTestament, setFilteredOldTestament] = useState(bookList.filter((book) => book.testament === "old"));
+  const [filteredNewTestament, setFilteredNewTestament] = useState(bookList.filter((book) => book.testament === "new"));
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -76,6 +83,16 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isBookDropdownOpen, isChapterDropdownOpen, isVerseDropdownOpen]);
+
+  useEffect(() => {
+    const query = bookSearchQuery.toLowerCase();
+    setFilteredOldTestament(
+      bookList.filter((book) => book.testament === "old").filter(book => book.name.toLowerCase().includes(query))
+    );
+    setFilteredNewTestament(
+      bookList.filter((book) => book.testament === "new").filter(book => book.name.toLowerCase().includes(query))
+    );
+  }, [bookSearchQuery]);
 
   const oldTestamentBooks = bookList.filter((book) => book.testament === "old");
   const newTestamentBooks = bookList.filter((book) => book.testament === "new");
@@ -108,7 +125,7 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   };
 
   return (
-    <div className="fixed top-12 left-0 right-0 z-40 flex justify-center pointer-events-none">
+    <div className="fixed top-12 left-0 right-0 z-50 flex justify-center pointer-events-none">
       <AnimatePresence>
         {isVisible && (
           <motion.div
@@ -116,8 +133,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="flex items-center gap-4 px-6 py-3 rounded-full bg-[#f9fafb] dark:bg-[#30261d]  shadow-lg backdrop-blur-sm bg-f9fafb  pointer-events-auto"
-            // style={{ backgroundColor: isDarkMode ? 'rgb(31, 31, 31)' : '#f9fafb' }}
+            className={`flex items-center gap-4 px-6 py-3 rounded-full ${
+              isVerseByVerseView && hasBackgroundImage
+                ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md backdrop-saturate-150'
+                : 'bg-[#f9fafb] dark:bg-[#30261d] bg-opacity-5 backdrop-blur-sm bg-f9fafb'
+            } shadow-lg pointer-events-auto relative`}
           >
             {/* Navigation Controls */}
             <div className="flex items-center gap-3">
@@ -128,7 +148,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   currentChapter <= 1
                     ? 'text-stone-300 dark:text-stone-500 cursor-not-allowed'
-                    : 'text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300'
+                    : `text-stone-400 dark:text-stone-400 ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md hover:bg-white/20 dark:hover:bg-black/20'
+                          : 'bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300'
+                      }`
                 }`}
               >
                 <ChevronLeft size={16} />
@@ -137,35 +161,88 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
               {/* Book Dropdown */}
               <div className="relative book-dropdown">
                 <button
-                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#3d332a] focus:ring-0 ring-gray-500 focus:outline-none shadow hover:bg-primary/10 dark:hover:bg-[#4a3e34] transition-colors duration-200 text-stone-600 dark:text-stone-300"
+                  className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg focus:ring-0 ring-gray-500 focus:outline-none shadow transition-colors duration-200 ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/10 dark:bg-black/10 backdrop-blur-3xl text-white hover:bg-white/20 dark:hover:bg-black/20'
+                      : 'bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] text-stone-600 dark:text-stone-300'
+                  }`}
                   onClick={() => {
                     setIsBookDropdownOpen(!isBookDropdownOpen);
                     setIsChapterDropdownOpen(false);
                     setIsVerseDropdownOpen(false);
                   }}
                 >
-                  <span className="text-[12px] font-medium font-bitter text-stone-500 dark:text-gray-50">
+                  <span className={`text-[12px] font-medium font-bitter ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'text-white'
+                      : 'text-stone-500 dark:text-gray-50'
+                  }`}>
                     {currentBook}
                   </span>
                   <ChevronDown
                     size={14}
-                    className={`transition-transform duration-200 text-gray-400 ${
-                      isBookDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`transition-transform duration-200 ${
+                      isVerseByVerseView && hasBackgroundImage ? 'text-white/70' : 'text-gray-400'
+                    } ${isBookDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
+                {/* Book Dropdown Content */}
                 {isBookDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-[38vw] bg-white dark:bg-[#30261d] rounded-3xl shadow-lg z-10 max-h-96 overflow-y-auto no-scrollbar p-4">
+                  <div className={`absolute left-0 mt-2 w-[38vw] ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/10 dark:bg-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-xl'
+                      : 'bg-white dark:bg-[#30261d]'
+                  } rounded-3xl shadow-lg z-[60] max-h-96 overflow-y-auto no-scrollbar p-4`}>
                     <div className="p-3">
-                      <h2 className="text-sm font-semibold mb-2 font-serif text-stone-500 dark:text-stone-400">Old Testament</h2>
+                      {/* Search Input */}
+                      <div className={`relative mb-4 group border-none w-[50%] ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? ''
+                          : 'border border-gray-200 dark:border-gray-700'
+                      } rounded-xl overflow-hidden`}>
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                          <Search size={16} className={
+                            isVerseByVerseView && hasBackgroundImage
+                              ? "text-white/50"
+                              : "text-gray-400 dark:text-gray-500"
+                          } />
+                        </div>
+                        <input
+                          type="text"
+                          value={bookSearchQuery}
+                          onChange={(e) => setBookSearchQuery(e.target.value)}
+                          placeholder="Search books..."
+                          className={`w-full py-2.5 pl-10 pr-4 border-none ${
+                            isVerseByVerseView && hasBackgroundImage
+                              ? 'bg-white/5 hover:bg-white/10 focus:bg-white/10 text-white placeholder-white/50'
+                              : 'bg-gray-50/50 dark:bg-gray-800/20 hover:bg-gray-100/50 dark:hover:bg-gray-800/30 focus:bg-gray-100/50 dark:focus:bg-gray-800/30 text-stone-600 dark:text-stone-300 placeholder-stone-400 dark:placeholder-stone-500'
+                          } outline-none text-sm transition-colors duration-200`}
+                          autoFocus
+                        />
+                        <div className={`absolute bottom-0 left-0 w-full h-[1px] transition-transform duration-300 transform origin-left ${
+                          isVerseByVerseView && hasBackgroundImage
+                            ? 'bg-white/30'
+                            : 'bg-primary/30 dark:bg-primary/20'
+                        } scale-x-0 group-focus-within:scale-x-100`} />
+                      </div>
+
+                      <h2 className={`text-sm font-semibold mb-2 font-serif ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? 'text-white'
+                          : 'text-stone-500 dark:text-stone-400'
+                      }`}>Old Testament</h2>
                       <div className="grid grid-cols-3 gap-1 mb-4">
-                        {oldTestamentBooks.map((book) => (
+                        {filteredOldTestament.map((book) => (
                           <div
                             key={book.name}
-                            className={`p-2 text-[12px] flex items-center justify-center bg-white dark:bg-[#3d332a] shadow rounded-full transition-colors duration-150 ${
+                            className={`p-2 z-50 cursor-pointer  text-[12px] flex items-center justify-center shadow rounded-full transition-colors duration-150 ${
                               currentBook === book.name
-                                ? "bg-primary text-white dark:bg-primary dark:text-white font-medium ring-2 ring-primary/20 dark:ring-primary/40"
+                                ? isVerseByVerseView && hasBackgroundImage
+                                  ? "bg-white/50   text-white font-medium ring-1 ring-white/30 cursor-not-allowed "
+                                  : "bg-primary text-white dark:bg-primary dark:text-white font-medium ring-2 ring-primary/20 dark:ring-primary/40"
+                                : isVerseByVerseView && hasBackgroundImage
+                                ? "bg-white/10  text-white hover:bg-white/20 "
                                 : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] cursor-pointer hover:text-stone-700 dark:hover:text-stone-200"
                             }`}
                             onClick={() => handleBookSelect(book.name)}
@@ -174,16 +251,24 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                           </div>
                         ))}
                       </div>
-                      <h2 className="text-sm font-semibold mb-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-stone-400">
+                      <h2 className={`text-sm font-semibold mb-2 pt-2 border-t ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? 'border-white/20 text-white'
+                          : 'border-gray-200 dark:border-gray-700 text-stone-400'
+                      }`}>
                         New Testament
                       </h2>
                       <div className="grid grid-cols-3 gap-1">
-                        {newTestamentBooks.map((book) => (
+                        {filteredNewTestament.map((book) => (
                           <div
                             key={book.name}
-                            className={`p-2 text-[12px] flex items-center justify-center bg-white dark:bg-[#3d332a] shadow rounded-full transition-colors duration-150 ${
+                            className={`p-2 cursor-pointer text-[12px] flex items-center justify-center shadow rounded-full transition-colors duration-150 ${
                               currentBook === book.name
-                                ? "bg-primary text-white dark:bg-primary dark:text-white font-medium ring-2 ring-primary/20 dark:ring-primary/40"
+                                ? isVerseByVerseView && hasBackgroundImage
+                                  ? "bg-white/30 text-white font-medium ring-1 ring-white/30"
+                                  : "bg-primary text-white dark:bg-primary dark:text-white font-medium ring-2 ring-primary/20 dark:ring-primary/40"
+                                : isVerseByVerseView && hasBackgroundImage
+                                ? "bg-white/10 text-white hover:bg-white/20"
                                 : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] cursor-pointer hover:text-stone-700 dark:hover:text-stone-200"
                             }`}
                             onClick={() => handleBookSelect(book.name)}
@@ -200,33 +285,50 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
               {/* Chapter Dropdown */}
               <div className="relative chapter-dropdown">
                 <button
-                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#3d332a] focus:ring-0 ring-gray-500 focus:outline-none shadow hover:bg-primary/10 dark:hover:bg-[#4a3e34] transition-colors duration-200 text-stone-600 dark:text-stone-300"
+                  className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg focus:ring-0 ring-gray-500 focus:outline-none shadow transition-colors duration-200 ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md text-white hover:bg-white/20 dark:hover:bg-black/20'
+                      : 'bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] text-stone-600 dark:text-stone-300'
+                  }`}
                   onClick={() => {
                     setIsChapterDropdownOpen(!isChapterDropdownOpen);
                     setIsBookDropdownOpen(false);
                     setIsVerseDropdownOpen(false);
                   }}
                 >
-                  <span className="text-[12px] font-medium font-bitter text-stone-500 dark:text-gray-50">
+                  <span className={`text-[12px] font-medium font-bitter ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'text-white'
+                      : 'text-stone-500 dark:text-gray-50'
+                  }`}>
                     {currentChapter}
                   </span>
                   <ChevronDown
                     size={14}
-                    className={`transition-transform duration-200 text-gray-400 ${
-                      isChapterDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`transition-transform duration-200 ${
+                      isVerseByVerseView && hasBackgroundImage ? 'text-white/70' : 'text-gray-400'
+                    } ${isChapterDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
+                {/* Chapter Dropdown Content */}
                 {isChapterDropdownOpen && (
-                  <div className="absolute mt-2 w-52 bg-white dark:bg-[#30261d] rounded-3xl shadow-lg z-10 max-h-60 overflow-y-auto no-scrollbar p-4">
+                  <div className={`absolute mt-2 w-52 ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/10 dark:bg-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-xl'
+                      : 'bg-white dark:bg-[#30261d]'
+                  } rounded-3xl shadow-lg z-[60] max-h-60 overflow-y-auto no-scrollbar p-4`}>
                     <div className="p-2 grid grid-cols-5 gap-1">
                       {getChapters().map((chapter) => (
                         <div
                           key={chapter}
-                          className={`p-2 text-[12px] flex items-center justify-center bg-white dark:bg-[#3d332a] shadow rounded-full transition-colors duration-150 ${
+                          className={`p-2 text-[12px] flex items-center justify-center shadow rounded-full transition-colors duration-150 ${
                             currentChapter === chapter
-                              ? "bg-transparent text-stone-700 hover:text-stone-900 cursor-not-allowed dark:text-stone-200 font-medium"
+                              ? isVerseByVerseView && hasBackgroundImage
+                                ? "bg-white/30 text-white font-medium"
+                                : "bg-transparent text-stone-700 hover:text-stone-900 cursor-not-allowed dark:text-stone-200 font-medium"
+                              : isVerseByVerseView && hasBackgroundImage
+                              ? "bg-white/10 text-white hover:bg-white/20"
                               : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] cursor-pointer hover:text-stone-700 dark:hover:text-stone-200"
                           }`}
                           onClick={() => handleChapterSelect(chapter)}
@@ -242,33 +344,50 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
               {/* Verse Dropdown */}
               <div className="relative verse-dropdown">
                 <button
-                  className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#3d332a] focus:ring-0 ring-gray-500 focus:outline-none shadow hover:bg-primary/10 dark:hover:bg-[#4a3e34] transition-colors duration-200 text-stone-600 dark:text-stone-300"
+                  className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg focus:ring-0 ring-gray-500 focus:outline-none shadow transition-colors duration-200 ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md text-white hover:bg-white/20 dark:hover:bg-black/20'
+                      : 'bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] text-stone-600 dark:text-stone-300'
+                  }`}
                   onClick={() => {
                     setIsVerseDropdownOpen(!isVerseDropdownOpen);
                     setIsBookDropdownOpen(false);
                     setIsChapterDropdownOpen(false);
                   }}
                 >
-                  <span className="text-[12px] font-medium font-bitter text-stone-500 dark:text-gray-50">
+                  <span className={`text-[12px] font-medium font-bitter ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'text-white'
+                      : 'text-stone-500 dark:text-gray-50'
+                  }`}>
                     v {selectedVerse || 1}
                   </span>
                   <ChevronDown
                     size={14}
-                    className={`transition-transform duration-200 text-gray-400 ${
-                      isVerseDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`transition-transform duration-200 ${
+                      isVerseByVerseView && hasBackgroundImage ? 'text-white/70' : 'text-gray-400'
+                    } ${isVerseDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
+                {/* Verse Dropdown Content */}
                 {isVerseDropdownOpen && (
-                  <div className="absolute mt-2 w-52 bg-white dark:bg-[#30261d] rounded-3xl shadow-lg z-10 max-h-60 overflow-y-auto no-scrollbar p-4">
+                  <div className={`absolute mt-2 w-52 ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/10 dark:bg-white/10 backdrop-blur-xl backdrop-saturate-150 shadow-xl'
+                      : 'bg-white dark:bg-[#30261d]'
+                  } rounded-3xl shadow-lg z-[60] max-h-60 overflow-y-auto no-scrollbar p-4`}>
                     <div className="p-2 grid grid-cols-5 gap-1">
                       {getVerses().map((verse) => (
                         <div
                           key={verse}
-                          className={`p-2 text-[12px] flex items-center justify-center bg-white dark:bg-[#3d332a] shadow rounded-full transition-colors duration-150 ${
+                          className={`p-2 text-[12px] flex items-center justify-center shadow rounded-full transition-colors duration-150 ${
                             selectedVerse === verse
-                              ? "bg-transparent text-stone-700 hover:text-stone-900 cursor-not-allowed dark:text-stone-200 font-medium"
+                              ? isVerseByVerseView && hasBackgroundImage
+                                ? "bg-white/30 text-white font-medium"
+                                : "bg-transparent text-stone-700 hover:text-stone-900 cursor-not-allowed dark:text-stone-200 font-medium"
+                              : isVerseByVerseView && hasBackgroundImage
+                              ? "bg-white/10 text-white hover:bg-white/20"
                               : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] cursor-pointer hover:text-stone-700 dark:hover:text-stone-200"
                           }`}
                           onClick={() => handleVerseSelect(verse)}
@@ -288,7 +407,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   currentChapter >= chapterCount
                     ? 'text-stone-300 dark:text-stone-500 cursor-not-allowed'
-                    : 'text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300'
+                    : `text-stone-400 dark:text-stone-400 ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md hover:bg-white/20 dark:hover:bg-black/20'
+                          : 'bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300'
+                      }`
                 }`}
               >
                 <ChevronRight size={16} />
@@ -330,7 +453,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 onClick={() => toggleFeature('bookmarks')}
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   activeFeature === 'bookmarks'
-                    ? 'bg-primary text-white shadow'
+                    ? isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/30 text-white shadow'
+                      : 'bg-primary text-white shadow'
+                    : isVerseByVerseView && hasBackgroundImage
+                    ? 'bg-white/10 text-white hover:bg-white/20'
                     : 'text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary'
                 }`}
               >
@@ -340,7 +467,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 onClick={() => toggleFeature('history')}
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   activeFeature === 'history'
-                    ? 'bg-primary text-white shadow'
+                    ? isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/30 text-white shadow'
+                      : 'bg-primary text-white shadow'
+                    : isVerseByVerseView && hasBackgroundImage
+                    ? 'bg-white/10 text-white hover:bg-white/20'
                     : 'text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary'
                 }`}
               >
@@ -350,7 +481,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 onClick={() => toggleFeature('search')}
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   activeFeature === 'search'
-                    ? 'bg-primary text-white shadow'
+                    ? isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/30 text-white shadow'
+                      : 'bg-primary text-white shadow'
+                    : isVerseByVerseView && hasBackgroundImage
+                    ? 'bg-white/10 text-white hover:bg-white/20'
                     : 'text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary'
                 }`}
               >
@@ -360,7 +495,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 onClick={() => toggleFeature('library')}
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   activeFeature === 'library'
-                    ? 'bg-primary text-white shadow'
+                    ? isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/30 text-white shadow'
+                      : 'bg-primary text-white shadow'
+                    : isVerseByVerseView && hasBackgroundImage
+                    ? 'bg-white/10 text-white hover:bg-white/20'
                     : 'text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary'
                 }`}
               >
@@ -370,7 +509,11 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 onClick={() => toggleFeature('shortcuts')}
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   activeFeature === 'shortcuts'
-                    ? 'bg-primary text-white shadow'
+                    ? isVerseByVerseView && hasBackgroundImage
+                      ? 'bg-white/30 text-white shadow'
+                      : 'bg-primary text-white shadow'
+                    : isVerseByVerseView && hasBackgroundImage
+                    ? 'bg-white/10 text-white hover:bg-white/20'
                     : 'text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary'
                 }`}
               >

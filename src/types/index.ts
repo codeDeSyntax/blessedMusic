@@ -65,6 +65,7 @@ export type EvSermon = {
   slides: Slide[];
   createdAt: string;
   updatedAt: string;
+  backgroundImage?: string;
 };
 
 export type EvOther = {
@@ -75,6 +76,7 @@ export type EvOther = {
   slides: Slide[];
   createdAt: string;
   updatedAt: string;
+  backgroundImage?: string;
 };
 
 export type Presentation = EvSermon | EvOther;

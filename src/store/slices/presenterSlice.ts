@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { Presentation } from '@/types';
 
 export type ViewState =
@@ -16,12 +16,16 @@ interface PresenterState {
   currentPresentation: Presentation | null;
   viewState: ViewState;
   
+  // Path management (from Context)
+  selectedPath: string;
+  
   // Slideshow state
   currentSlideIndex: number;
   isPresenting: boolean;
   isPaused: boolean;
   autoAdvance: boolean;
   slideTimer: number; // in seconds
+  isPresentationMode: boolean; // from Context
   
   // Filters and search
   searchQuery: string;
@@ -36,16 +40,119 @@ interface PresenterState {
   presentationBackgrounds: string[];
 }
 
+// Async thunks for API calls (replacing Context methods)
+export const loadPresentations = createAsyncThunk(
+  'presenter/loadPresentations',
+  async (selectedPath: string, { rejectWithValue, dispatch }) => {
+    try {
+      if (!selectedPath) {
+        console.log("No path selected, skipping presentation loading");
+        return [];
+      }
+      
+      dispatch(setLoading(true));
+      console.log("Loading presentations from path:", selectedPath);
+      const result = await window.api.loadEvPresentations(selectedPath);
+      console.log("Loaded presentations:", result.length);
+      return result;
+    } catch (error) {
+      console.error("Failed to load presentations:", error);
+      let message = 'Failed to load presentations';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      return rejectWithValue(message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
+);
+
+export const createPresentationAsync = createAsyncThunk(
+  'presenter/createPresentation',
+  async ({ 
+    path, 
+    presentation 
+  }: { 
+    path: string; 
+    presentation: Omit<Presentation, "id" | "createdAt" | "updatedAt"> 
+  }, { rejectWithValue }) => {
+    try {
+      const newPresentation = await window.api.createEvPresentation(path, presentation);
+      return newPresentation;
+    } catch (error) {
+      console.error("Failed to create presentation:", error);
+      let message = 'Failed to create presentation';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const updatePresentationAsync = createAsyncThunk(
+  'presenter/updatePresentation',
+  async ({ 
+    id, 
+    directoryPath, 
+    presentation 
+  }: { 
+    id: string; 
+    directoryPath: string; 
+    presentation: Partial<Presentation> 
+  }, { rejectWithValue }) => {
+    try {
+      const updatedPresentation = await window.api.updateEvPresentation(
+        id,
+        directoryPath,
+        presentation
+      );
+      return updatedPresentation;
+    } catch (error) {
+      console.error("Failed to update presentation:", error);
+      let message = 'Failed to update presentation';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const deletePresentationAsync = createAsyncThunk(
+  'presenter/deletePresentation',
+  async ({ 
+    id, 
+    directory 
+  }: { 
+    id: string; 
+    directory: string 
+  }, { rejectWithValue }) => {
+    try {
+      await window.api.deleteEvPresentation(id, directory);
+      return id;
+    } catch (error) {
+      console.error("Failed to delete presentation:", error);
+      return rejectWithValue((error as Error).message || 'Failed to delete presentation');
+    }
+  }
+);
+
 const initialState: PresenterState = {
-  presentations: JSON.parse(localStorage.getItem('presentations') || '[]'),
-  currentPresentation: JSON.parse(localStorage.getItem('currentPresentation') || 'null'),
+  presentations: [],
+  currentPresentation: null,
   viewState: { type: "categories" },
+  
+  // Path management
+  selectedPath: typeof window !== 'undefined' ? localStorage.getItem('evpresenterfilespath') || '' : '',
   
   currentSlideIndex: 0,
   isPresenting: false,
   isPaused: false,
   autoAdvance: false,
   slideTimer: 30,
+  isPresentationMode: false,
   
   searchQuery: '',
   selectedCategory: null,
@@ -54,46 +161,48 @@ const initialState: PresenterState = {
   error: null,
   
   defaultSlideTransition: 'fade',
-  presentationBackgrounds: JSON.parse(localStorage.getItem('presentationBackgrounds') || '[]'),
+  presentationBackgrounds: typeof window !== 'undefined' ? 
+    JSON.parse(localStorage.getItem('presentationBackgrounds') || '[]') : [],
 };
 
 const presenterSlice = createSlice({
   name: 'presenter',
   initialState,
   reducers: {
+    // Path management (from Context)
+    setSelectedPath: (state, action: PayloadAction<string>) => {
+      state.selectedPath = action.payload;
+      if (typeof window !== 'undefined' && action.payload) {
+        localStorage.setItem('evpresenterfilespath', action.payload);
+      }
+    },
+    
     // Presentation management
     setPresentations: (state, action: PayloadAction<Presentation[]>) => {
       state.presentations = action.payload;
-      localStorage.setItem('presentations', JSON.stringify(action.payload));
     },
     addPresentation: (state, action: PayloadAction<Presentation>) => {
       state.presentations.push(action.payload);
-      localStorage.setItem('presentations', JSON.stringify(state.presentations));
     },
-    updatePresentation: (state, action: PayloadAction<Presentation>) => {
+    updatePresentationLocal: (state, action: PayloadAction<Presentation>) => {
       const index = state.presentations.findIndex(p => p.id === action.payload.id);
       if (index >= 0) {
         state.presentations[index] = action.payload;
-        localStorage.setItem('presentations', JSON.stringify(state.presentations));
+      }
+      // Update current presentation if it's the same one
+      if (state.currentPresentation?.id === action.payload.id) {
+        state.currentPresentation = action.payload;
       }
     },
-    deletePresentation: (state, action: PayloadAction<string>) => {
+    removePresentationLocal: (state, action: PayloadAction<string>) => {
       state.presentations = state.presentations.filter(p => p.id !== action.payload);
-      localStorage.setItem('presentations', JSON.stringify(state.presentations));
-      
       // Clear current presentation if it was deleted
       if (state.currentPresentation?.id === action.payload) {
         state.currentPresentation = null;
-        localStorage.removeItem('currentPresentation');
       }
     },
     setCurrentPresentation: (state, action: PayloadAction<Presentation | null>) => {
       state.currentPresentation = action.payload;
-      if (action.payload) {
-        localStorage.setItem('currentPresentation', JSON.stringify(action.payload));
-      } else {
-        localStorage.removeItem('currentPresentation');
-      }
     },
     
     // View state management
@@ -134,6 +243,22 @@ const presenterSlice = createSlice({
       state.slideTimer = action.payload;
     },
     
+    // Presentation mode (from Context)
+    setIsPresentationMode: (state, action: PayloadAction<boolean>) => {
+      state.isPresentationMode = action.payload;
+    },
+    startPresentation: (state) => {
+      state.isPresentationMode = true;
+      state.isPresenting = true;
+      state.currentSlideIndex = 0;
+    },
+    stopPresentation: (state) => {
+      state.isPresentationMode = false;
+      state.isPresenting = false;
+      state.isPaused = false;
+      state.currentSlideIndex = 0;
+    },
+    
     // Search and filter
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -148,7 +273,9 @@ const presenterSlice = createSlice({
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
-      state.isLoading = false;
+    },
+    clearError: (state) => {
+      state.error = null;
     },
     
     // Settings
@@ -157,7 +284,9 @@ const presenterSlice = createSlice({
     },
     setPresentationBackgrounds: (state, action: PayloadAction<string[]>) => {
       state.presentationBackgrounds = action.payload;
-      localStorage.setItem('presentationBackgrounds', JSON.stringify(action.payload));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('presentationBackgrounds', JSON.stringify(action.payload));
+      }
     },
     
     // Navigation helpers
@@ -180,26 +309,117 @@ const presenterSlice = createSlice({
       state.viewState = { type: "slideshow", presentation: action.payload };
       state.currentPresentation = action.payload;
       state.isPresenting = true;
+      state.isPresentationMode = true;
       state.currentSlideIndex = 0;
     },
     
     // Exit slideshow
     exitSlideshow: (state) => {
       state.isPresenting = false;
+      state.isPresentationMode = false;
       state.isPaused = false;
       state.currentSlideIndex = 0;
       state.viewState = { type: "categories" };
     },
+    
+    // Reset state
+    resetPresenterState: (state) => {
+      return {
+        ...initialState,
+        selectedPath: state.selectedPath, // Keep the selected path
+        presentationBackgrounds: state.presentationBackgrounds, // Keep backgrounds
+      };
+    },
+  },
+  extraReducers: (builder) => {
+    // Load presentations
+    builder
+      .addCase(loadPresentations.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loadPresentations.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.presentations = action.payload;
+        state.error = null;
+      })
+      .addCase(loadPresentations.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+    
+    // Create presentation
+    builder
+      .addCase(createPresentationAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createPresentationAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.presentations.push(action.payload);
+        state.error = null;
+      })
+      .addCase(createPresentationAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+    
+    // Update presentation
+    builder
+      .addCase(updatePresentationAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updatePresentationAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.presentations.findIndex(p => p.id === action.payload.id);
+        if (index >= 0) {
+          state.presentations[index] = action.payload;
+        }
+        if (state.currentPresentation?.id === action.payload.id) {
+          state.currentPresentation = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(updatePresentationAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+    
+    // Delete presentation
+    builder
+      .addCase(deletePresentationAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deletePresentationAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.presentations = state.presentations.filter(p => p.id !== action.payload);
+        if (state.currentPresentation?.id === action.payload) {
+          state.currentPresentation = null;
+        }
+        state.error = null;
+      })
+      .addCase(deletePresentationAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 
 export const {
+  // Path management
+  setSelectedPath,
+  
+  // Presentation management
   setPresentations,
   addPresentation,
-  updatePresentation,
-  deletePresentation,
+  updatePresentationLocal,
+  removePresentationLocal,
   setCurrentPresentation,
   setViewState,
+  
+  // Slideshow controls
   setCurrentSlideIndex,
   nextSlide,
   previousSlide,
@@ -208,12 +428,26 @@ export const {
   togglePause,
   setAutoAdvance,
   setSlideTimer,
+  
+  // Presentation mode
+  setIsPresentationMode,
+  startPresentation,
+  stopPresentation,
+  
+  // Search and filters
   setSearchQuery,
   setSelectedCategory,
+  
+  // Loading states
   setLoading,
   setError,
+  clearError,
+  
+  // Settings
   setDefaultSlideTransition,
   setPresentationBackgrounds,
+  
+  // Navigation
   goToCategories,
   goToList,
   goToDetail,
@@ -221,6 +455,9 @@ export const {
   goToCreate,
   goToSlideshow,
   exitSlideshow,
+  
+  // Utilities
+  resetPresenterState,
 } = presenterSlice.actions;
 
-export default presenterSlice.reducer; 
+export default presenterSlice.reducer;

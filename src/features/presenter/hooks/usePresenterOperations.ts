@@ -3,8 +3,8 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import {
   setPresentations,
   addPresentation,
-  updatePresentation,
-  deletePresentation,
+  // updatePresentation,
+  // deletePresentation,
   setCurrentPresentation,
   setViewState,
   setCurrentSlideIndex,
@@ -30,6 +30,10 @@ import {
   exitSlideshow,
   ViewState,
   PresentationCategory,
+  loadPresentations as loadPresentationsThunk,
+  createPresentationAsync,
+  updatePresentationAsync,
+  deletePresentationAsync,
 } from '@/store/slices/presenterSlice';
 import { Presentation } from '@/types';
 
@@ -39,6 +43,7 @@ export const usePresenterOperations = () => {
   const presentations = useAppSelector((state) => state.presenter.presentations);
   const currentPresentation = useAppSelector((state) => state.presenter.currentPresentation);
   const viewState = useAppSelector((state) => state.presenter.viewState);
+  const selectedPath = useAppSelector((state) => state.presenter.selectedPath);
   const currentSlideIndex = useAppSelector((state) => state.presenter.currentSlideIndex);
   const isPresenting = useAppSelector((state) => state.presenter.isPresenting);
   const isPaused = useAppSelector((state) => state.presenter.isPaused);
@@ -53,45 +58,59 @@ export const usePresenterOperations = () => {
 
   // Presentation management operations
   const loadPresentations = useCallback(async () => {
-    try {
-      dispatch(setLoading(true));
-      // API call would go here to load presentations
-      const presentationsData: Presentation[] = []; // This would be populated from storage
-      dispatch(setPresentations(presentationsData));
-    } catch (error) {
-      dispatch(setError(error instanceof Error ? error.message : 'Failed to load presentations'));
+    if (!selectedPath) {
+      console.warn('No path selected for loading presentations');
+      return;
     }
-  }, [dispatch]);
+    try {
+      await dispatch(loadPresentationsThunk(selectedPath)).unwrap();
+    } catch (error) {
+      console.error('Failed to load presentations:', error);
+    }
+  }, [dispatch, selectedPath]);
 
-  const createPresentation = useCallback(async (presentation: Presentation) => {
-    try {
-      dispatch(setLoading(true));
-      // API call would go here to save presentation
-      dispatch(addPresentation(presentation));
-    } catch (error) {
-      dispatch(setError(error instanceof Error ? error.message : 'Failed to create presentation'));
+  const createPresentation = useCallback(async (presentation: Omit<Presentation, "id" | "createdAt" | "updatedAt">) => {
+    if (!selectedPath) {
+      throw new Error('No path selected for creating presentation');
     }
-  }, [dispatch]);
+    try {
+      await dispatch(createPresentationAsync({ path: selectedPath, presentation })).unwrap();
+    } catch (error) {
+      console.error('Failed to create presentation:', error);
+      throw error;
+    }
+  }, [dispatch, selectedPath]);
 
-  const savePresentation = useCallback(async (presentation: Presentation) => {
-    try {
-      dispatch(setLoading(true));
-      // API call would go here to update presentation
-      dispatch(updatePresentation(presentation));
-    } catch (error) {
-      dispatch(setError(error instanceof Error ? error.message : 'Failed to save presentation'));
+  const savePresentation = useCallback(async (id: string, presentation: Partial<Presentation>) => {
+    if (!selectedPath) {
+      throw new Error('No path selected for updating presentation');
     }
-  }, [dispatch]);
+    try {
+      await dispatch(updatePresentationAsync({
+        id,
+        directoryPath: selectedPath,
+        presentation
+      })).unwrap();
+    } catch (error) {
+      console.error('Failed to save presentation:', error);
+      throw error;
+    }
+  }, [dispatch, selectedPath]);
 
   const removePresentation = useCallback(async (presentationId: string) => {
-    try {
-      dispatch(setLoading(true));
-      // API call would go here to delete presentation
-      dispatch(deletePresentation(presentationId));
-    } catch (error) {
-      dispatch(setError(error instanceof Error ? error.message : 'Failed to delete presentation'));
+    if (!selectedPath) {
+      throw new Error('No path selected for deleting presentation');
     }
-  }, [dispatch]);
+    try {
+      await dispatch(deletePresentationAsync({
+        id: presentationId,
+        directory: selectedPath
+      })).unwrap();
+    } catch (error) {
+      console.error('Failed to delete presentation:', error);
+      throw error;
+    }
+  }, [dispatch, selectedPath]);
 
   const selectPresentation = useCallback((presentation: Presentation | null) => {
     dispatch(setCurrentPresentation(presentation));
@@ -217,6 +236,7 @@ export const usePresenterOperations = () => {
     presentations,
     currentPresentation,
     viewState,
+    selectedPath,
     currentSlideIndex,
     isPresenting,
     isPaused,

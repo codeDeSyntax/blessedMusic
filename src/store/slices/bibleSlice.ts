@@ -39,19 +39,19 @@ export interface HistoryEntry {
 export const TRANSLATIONS = {
   KJV: {
     name: "King James Version",
-    path: "/assets/newkjv.json",
+    path: "./assets/newkjv.json",
   },
   TWI: {
     name: "Twi Bible",
-    path: "/assets/twiBible.json",
+    path: "./assets/twiBible.json",
   },
   EWE: {
     name: "Ewe Bible",
-    path: "/assets/eweBible.json"
+    path: "./assets/eweBible.json"
   },
   FRENCH: {
     name: "French Bible",
-    path: "/assets/frenchBible.json"
+    path: "./assets/frenchBible.json"
   }
 };
 

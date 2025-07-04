@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ColorPicker } from "antd";
 import {
   X,
   ChevronLeft,
@@ -25,15 +26,189 @@ interface SlideProps {
   currentSlide: number;
   slideIndex: number;
   backgroundImage: string;
+  animation?: string;
+  titleColor?: string;
+  scriptureColor?: string;
+  quoteColor?: string;
 }
+
+// Custom Animation Wrapper Component
+const AnimatedContent: React.FC<{
+  children: React.ReactNode;
+  animation: string;
+  isVisible: boolean;
+}> = ({ children, animation, isVisible }) => {
+  const getAnimationVariants = () => {
+    switch (animation) {
+      case "bouncing-text":
+        return {
+          hidden: {
+            opacity: 0,
+            y: -100,
+            scale: 0.3,
+            rotateX: 90,
+          },
+          visible: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            rotateX: 0,
+            transition: {
+              type: "spring",
+              damping: 10,
+              stiffness: 100,
+              duration: 1.2,
+              delay: 0.2,
+              when: "beforeChildren",
+              staggerChildren: 0.1,
+            },
+          },
+        };
+
+      case "gliding-sweep":
+        return {
+          hidden: {
+            opacity: 0,
+            x: -200,
+            scale: 0.8,
+            filter: "blur(10px)",
+          },
+          visible: {
+            opacity: 1,
+            x: 0,
+            scale: 1,
+            filter: "blur(0px)",
+            transition: {
+              type: "tween",
+              ease: [0.25, 0.46, 0.45, 0.94],
+              duration: 1.5,
+              delay: 0.3,
+            },
+          },
+        };
+
+      case "explosive-zoom":
+        return {
+          hidden: {
+            opacity: 0,
+            scale: 0.1,
+            rotate: -180,
+            filter: "brightness(0)",
+          },
+          visible: {
+            opacity: 1,
+            scale: [0.1, 1.2, 1],
+            rotate: 0,
+            filter: "brightness(1)",
+            transition: {
+              duration: 1.0,
+              ease: "easeOut",
+              times: [0, 0.7, 1],
+              delay: 0.1,
+            },
+          },
+        };
+
+      case "wave-reveal":
+        return {
+          hidden: {
+            opacity: 0,
+            y: 50,
+            scaleY: 0,
+            skewX: 45,
+          },
+          visible: {
+            opacity: 1,
+            y: 0,
+            scaleY: 1,
+            skewX: 0,
+            transition: {
+              type: "spring",
+              damping: 20,
+              stiffness: 200,
+              duration: 1.3,
+              delay: 0.2,
+            },
+          },
+        };
+
+      case "spiral-entrance":
+        return {
+          hidden: {
+            opacity: 0,
+            scale: 0.2,
+            rotate: -720,
+            x: 100,
+            y: -100,
+          },
+          visible: {
+            opacity: 1,
+            scale: 1,
+            rotate: 0,
+            x: 0,
+            y: 0,
+            transition: {
+              type: "spring",
+              damping: 15,
+              stiffness: 80,
+              duration: 1.8,
+              delay: 0.1,
+            },
+          },
+        };
+
+      default:
+        return {
+          hidden: { opacity: 0, y: 20 },
+          visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.8 },
+          },
+        };
+    }
+  };
+
+  const variants = getAnimationVariants();
+
+  return (
+    <motion.div
+      initial="hidden"
+      animate={isVisible ? "visible" : "hidden"}
+      variants={variants}
+      className="w-full h-full"
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 const Slide: React.FC<SlideProps> = ({
   content,
   currentSlide,
   slideIndex,
   backgroundImage,
+  animation = "bouncing-text",
+  titleColor,
+  scriptureColor,
+  quoteColor,
 }) => {
   const { isDarkMode } = useTheme();
+  const [isContentVisible, setIsContentVisible] = useState(false);
+
+  // Trigger content animation when slide becomes active
+  useEffect(() => {
+    if (currentSlide === slideIndex) {
+      // Small delay to ensure slide transition starts first
+      const timer = setTimeout(() => {
+        setIsContentVisible(true);
+      }, 400);
+      return () => clearTimeout(timer);
+    } else {
+      setIsContentVisible(false);
+    }
+  }, [currentSlide, slideIndex]);
+
   const variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? "100%" : "-100%",
@@ -62,11 +237,54 @@ const Slide: React.FC<SlideProps> = ({
         backgroundImage: `url(${backgroundImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundBlendMode: "luminosity",
       }}
     >
       <div className="w-full h-full flex items-center justify-center p-6 sm:p-8 md:p-12">
-        <div className="w-full max-w-5xl max-h-full overflow-scroll no-scrollbar text-center p-6 md:p-8 rounded-xl shadow-xl text-white">
-          {content}
+        <div className="w-full max-w-5xl max-h-full overflow-scroll no-scrollbar text-center p-6 md:p-8 font-archivo rounded-xl shadow-xl text-[#9a674a] dark:text-white relative">
+          <AnimatedContent animation={animation} isVisible={isContentVisible}>
+            {content}
+          </AnimatedContent>
+
+          {/* Add particle effects for certain animations */}
+          {animation === "gliding-sweep" && isContentVisible && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+              className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-sm"
+            />
+          )}
+
+          {animation === "explosive-zoom" && isContentVisible && (
+            <>
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0, rotate: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    scale: [0, 1, 0],
+                    rotate: [0, 360],
+                    x: [0, Math.cos((i * 60 * Math.PI) / 180) * 100],
+                    y: [0, Math.sin((i * 60 * Math.PI) / 180) * 100],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    delay: 0.5 + i * 0.1,
+                    ease: "easeOut",
+                  }}
+                  className="absolute top-1/2 left-1/2 w-4 h-4 rounded-full"
+                  style={{
+                    background: `radial-gradient(circle at center, ${
+                      titleColor || "#ffffff"
+                    }, transparent)`,
+                  }}
+                />
+              ))}
+            </>
+          )}
         </div>
       </div>
     </motion.div>
@@ -79,7 +297,8 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   const { currentPresentation, stopPresentation } = usePresenterOperations();
   const dispatch = useAppDispatch();
   const [presentationbgs, setPresentationbgs] = useState<string[]>([]);
-  const changeScreen = (screen: CurrentScreen) => dispatch(setCurrentScreen(screen));
+  const changeScreen = (screen: CurrentScreen) =>
+    dispatch(setCurrentScreen(screen));
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
   const [slides, setSlides] = useState<React.ReactNode[]>([]);
@@ -94,24 +313,291 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   const [slideView, setSlideView] = useState<"grid" | "carousel">("carousel");
   const containerRef = useRef<HTMLDivElement>(null);
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [temporaryBackground, setTemporaryBackground] = useState<string | null>(
+    null
+  );
+  const settingsRef = useRef<HTMLDivElement>(null);
 
-  // Load background image from localStorage
+  // Font size states with persistence
+  const [titleFontSize, setTitleFontSize] = useState(() => {
+    const saved = localStorage.getItem("presentationTitleFontSize");
+    return saved ? parseInt(saved) : 4; // Default to text-4xl (4rem)
+  });
+
+  const [scriptureFontSize, setScriptureFontSize] = useState(() => {
+    const saved = localStorage.getItem("presentationScriptureFontSize");
+    return saved ? parseInt(saved) : 6; // Default to text-6xl (6rem)
+  });
+
+  const [quoteFontSize, setQuoteFontSize] = useState(() => {
+    const saved = localStorage.getItem("presentationQuoteFontSize");
+    return saved ? parseInt(saved) : 5; // Default to text-5xl (5rem)
+  });
+
+  // Animation settings
+  const [selectedAnimation, setSelectedAnimation] = useState(() => {
+    const saved = localStorage.getItem("presentationAnimation");
+    return saved || "bouncing-text"; // Default animation
+  });
+
+  // Custom powerful animations combining AOS and Framer Motion
+  const powerAnimations = [
+    {
+      value: "bouncing-text",
+      label: "🚀 Bouncing Text",
+      description: "Bouncy text with spring physics",
+    },
+    {
+      value: "gliding-sweep",
+      label: "✨ Gliding Sweep",
+      description: "Smooth gliding with particle effect",
+    },
+    {
+      value: "explosive-zoom",
+      label: "💥 Explosive Zoom",
+      description: "Explosive zoom with shake effect",
+    },
+    {
+      value: "wave-reveal",
+      label: "🌊 Wave Reveal",
+      description: "Wave-like text revelation",
+    },
+    {
+      value: "spiral-entrance",
+      label: "🌪️ Spiral Entrance",
+      description: "Spiral rotation with scaling",
+    },
+  ];
+
+  // Color settings with persistence
+  const [titleColor, setTitleColor] = useState(() => {
+    const saved = localStorage.getItem("presentationTitleColor");
+    return saved || "#ffffff"; // Default to white
+  });
+
+  const [scriptureColor, setScriptureColor] = useState(() => {
+    const saved = localStorage.getItem("presentationScriptureColor");
+    return saved || "#ffffff"; // Default to white
+  });
+
+  const [quoteColor, setQuoteColor] = useState(() => {
+    const saved = localStorage.getItem("presentationQuoteColor");
+    return saved || "#ffffff"; // Default to white
+  });
+
+  // Inline color picker states
+  const [showTitleColorPicker, setShowTitleColorPicker] = useState(false);
+  const [showScriptureColorPicker, setShowScriptureColorPicker] =
+    useState(false);
+  const [showQuoteColorPicker, setShowQuoteColorPicker] = useState(false);
+  const [colorPickerPosition, setColorPickerPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  // Load background image from presentation or localStorage
   useEffect(() => {
-    const savedBg = localStorage.getItem("selectedBg");
-    if (savedBg) {
-      setBackgroundImage(savedBg);
+    if (currentPresentation?.backgroundImage) {
+      // Use presentation's background image as default
+      setBackgroundImage(currentPresentation.backgroundImage);
     } else {
-      // Set default background if none saved
-      setBackgroundImage(presentationbgs[0] || "");
+      // If no presentation background, try localStorage
+      const savedBg = localStorage.getItem("selectedBg");
+      if (savedBg) {
+        setBackgroundImage(savedBg);
+      } else {
+        // Set default background if none saved
+        setBackgroundImage(presentationbgs[0] || "");
+      }
     }
-  }, [presentationbgs]);
+  }, [currentPresentation, presentationbgs]);
 
-  //save selected background to localStorage
+  // Handle temporary background changes from settings
   useEffect(() => {
-    if (backgroundImage) {
-      localStorage.setItem("selectedBg", backgroundImage);
+    if (temporaryBackground !== null) {
+      setBackgroundImage(temporaryBackground);
+    } else if (currentPresentation?.backgroundImage) {
+      setBackgroundImage(currentPresentation.backgroundImage);
     }
-  }, [backgroundImage]);
+  }, [temporaryBackground, currentPresentation]);
+
+  // Save temporary background to localStorage
+  useEffect(() => {
+    if (temporaryBackground) {
+      localStorage.setItem("selectedBg", temporaryBackground);
+    }
+  }, [temporaryBackground]);
+
+  // Reset temporary background when presentation changes
+  useEffect(() => {
+    setTemporaryBackground(null);
+  }, [currentPresentation]);
+
+  // Font size handlers with persistence
+  const handleTitleFontSizeChange = (size: number) => {
+    setTitleFontSize(size);
+    localStorage.setItem("presentationTitleFontSize", size.toString());
+  };
+
+  const handleScriptureFontSizeChange = (size: number) => {
+    setScriptureFontSize(size);
+    localStorage.setItem("presentationScriptureFontSize", size.toString());
+  };
+
+  const handleQuoteFontSizeChange = (size: number) => {
+    setQuoteFontSize(size);
+    localStorage.setItem("presentationQuoteFontSize", size.toString());
+  };
+
+  // Color handlers with persistence
+  const handleTitleColorChange = (color: string) => {
+    setTitleColor(color);
+    localStorage.setItem("presentationTitleColor", color);
+  };
+
+  const handleScriptureColorChange = (color: string) => {
+    setScriptureColor(color);
+    localStorage.setItem("presentationScriptureColor", color);
+  };
+
+  const handleQuoteColorChange = (color: string) => {
+    setQuoteColor(color);
+    localStorage.setItem("presentationQuoteColor", color);
+  };
+
+  // Inline color picker handlers
+  const handleTextClick = (
+    event: React.MouseEvent,
+    type: "title" | "scripture" | "quote"
+  ) => {
+    if (!isPresentationMode) {
+      event.stopPropagation();
+      const rect = event.currentTarget.getBoundingClientRect();
+      setColorPickerPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+      });
+
+      // Close all other pickers first
+      setShowTitleColorPicker(false);
+      setShowScriptureColorPicker(false);
+      setShowQuoteColorPicker(false);
+
+      // Open the specific picker
+      if (type === "title") setShowTitleColorPicker(true);
+      else if (type === "scripture") setShowScriptureColorPicker(true);
+      else if (type === "quote") setShowQuoteColorPicker(true);
+    }
+  };
+
+  const closeAllColorPickers = () => {
+    setShowTitleColorPicker(false);
+    setShowScriptureColorPicker(false);
+    setShowQuoteColorPicker(false);
+  };
+
+  // Click outside to close settings
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+
+      // Check if click is inside settings panel
+      if (settingsRef.current && !settingsRef.current.contains(target)) {
+        setShowSettings(false);
+        setShowInfo(false);
+      }
+
+      // Check if click is inside any color picker or its related elements
+      const isColorPickerClick =
+        target &&
+        (target.closest(".color-picker-container") ||
+          target.closest(".ant-color-picker") ||
+          target.closest(".ant-color-picker-panel") ||
+          target.closest(".ant-popover") ||
+          target.closest('[class*="color-picker"]') ||
+          target.classList.contains("ant-color-picker") ||
+          target.classList.contains("ant-color-picker-panel") ||
+          target.classList.contains("ant-popover") ||
+          target.classList.contains("color-picker-container") ||
+          // Check for any parent with color picker classes
+          (target.parentElement &&
+            target.parentElement.closest(".color-picker-container")) ||
+          (target.parentElement &&
+            target.parentElement.closest(".ant-color-picker")));
+
+      // Only close color pickers if it's not a color picker related click
+      if (!isColorPickerClick) {
+        closeAllColorPickers();
+      }
+    };
+
+    if (
+      showSettings ||
+      showInfo ||
+      showTitleColorPicker ||
+      showScriptureColorPicker ||
+      showQuoteColorPicker
+    ) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [
+    showSettings,
+    showInfo,
+    showTitleColorPicker,
+    showScriptureColorPicker,
+    showQuoteColorPicker,
+  ]);
+
+  // Background change handler
+  const handleBackgroundChange = (newBackground: string) => {
+    setTemporaryBackground(newBackground);
+  };
+
+  // Helper functions to get font size classes
+  const getTitleFontClass = () => {
+    const sizeMap: { [key: number]: string } = {
+      1: "text-xl",
+      2: "text-2xl",
+      3: "text-3xl",
+      4: "text-4xl",
+      5: "text-5xl",
+      6: "text-6xl",
+      7: "text-7xl",
+      8: "text-8xl",
+    };
+    return sizeMap[titleFontSize] || "text-4xl";
+  };
+
+  const getScriptureFontClass = () => {
+    const sizeMap: { [key: number]: string } = {
+      1: "text-xl",
+      2: "text-2xl",
+      3: "text-3xl",
+      4: "text-4xl",
+      5: "text-5xl",
+      6: "text-6xl",
+      7: "text-7xl",
+      8: "text-8xl",
+    };
+    return sizeMap[scriptureFontSize] || "text-6xl";
+  };
+
+  const getQuoteFontClass = () => {
+    const sizeMap: { [key: number]: string } = {
+      1: "text-xl",
+      2: "text-2xl",
+      3: "text-3xl",
+      4: "text-4xl",
+      5: "text-5xl",
+      6: "text-6xl",
+      7: "text-7xl",
+      8: "text-8xl",
+    };
+    return sizeMap[quoteFontSize] || "text-5xl";
+  };
 
   // Add this effect to load custom images
   useEffect(() => {
@@ -131,7 +617,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             "./wood7.png",
             "./pic2.jpg",
             "./wood10.jpg",
-            "./wood11.jpg"
+            "./wood11.jpg",
           ]);
         }
       } else {
@@ -143,7 +629,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
           "./wood7.png",
           "./pic2.jpg",
           "./wood10.jpg",
-          "./wood11.jpg"
+          "./wood11.jpg",
         ]);
       }
     };
@@ -160,12 +646,14 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       return [
         <div className="space-y-3 overflow-y-auto max-h-[80vh] no-scrollbar">
           {title && (
-            <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-4">
+            <h2
+              className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
+            >
               {title}
             </h2>
           )}
           <p
-            className="text-2xl md:text-6xl font-bitter leading- "
+            className={`${getScriptureFontClass()} font-cooper leading-relaxed text-[#9a674a] dark:text-white`}
             style={{
               lineHeight: 1.4,
             }}
@@ -181,20 +669,24 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     for (let i = 0; i < words.length; i += wordLimit) {
       const slideText = words.slice(i, i + wordLimit).join(" ");
       slides.push(
-        <div className=" overflow-y-auto max-h-[80vh] no-scrollbar">
+        <div className=" overflow-y-auto max-h-[80vh] no-scrollbar rounded-t-3xl">
           {title && i === 0 && (
-            <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-4">
+            <h2
+              className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
+            >
               {title}
             </h2>
           )}
           {i > 0 && (
-            <h2 className="text-xl text-purple-300 mb-2">
+            <h2 className="text-xl text-[#9a674a] dark:text-purple-300 mb-2">
               {title} (Continued {Math.floor(i / wordLimit) + 1})
             </h2>
           )}
-          <p className="text-2xl md:text-6xl font-bitter leading-relaxed"
+          <p
+            className={`${getScriptureFontClass()} font-oswald leading-relaxed text-[#9a674a] dark:text-white`}
             style={{
               lineHeight: 1.4,
+              // fontFamily: "garamond",
             }}
           >
             {slideText}
@@ -202,7 +694,6 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
         </div>
       );
     }
-
     return slides;
   };
 
@@ -216,8 +707,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       newSlides.push(
         <div className="space-y-6">
           <h1
-            className="text-4xl md:text-6xl  font-bold font-bitter text-white"
-            style={{ lineHeight: 1.2 }}
+            className={`${getTitleFontClass()} font-impact font-bold cursor-pointer hover:opacity-80 transition-opacity`}
+            style={{ lineHeight: 1.2, color: titleColor }}
+            onClick={(e) => handleTextClick(e, "title")}
+            title="Click to change color"
           >
             {currentPresentation.title}
           </h1>
@@ -237,16 +730,20 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-2">
                 Scripture References
               </h2>
-              <div className="flex flex-wrap gap-4 justify-center items-center">
+              <div className="flex flex-wrap  gap-4 justify-center items-center">
                 {(currentPresentation as any).scriptures.map(
                   (scripture: any, idx: number) => (
                     <div
                       key={idx}
-                      className="text-white text-2xl font-bitter md:text-5xl font-bold p-4 rounded-lg shadow-lg backdrop-blur-sm "
+                      className={`${getScriptureFontClass()} font-anton font-bold p-4 rounded-lg shadow-lg backdrop-blur-sm cursor-pointer hover:opacity-80 transition-opacity`}
                       style={{
                         border: "2px solid #4B5563",
                         borderRadius: "1rem",
+                        letterSpacing: 2,
+                        color: scriptureColor,
                       }}
+                      onClick={(e) => handleTextClick(e, "scripture")}
+                      title="Click to change color"
                     >
                       {scripture.text}
                     </div>
@@ -273,8 +770,19 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-6">
                 Quote
               </h2>
-              <p className="text-3xl md:text-4xl font-bitter text-white italic">
-                "{(currentPresentation as any).quote}"
+              <p
+                className={`${getQuoteFontClass()} font-archivo italic cursor-pointer hover:opacity-80 transition-opacity`}
+                style={{ color: quoteColor }}
+                onClick={(e) => handleTextClick(e, "quote")}
+                title="Click to change color"
+              >
+                "
+                {(currentPresentation as any).quote
+                  .split(",")
+                  .map((part: string) => (
+                    <p key={part.trim()}>{part.trim()}</p>
+                  ))}
+                "
               </p>
               {(currentPresentation as any).quoteAuthor && (
                 <p className="text-xl md:text-2xl text-gray-300 mt-6">
@@ -299,9 +807,17 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
 
     setSlides(buildSlides());
     setCurrentSlide(0);
-  }, [currentPresentation]);
+  }, [
+    currentPresentation,
+    titleFontSize,
+    scriptureFontSize,
+    quoteFontSize,
+    titleColor,
+    scriptureColor,
+    quoteColor,
+  ]);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     if (currentSlide < slides.length - 1) {
       setDirection(1);
       setCurrentSlide((prev) => prev + 1);
@@ -310,9 +826,9 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       setDirection(1);
       setCurrentSlide(0);
     }
-  };
+  }, [currentSlide, slides.length, isAutoPlaying]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     if (currentSlide > 0) {
       setDirection(-1);
       setCurrentSlide((prev) => prev - 1);
@@ -321,14 +837,14 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       setDirection(-1);
       setCurrentSlide(slides.length - 1);
     }
-  };
+  }, [currentSlide, isAutoPlaying, slides.length]);
 
   const goToSlide = (index: number) => {
     setDirection(index > currentSlide ? 1 : -1);
     setCurrentSlide(index);
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen();
       setIsFullscreen(true);
@@ -336,7 +852,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       document.exitFullscreen();
       setIsFullscreen(false);
     }
-  };
+  }, []);
 
   const togglePresentationMode = () => {
     setIsPresentationMode(!isPresentationMode);
@@ -356,80 +872,99 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     }
 
     setIsAutoPlaying(true);
-
-    // Set up the new interval
-    autoPlayTimerRef.current = setInterval(() => {
-      nextSlide();
-    }, autoPlayInterval);
   };
 
-  const stopAutoPlay = () => {
+  const stopAutoPlay = useCallback(() => {
     if (autoPlayTimerRef.current) {
       clearInterval(autoPlayTimerRef.current);
       autoPlayTimerRef.current = null;
     }
     setIsAutoPlaying(false);
-  };
+  }, []);
 
-  const toggleAutoPlay = () => {
+  const toggleAutoPlay = useCallback(() => {
     if (isAutoPlaying) {
       stopAutoPlay();
     } else {
       startAutoPlay();
     }
-  };
+  }, [isAutoPlaying, stopAutoPlay]);
 
   const handleIntervalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newInterval = parseInt(e.target.value) * 1000;
     setAutoPlayInterval(newInterval);
-
-    // If currently playing, restart with new interval
-    if (isAutoPlaying) {
-      stopAutoPlay();
-      setTimeout(() => {
-        startAutoPlay();
-      }, 10);
-    }
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "ArrowRight") {
-      nextSlide();
-    } else if (e.key === "ArrowLeft") {
-      prevSlide();
-    } else if (e.key === "Escape") {
-      if (isPresentationMode) {
-        setIsPresentationMode(false);
-        if (isAutoPlaying) stopAutoPlay();
-      } else {
-        stopPresentation();
-      }
-    } else if (e.key === "F" || e.key === "f") {
-      toggleFullscreen();
-    } else if (e.key === " " || e.code === "Space") {
-      toggleAutoPlay();
-      e.preventDefault(); // Prevent scroll
-    }
-  };
-
-  const changeDirectory = async () => {
-    const path = await window.api.selectDirectory();
-    if (typeof path === "string") {
-      localStorage.setItem("vmusicimages", path);
-      const images = await window.api.getImages(path);
-      setPresentationbgs(images);
-    }
-  };
-
+  // Add effect to handle auto-play state
   useEffect(() => {
+    if (isAutoPlaying && slides.length > 0) {
+      autoPlayTimerRef.current = setInterval(() => {
+        setCurrentSlide((prevSlide) => {
+          if (prevSlide >= slides.length - 1) {
+            return 0; // Loop back to first slide
+          }
+          return prevSlide + 1;
+        });
+      }, autoPlayInterval);
+
+      return () => {
+        if (autoPlayTimerRef.current) {
+          clearInterval(autoPlayTimerRef.current);
+        }
+      };
+    }
+  }, [isAutoPlaying, autoPlayInterval, slides.length]);
+
+  // Separate effect for keyboard events
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent default behavior for arrow keys in all modes to ensure consistent navigation
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+      }
+
+      if (e.key === "ArrowRight") {
+        nextSlide();
+      } else if (e.key === "ArrowLeft") {
+        prevSlide();
+      } else if (e.key === "Escape") {
+        if (isPresentationMode) {
+          setIsPresentationMode(false);
+          if (isAutoPlaying) stopAutoPlay();
+        } else {
+          stopPresentation();
+        }
+      } else if (e.key === "F" || e.key === "f") {
+        toggleFullscreen();
+      } else if (e.key === " " || e.code === "Space") {
+        toggleAutoPlay();
+        e.preventDefault(); // Prevent scroll
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    nextSlide,
+    prevSlide,
+    isPresentationMode,
+    isAutoPlaying,
+    stopAutoPlay,
+    toggleFullscreen,
+    toggleAutoPlay,
+    stopPresentation,
+  ]);
+
+  // Clean up intervals on unmount
+  useEffect(() => {
+    return () => {
       if (autoPlayTimerRef.current) {
         clearInterval(autoPlayTimerRef.current);
       }
     };
-  }, [slides.length, currentSlide, isPresentationMode, isAutoPlaying]);
+  }, []);
 
   // Handle fullscreen change events
   useEffect(() => {
@@ -448,290 +983,699 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   return (
     <div
       ref={containerRef}
-      className="inset-0 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 text-black dark:text-white z-20 flex flex-col h-full"
+      className={`relative h-full w-full bg-black text-[#9a674a] dark:text-white overflow-hidden ${
+        isFullscreen ? "fixed inset-0 z-50" : "rounded-3xl"
+      }`}
     >
-      {/* Top Controls - Only show when not in presentation mode */}
+      {/* Controls */}
       {!isPresentationMode && (
-        <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-1 flex justify-between items-center bg-white/95 dark:bg-gray-900/95 shadow-sm backdrop-blur-sm sticky top-0 z-30 h-10">
-          <div className="flex items-center gap-3">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 f4d0] to-transparent">
+          <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
-              className="p-2 bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-200 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors flex items-center gap-1"
-              title="Back to Home"
+              className="p-2 rounded-full bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-white dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors"
             >
-              <Home size={18} />
-              <span className="hidden sm:inline text-sm">Home</span>
-            </button>
-            <h3 className="text-lg font-semibold text-violet-800 dark:text-violet-400 truncate max-w-xs md:max-w-md">
-              {currentPresentation.title}
-            </h3>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowInfo(!showInfo)}
-              className={`p-2 rounded-lg transition-colors ${
-                showInfo
-                  ? "bg-violet-600 text-white"
-                  : "bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-200 hover:bg-violet-200 dark:hover:bg-violet-800"
-              }`}
-              title="Keyboard Shortcuts"
-            >
-              <Info size={18} />
-            </button>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-lg transition-colors ${
-                showSettings
-                  ? "bg-violet-600 text-white"
-                  : "bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-200 hover:bg-violet-200 dark:hover:bg-violet-800"
-              }`}
-              title="Settings"
-            >
-              <Settings size={18} />
+              <Home size={20} />
             </button>
             <button
               onClick={togglePresentationMode}
-              className="p-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center gap-1"
-              title="Present"
+              className="p-2 rounded-full bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-white dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors"
             >
-              <Monitor size={18} />
-              <span className="hidden sm:inline">Present</span>
+              <Monitor size={20} />
             </button>
             <button
-              onClick={stopPresentation}
-              className="p-2 bg-gray-200 dark:bg-gray-800 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-              title="Close"
+              onClick={toggleAutoPlay}
+              className={`p-2 rounded-full ${
+                isAutoPlaying
+                  ? "bg-[#9a674a] text-white"
+                  : "bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-white"
+              } dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors`}
             >
-              <X size={18} />
+              {isAutoPlaying ? <Pause size={20} /> : <Play size={20} />}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Info Panel */}
-      {showInfo && !isPresentationMode && (
-        <div className="absolute top-24 right-24 z-40 bg-white dark:bg-gray-900 p-5 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-72">
-          <div className="flex justify-between items-center ">
-            <h4 className="font-semibold text-violet-800 dark:text-violet-400 text-lg">
-              Keyboard Shortcuts
-            </h4>
             <button
-              onClick={() => setShowInfo(false)}
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1"
+              onClick={() => setShowSettings(!showSettings)}
+              className={`p-2 rounded-full ${
+                showSettings
+                  ? "bg-[#9a674a] text-white"
+                  : "bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-white"
+              } dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors`}
             >
-              <X size={16} />
+              <Settings size={20} />
+            </button>
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className={`p-2 rounded-full ${
+                showInfo
+                  ? "bg-[#9a674a] text-white"
+                  : "bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-white"
+              } dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors`}
+            >
+              <Info size={20} />
+            </button>
+            <button
+              onClick={() =>
+                setSlideView(slideView === "grid" ? "carousel" : "grid")
+              }
+              className={`p-2 rounded-full ${
+                slideView === "grid"
+                  ? "bg-[#9a674a] text-white"
+                  : "bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-white"
+              } dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors`}
+            >
+              <LayoutGrid size={20} />
             </button>
           </div>
-
-          <div className="space-y3 text-[12px]">
-            <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md">
-              <span>Next Slide</span>
-              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded shadow">
-                →
-              </kbd>
-            </div>
-            <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md">
-              <span>Previous Slide</span>
-              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded shadow">
-                ←
-              </kbd>
-            </div>
-            <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md">
-              <span>Toggle Fullscreen</span>
-              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded shadow">
-                F
-              </kbd>
-            </div>
-            <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md">
-              <span>Toggle Autoplay</span>
-              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded shadow">
-                Space
-              </kbd>
-            </div>
-            <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md">
-              <span>Exit</span>
-              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded shadow">
-                Esc
-              </kbd>
-            </div>
-          </div>
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 rounded-full bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-[#9a674a] dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors"
+          >
+            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+          </button>
         </div>
       )}
 
       {/* Settings Panel */}
-      {showSettings && !isPresentationMode && (
-        <div className="absolute top-24 right-4 z-40 bg-white dark:bg-gray-900 px-5 py-2 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-80">
-          <div className="flex justify-between items-center mb-">
-            <h4 className="font-semibold text-violet-800 dark:text-violet-400 text-lg">
-              Presentation Settings
-            </h4>
-            <button
-              onClick={() => setShowSettings(false)}
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1"
-            >
-              <X size={16} />
-            </button>
-          </div>
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            ref={settingsRef}
+            initial={{ opacity: 0, x: -300, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -300, scale: 0.9 }}
+            className="absolute top-16 left-4 z-20  max-w-5xl  bg-black/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 p-4"
+          >
+            <div className="space-y-">
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#9a674a] to-[#7a5236] flex items-center justify-center shadow-lg">
+                  <Settings size={12} className="text-white" />
+                </div>
+                <h3 className="text-base font-semibold text-[#9a674a] dark:text-white">
+                  Presentation Settings
+                </h3>
+              </div>
 
-          <div className="mb-5">
-            <label className="block text-sm font-medium mb-2">
-              Autoplay Interval
-            </label>
-            <div className="flex items-center gap-3">
+              {/* Settings Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                {/* Auto-play & Animation Column */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
+                    ⚡ Playback & Animation
+                  </h4>
+
+                  {/* Auto-play Interval */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
+                        Auto-play Interval
+                      </label>
+                      <div className="px-2 py-1 rounded text-xs font-medium bg-[#9a674a]/10 text-[#9a674a] dark:bg-white/10 dark:text-white border border-[#9a674a]/20">
+                        {autoPlayInterval / 1000}s
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={autoPlayInterval / 1000}
+                      onChange={handleIntervalChange}
+                      className="w-full h-1.5 bg-gray-200/30 dark:bg-gray-700/30 rounded-lg appearance-none cursor-pointer slider-thumb backdrop-blur-sm"
+                      style={{
+                        background: `linear-gradient(90deg, #9a674a 0%, #7a5236 ${
+                          ((autoPlayInterval / 1000 - 1) / (10 - 1)) * 100
+                        }%, rgba(156, 163, 175, 0.3) ${
+                          ((autoPlayInterval / 1000 - 1) / (10 - 1)) * 100
+                        }%, rgba(156, 163, 175, 0.3) 100%)`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Animation Settings */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
+                      Power Animation
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedAnimation}
+                        onChange={(e) => {
+                          setSelectedAnimation(e.target.value);
+                          localStorage.setItem(
+                            "presentationAnimation",
+                            e.target.value
+                          );
+                        }}
+                        className="w-full px-3 py-2 text-xs bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-lg text-[#9a674a] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9a674a]/50 focus:border-[#9a674a] transition-all duration-200 backdrop-blur-sm appearance-none cursor-pointer"
+                      >
+                        {powerAnimations.map((animation) => (
+                          <option
+                            key={animation.value}
+                            value={animation.value}
+                            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                          >
+                            {animation.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <svg
+                          className="w-3 h-3 text-[#9a674a] dark:text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {powerAnimations.find(
+                        (a) => a.value === selectedAnimation
+                      )?.description || "Choose a powerful animation effect"}
+                    </div>
+                    <div className="text-xs text-blue-400 dark:text-blue-300 mt-2">
+                      💡 Tip: Click on text elements to change colors & font
+                      sizes!
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Info Panel */}
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            ref={settingsRef}
+            initial={{ opacity: 0, x: -300, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -300, scale: 0.9 }}
+            className="absolute top-20 left-4 z-20 w-80 bg-white/10 dark:bg-black/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 p-6"
+          >
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center gap-3 pb-4 border-b border-white/10">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#9a674a] to-[#7a5236] flex items-center justify-center shadow-lg">
+                  <Info size={16} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-[#9a674a] dark:text-white">
+                  Keyboard Shortcuts
+                </h3>
+              </div>
+
+              {/* Shortcuts */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 dark:bg-black/20 border border-white/10">
+                  <span className="text-[#9a674a] dark:text-gray-300 font-medium">
+                    Next Slide
+                  </span>
+                  <kbd className="px-3 py-1.5 text-sm bg-gradient-to-br from-[#9a674a]/20 to-[#7a5236]/20 border border-[#9a674a]/30 rounded-lg text-[#9a674a] dark:text-white font-mono shadow-sm">
+                    →
+                  </kbd>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 dark:bg-black/20 border border-white/10">
+                  <span className="text-[#9a674a] dark:text-gray-300 font-medium">
+                    Previous Slide
+                  </span>
+                  <kbd className="px-3 py-1.5 text-sm bg-gradient-to-br from-[#9a674a]/20 to-[#7a5236]/20 border border-[#9a674a]/30 rounded-lg text-[#9a674a] dark:text-white font-mono shadow-sm">
+                    ←
+                  </kbd>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 dark:bg-black/20 border border-white/10">
+                  <span className="text-[#9a674a] dark:text-gray-300 font-medium">
+                    Toggle Fullscreen
+                  </span>
+                  <kbd className="px-3 py-1.5 text-sm bg-gradient-to-br from-[#9a674a]/20 to-[#7a5236]/20 border border-[#9a674a]/30 rounded-lg text-[#9a674a] dark:text-white font-mono shadow-sm">
+                    F
+                  </kbd>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 dark:bg-black/20 border border-white/10">
+                  <span className="text-[#9a674a] dark:text-gray-300 font-medium">
+                    Toggle Presentation
+                  </span>
+                  <kbd className="px-3 py-1.5 text-sm bg-gradient-to-br from-[#9a674a]/20 to-[#7a5236]/20 border border-[#9a674a]/30 rounded-lg text-[#9a674a] dark:text-white font-mono shadow-sm">
+                    P
+                  </kbd>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 dark:bg-black/20 border border-white/10">
+                  <span className="text-[#9a674a] dark:text-gray-300 font-medium">
+                    Toggle Auto-play
+                  </span>
+                  <kbd className="px-3 py-1.5 text-sm bg-gradient-to-br from-[#9a674a]/20 to-[#7a5236]/20 border border-[#9a674a]/30 rounded-lg text-[#9a674a] dark:text-white font-mono shadow-sm">
+                    Space
+                  </kbd>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Grid View */}
+      {slideView === "grid" ? (
+        <div
+          className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 mt-16 ${
+            !isFullscreen && "rounded-3xl"
+          }`}
+        >
+          {slides.map((slide, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setCurrentSlide(index);
+                setSlideView("carousel");
+              }}
+              className={`relative aspect-video rounded-xl overflow-hidden border-2 transition-all ${
+                currentSlide === index
+                  ? "border-[#9a674a] dark:border-purple-500 scale-105"
+                  : "border-transparent hover:border-[#9a674a]/50 dark:hover:border-purple-500/50"
+              }`}
+              style={{
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center p-2">
+                <div className="w-full text-center  text-white transform scale-50">
+                  {slide}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Carousel View */}
+          <div
+            className={`relative w-full h-full ${
+              !isFullscreen && "rounded-3xl overflow-hidden"
+            }`}
+          >
+            <AnimatePresence initial={false} custom={direction}>
+              <Slide
+                key={currentSlide}
+                content={slides[currentSlide]}
+                currentSlide={currentSlide}
+                slideIndex={currentSlide}
+                backgroundImage={backgroundImage}
+                animation={selectedAnimation}
+                titleColor={titleColor}
+                scriptureColor={scriptureColor}
+                quoteColor={quoteColor}
+              />
+            </AnimatePresence>
+
+            {/* Navigation Arrows */}
+            {!isPresentationMode && (
+              <>
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-[#9a674a] dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors"
+                  disabled={currentSlide === 0}
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-[#9a674a]/10 hover:bg-[#9a674a]/20 text-[#9a674a] dark:bg-black/30 dark:hover:bg-black/50 dark:text-white transition-colors"
+                  disabled={currentSlide === slides.length - 1}
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+
+            {/* Slide Counter */}
+            {!isPresentationMode && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full bg-[#9a674a]/10 dark:bg-black/30 text-[#9a674a] dark:text-white text-sm">
+                {currentSlide + 1} / {slides.length}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Inline Color Pickers */}
+      <AnimatePresence>
+        {showTitleColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="fixed z-50 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border color-picker-container"
+            style={{
+              left: colorPickerPosition.x - 120,
+              top: colorPickerPosition.y - 80,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+                Title Style
+              </h4>
+            </div>
+
+            {/* Font Size Control */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Font Size
+                </label>
+                <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  {getTitleFontClass().replace("text-", "")}
+                </div>
+              </div>
               <input
                 type="range"
                 min="1"
-                max="15"
-                value={autoPlayInterval / 1000}
-                onChange={handleIntervalChange}
-                className="flex-1 accent-violet-600"
+                max="8"
+                step="1"
+                value={titleFontSize}
+                onChange={(e) =>
+                  handleTitleFontSizeChange(parseInt(e.target.value))
+                }
+                className="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
-              <span className="text-sm bg-violet-100 dark:bg-violet-900/80 text-violet-800 dark:text-violet-200 px-3 py-1 rounded-md font-medium w-12 text-center">
-                {autoPlayInterval / 1000}s
-              </span>
             </div>
-          </div>
 
-          <div className="mb-4">
-            <div className="flex items-center gap-2 justify-between py-2 mb-2">
-              <label className="block text-sm font-medium">
-                Background Image
+            {/* Color Picker */}
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-2">
+                Color
               </label>
-              <button
-                onClick={changeDirectory}
-                className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 transition-colors flex items-center gap-1 text-sm"
-                title="Change Background Directory"
-              >
-                <FolderEdit size={16} />
-                <span>Change folder</span>
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2">
-              {presentationbgs.map((bg: string, idx: number) => (
-                <button
-                  key={idx}
-                  onClick={() => setBackgroundImage(bg)}
-                  className={`h-12 w-full bg-cover bg-center rounded-lg overflow-hidden cursor-pointer transition-all ${
-                    backgroundImage === bg
-                      ? "ring-2 ring-violet-600 scale-105"
-                      : "hover:ring-1 hover:ring-violet-400 hover:scale-105"
-                  }`}
-                  style={{ backgroundImage: `url(${bg})` }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <div className="flex-1 relative overflow-y-scroll no-scrollbar h-[calc(100vh-7rem)] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-950">
-        <AnimatePresence initial={false} custom={direction}>
-          <Slide
-            key={currentSlide}
-            content={slides[currentSlide]}
-            currentSlide={currentSlide}
-            slideIndex={currentSlide}
-            backgroundImage={backgroundImage}
-          />
-        </AnimatePresence>
-
-        {/* Slide Navigation Overlay */}
-        {!isPresentationMode && (
-          <div className="absolute inset-x-0 bottom-20 flex justify-center gap-1.5 p-2">
-            {slides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => goToSlide(idx)}
-                className={`h-2.5 rounded-full transition-all ${
-                  idx === currentSlide
-                    ? "bg-violet-600 w-6"
-                    : "bg-white/70 dark:bg-gray-600/70 w-2.5 hover:bg-white/90 dark:hover:bg-gray-400/90"
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
+              <ColorPicker
+                value={titleColor}
+                onChange={(color) => {
+                  handleTitleColorChange(color.toHexString());
+                }}
+                size="large"
+                showText
+                format="hex"
+                placement="bottom"
+                presets={[
+                  {
+                    label: "Common",
+                    colors: [
+                      "#ffffff",
+                      "#000000",
+                      "#ff4d4f",
+                      "#52c41a",
+                      "#1890ff",
+                      "#faad14",
+                      "#722ed1",
+                      "#eb2f96",
+                    ],
+                  },
+                ]}
+                onOpenChange={(open) => {
+                  // Prevent auto-closing
+                  if (!open && showTitleColorPicker) {
+                    // Force it to stay open
+                    setTimeout(() => {
+                      const colorPicker =
+                        document.querySelector(".ant-color-picker");
+                      if (colorPicker) {
+                        (colorPicker as HTMLElement).click();
+                      }
+                    }, 0);
+                  }
+                }}
               />
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
 
-      {/* Bottom Controls */}
-      <div
-        className={`flex justify-between items-center px-4 py-3 bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 ${
-          isPresentationMode
-            ? "absolute bottom-0 left-0 right-0 bg-opacity-80 dark:bg-opacity-80 backdrop-blur-md z-10 transition-all opacity-0 hover:opacity-100 lg:hover:opacity-90 duration-300"
-            : ""
-        }`}
-      >
-        <div className="flex gap-2 items-center">
-          {isPresentationMode && (
             <button
-              onClick={togglePresentationMode}
-              className="p-2 bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-200 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors"
-              title="Exit Presentation Mode"
+              onClick={closeAllColorPickers}
+              className="mt-3 w-full px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
-              <X size={18} />
+              Close
             </button>
-          )}
-          <button
-            onClick={toggleAutoPlay}
-            className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-              isAutoPlaying
-                ? "bg-violet-600 text-white hover:bg-violet-700"
-                : "bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-200 hover:bg-violet-200 dark:hover:bg-violet-800"
-            }`}
-            title={isAutoPlaying ? "Stop Auto Play" : "Start Auto Play"}
-          >
-            {isAutoPlaying ? <Pause size={18} /> : <Play size={18} />}
-            <span className="hidden sm:inline text-sm font-medium">
-              {isAutoPlaying ? "Stop" : "Auto Play"}
-            </span>
-          </button>
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-200 rounded-lg hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors flex items-center gap-1.5"
-            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-          >
-            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-            <span className="hidden sm:inline text-sm font-medium">
-              {isFullscreen ? "Exit" : "Fullscreen"}
-            </span>
-          </button>
-        </div>
+          </motion.div>
+        )}
 
-        <div className="flex gap-3 items-center">
-          <button
-            onClick={prevSlide}
-            disabled={currentSlide === 0 && !isAutoPlaying}
-            className={`p-2 rounded-lg transition-colors ${
-              currentSlide === 0 && !isAutoPlaying
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                : "bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
-            }`}
-            title="Previous Slide"
+        {showScriptureColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="fixed z-50 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border color-picker-container"
+            style={{
+              left: colorPickerPosition.x - 120,
+              top: colorPickerPosition.y - 80,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <ChevronLeft size={18} />
-          </button>
+            <div className="text-center mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+                Scripture Style
+              </h4>
+            </div>
 
-          <div className="bg-gray-200 dark:bg-gray-800 px-4 py-1.5 rounded-full text-sm font-medium">
-            {currentSlide + 1} / {slides.length}
-          </div>
+            {/* Font Size Control */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Font Size
+                </label>
+                <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  {getScriptureFontClass().replace("text-", "")}
+                </div>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                step="1"
+                value={scriptureFontSize}
+                onChange={(e) =>
+                  handleScriptureFontSizeChange(parseInt(e.target.value))
+                }
+                className="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
 
-          <button
-            onClick={nextSlide}
-            disabled={currentSlide === slides.length - 1 && !isAutoPlaying}
-            className={`p-2 rounded-lg transition-colors ${
-              currentSlide === slides.length - 1 && !isAutoPlaying
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                : "bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
-            }`}
-            title="Next Slide"
+            {/* Color Picker */}
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-2">
+                Color
+              </label>
+              <ColorPicker
+                value={scriptureColor}
+                onChange={(color) => {
+                  handleScriptureColorChange(color.toHexString());
+                }}
+                size="large"
+                showText
+                format="hex"
+                placement="bottom"
+                presets={[
+                  {
+                    label: "Common",
+                    colors: [
+                      "#ffffff",
+                      "#000000",
+                      "#ff4d4f",
+                      "#52c41a",
+                      "#1890ff",
+                      "#faad14",
+                      "#722ed1",
+                      "#eb2f96",
+                    ],
+                  },
+                ]}
+                onOpenChange={(open) => {
+                  // Prevent auto-closing
+                  if (!open && showScriptureColorPicker) {
+                    // Force it to stay open
+                    setTimeout(() => {
+                      const colorPicker =
+                        document.querySelector(".ant-color-picker");
+                      if (colorPicker) {
+                        (colorPicker as HTMLElement).click();
+                      }
+                    }, 0);
+                  }
+                }}
+              />
+            </div>
+
+            <button
+              onClick={closeAllColorPickers}
+              className="mt-3 w-full px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </motion.div>
+        )}
+
+        {showQuoteColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="fixed z-50 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border color-picker-container"
+            style={{
+              left: colorPickerPosition.x - 120,
+              top: colorPickerPosition.y - 80,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
+            <div className="text-center mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+                Quote Style
+              </h4>
+            </div>
+
+            {/* Font Size Control */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Font Size
+                </label>
+                <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  {getQuoteFontClass().replace("text-", "")}
+                </div>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                step="1"
+                value={quoteFontSize}
+                onChange={(e) =>
+                  handleQuoteFontSizeChange(parseInt(e.target.value))
+                }
+                className="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+
+            {/* Color Picker */}
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-2">
+                Color
+              </label>
+              <ColorPicker
+                value={quoteColor}
+                onChange={(color) => {
+                  handleQuoteColorChange(color.toHexString());
+                }}
+                size="large"
+                showText
+                format="hex"
+                placement="bottom"
+                presets={[
+                  {
+                    label: "Common",
+                    colors: [
+                      "#ffffff",
+                      "#000000",
+                      "#ff4d4f",
+                      "#52c41a",
+                      "#1890ff",
+                      "#faad14",
+                      "#722ed1",
+                      "#eb2f96",
+                    ],
+                  },
+                ]}
+                onOpenChange={(open) => {
+                  // Prevent auto-closing
+                  if (!open && showQuoteColorPicker) {
+                    // Force it to stay open
+                    setTimeout(() => {
+                      const colorPicker =
+                        document.querySelector(".ant-color-picker");
+                      if (colorPicker) {
+                        (colorPicker as HTMLElement).click();
+                      }
+                    }, 0);
+                  }
+                }}
+              />
+            </div>
+
+            <button
+              onClick={closeAllColorPickers}
+              className="mt-3 w-full px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        .slider-thumb::-webkit-slider-thumb {
+          appearance: none;
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #9a674a 0%, #7a5236 100%);
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(154, 103, 74, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          transition: all 0.2s ease;
+        }
+        
+        .slider-thumb::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+          box-shadow: 0 3px 8px rgba(154, 103, 74, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+        
+        .slider-thumb::-moz-range-thumb {
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #9a674a 0%, #7a5236 100%);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 6px rgba(154, 103, 74, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2);
+          transition: all 0.2s ease;
+        }
+        
+        .slider-thumb::-moz-range-thumb:hover {
+          transform: scale(1.1);
+          box-shadow: 0 3px 8px rgba(154, 103, 74, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Background gallery scrollbar hiding */
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 };

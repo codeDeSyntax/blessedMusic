@@ -1,6 +1,6 @@
 // components/PresentationList.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BookOpen,
@@ -19,7 +19,6 @@ import {
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
 import { useTheme } from "@/Provider/Theme";
-import { on } from "node:events";
 
 // Set of background images we'll use randomly for the cards
 const backgroundImages = [
@@ -38,25 +37,17 @@ const getBackgroundImage = (id: string) => {
   return backgroundImages[index];
 };
 
-type PresentationCardProps = {
+const PresentationCard: React.FC<{
   presentation: PresentationType;
   onSelect: (presentation: PresentationType) => void;
   onEdit: (presentation: PresentationType) => void;
   onDelete: (id: string) => void;
   onPresent: (presentation: PresentationType) => void;
-};
-
-const PresentationCard: React.FC<PresentationCardProps> = ({
-  presentation,
-  onSelect,
-  onEdit,
-  onDelete,
-  onPresent,
-}) => {
-  // Determine accent colors based on presentation type
-  const accentColor = presentation.type === "sermon" ? "indigo" : "purple";
+}> = ({ presentation, onSelect, onEdit, onDelete, onPresent }) => {
   const { isDarkMode } = useTheme();
-  const backgroundImage = isDarkMode ? "./wood10.jpg" : "./wood11.jpg";
+  // Determine accent colors based on presentation type
+  // const accentColor = presentation.type === "sermon" && isDarkMode ? "9a674a" : "8b5a3c";
+  const backgroundImage =  (isDarkMode ? "./wood10.jpg" : "./wood11.jpg");
 
   // Format date nicely
   const formattedDate = new Date(presentation.updatedAt).toLocaleDateString(
@@ -81,10 +72,10 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
     <motion.div
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
-      className={`flex flex-col rounded-lg  shadow-lg hover:shadow-xl dark:shadow-${accentColor}-500/10 dark:hover:shadow-${accentColor}-500/20 transition-all duration-500 h-full bg-white dark:bg-ltgray border border-gray-100 dark:border-gray-800`}
+      className={`flex flex-col rounded-lg shadow-lg hover:shadow-xl transition-all  duration-500 h-full bg-[#faeed1] dark:bg-ltgray border border-[#9a674a]/20 dark:border-gray-800`}
       style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264.888-.14 1.652-1.1 2.782.14 3.68.14 1.074 0 2.14-.156 3.204-.156 1.23 0 2.46.156 3.7.156 1.326 0 2.4-.156 3.7-.156' stroke='%23${
-          isDarkMode ? "555555" : "000000"
+          isDarkMode ? "#555555" : "#9a674a"
         }' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E")`,
         backgroundPosition: "bottom center",
         backgroundRepeat: "repeat-x",
@@ -92,11 +83,11 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
     >
       {/* Receipt Header with Title and Type */}
       <div
-        className="relative w-full cursor-pointer"
+        className="relative w-full cursor-pointer rounded-t-lg"
         onClick={() => onSelect(presentation)}
       >
         <div
-          className="h-12 bg-center bg-cover rounded-t-lg"
+          className="h-12 bg-center bg-cover rounded-lg"
           style={{
             backgroundImage: `url(${backgroundImage})`,
             backgroundPosition: "center",
@@ -104,14 +95,14 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
         ></div>
 
         {/* Receipt Title Bar */}
-        <div className="absolute inset-x-0 top-0 h-12 bg-purple/30 backdrop-blur- flex items-center justify-between px-4">
-          <h3 className="font-bitter text-stone-500 dark:text-gray-50  text-[12px] font-medium truncate max-w-[80%]">
+        <div className="absolute rounded-t-lg inset-x-0 top-0 h-12 bg-[#ecb129]/30 dark:bg-[#78716c]/30 backdrop-blur- flex items-center justify-between px-4">
+          <h3 className="font-bitter text-[#9a674a] dark:text-gray-50 text-[12px] font-medium truncate max-w-[80%]">
             {presentation.title}
           </h3>
 
           {/* Type Badge */}
           <div
-            className={`bg-${accentColor}-500 dark:bg-${accentColor}-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center`}
+            className={`bg-yellow-100 dark:bg-stone-600  dark:bg-${presentation.type === "sermon" ? "indigo" : "purple"}-600 text-black dark:text-white px-3 py-1 rounded-full text-xs font-medium flex items-center`}
           >
             {presentation.type === "sermon" ? (
               <>
@@ -132,7 +123,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
           {Array.from({ length: 15 }).map((_, i) => (
             <div
               key={i}
-              className="w-2 h-2 rounded-full bg-gray-100 dark:bg-gray-800 -mt-1"
+              className="w-2 h-2 rounded-full bg-[#9a674a]/10 dark:bg-gray-800 -mt-1"
             />
           ))}
         </div>
@@ -143,7 +134,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
         {/* Receipt Details */}
         <div className="space-y-3 mb-4">
           {/* Date and Time - Receipt Style */}
-          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 border-b border-dashed border-gray-200 dark:border-gray-700 pb-2">
+          <div className="flex justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
             <div className="flex items-center">
               <Calendar size={12} className="mr-1" />
               <span>{formattedDate}</span>
@@ -156,18 +147,18 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
 
           {/* Preacher Info */}
           {presentation.type === "sermon" && (
-            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 border-b border-dashed border-gray-200 dark:border-gray-700 pb-2">
+            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
               <div className="flex items-center">
                 <User size={12} className="mr-1" />
                 <span>Preacher:</span>
               </div>
-              <div className="font-medium text-gray-800 dark:text-gray-300 flex items-center">
+              <div className="font-medium text-[#9a674a] dark:text-gray-300 flex items-center">
                 <div
-                  className={`w-5 h-5 rounded-full bg-gradient-to-r from-${accentColor}-500 to-${accentColor}-600 flex items-center justify-center text-white text-xs font-bold mr-1`}
+                  className={`w-5 h-5 rounded-full bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] flex items-center justify-center text-[#faeed1] text-xs font-bold mr-1`}
                   style={{
                     borderWidth: 1,
                     borderStyle: "dashed",
-                    borderColor: isDarkMode ? "#800080" : "black",
+                    borderColor: isDarkMode ? "#800080" : "#9a674a",
                   }}
                 >
                   {((presentation as any).preacher || "")
@@ -181,7 +172,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
           )}
 
           {/* Presentation ID - Receipt Number */}
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 border-b border-dashed border-gray-200 dark:border-gray-700 pb-2">
+          <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
             <div className="flex items-center">
               <FileText size={12} className="mr-1" />
               <span>SermonID #:</span>
@@ -190,10 +181,27 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
               {presentation.id.slice(0, 8).toUpperCase()}
             </span>
           </div>
+
+          {/* Background Image Preview */}
+          {presentation.backgroundImage && (
+            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
+              <div className="flex items-center">
+                <Film size={12} className="mr-1" />
+                <span>Background:</span>
+              </div>
+              <div className="w-8 h-8 rounded-lg overflow-hidden border-2 border-[#9a674a]/30 dark:border-gray-700">
+                <img
+                  src={presentation.backgroundImage}
+                  alt="Background"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Receipt Footer with Actions */}
-        <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-auto pt-3 border-t border-[#9a674a]/30 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -202,7 +210,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
                 e.stopPropagation();
                 onEdit(presentation);
               }}
-              className={`flex items-center justify-center h-10 w-10 rounded-full bg-gray-100 dark:bg-bgray dark:text-white text-${accentColor}-500 dark:text-${accentColor}-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors`}
+              className={`flex items-center justify-center h-10 w-10 rounded-full bg-[#9a674a]/10 dark:bg-bgray dark:text-white text-[#9a674a] dark:text-${presentation.type === "sermon" ? "indigo" : "purple"}-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700 transition-colors`}
             >
               <Pencil size={16} />
             </motion.button>
@@ -214,7 +222,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
                 e.stopPropagation();
                 onPresent(presentation);
               }}
-              className={`flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-r from-${accentColor}-500 to-${accentColor}-600 text-white shadow-md hover:shadow-lg transition-all duration-300`}
+              className={`flex items-center justify-center h-10 w-10 rounded-full bg-[#faeed1] dark:bg-stone-500 dark:text-[#faeed1] text-black shadow-md hover:shadow-lg transition-all duration-300`}
             >
               <PresentationIcon size={16} />
             </motion.button>
@@ -226,7 +234,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
                 e.stopPropagation();
                 onDelete(presentation.id);
               }}
-              className="flex items-center justify-center h-10 w-10 rounded-full bg-purple-50 dark:bg-purple-900/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+              className="flex items-center justify-center h-10 w-10 rounded-full bg-[#9a674a]/5 dark:bg-purple-900/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
             >
               <Trash2 size={16} />
             </motion.button>
@@ -239,7 +247,7 @@ const PresentationCard: React.FC<PresentationCardProps> = ({
                 key={i}
                 className={`w-1 ${
                   i % 3 === 0 ? "h-full" : "h-2/3"
-                } bg-gray-300 dark:bg-gray-600`}
+                } bg-[#9a674a]/30 dark:bg-[#353433]/30`}
               />
             ))}
           </div>
@@ -256,43 +264,44 @@ export const PresentationList: React.FC<{
   onEdit: (presentation: PresentationType) => void;
   onNew: () => void;
   onPresent: (presentation: PresentationType) => void;
-}> = ({ type, onBack, onSelect, onEdit, onNew, onPresent }) => {
-  const {
-    presentations,
-    startPresentation,
-  } = usePresenterOperations();
+  onCategoryChange: (category: "sermon" | "other") => void;
+}> = ({ type, onBack, onSelect, onEdit, onNew, onPresent, onCategoryChange }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const { presentations, loadPresentations, removePresentation, isLoading, error } = usePresenterOperations();
+  const { isDarkMode } = useTheme();
 
   // Local state for path management
   const [selectedPath, setSelectedPath] = useState(
     localStorage.getItem("evpresenterfilespath") || ""
   );
-  const { isDarkMode } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
 
-  //arrange filtered presentation by date
-  presentations.sort((a, b) => {
+  // Load presentations when path changes or on mount
+  useEffect(() => {
+    if (selectedPath) {
+      loadPresentations();
+    }
+  }, [selectedPath, loadPresentations]);
+
+  // Create a sorted copy of presentations
+  const sortedPresentations = [...presentations].sort((a, b) => {
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
-  const filteredPresentations = presentations
+
+  const filteredPresentations = sortedPresentations
     .filter((p) => p.type === type)
-    .filter(
-      (p) =>
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.type === "sermon" &&
-          (p as any).preacher
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()))
+    .filter((p) =>
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.type === "sermon" && (p as any).preacher?.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this presentation?")) {
-      console.log("Delete presentation:", id); // TODO: Implement delete functionality
+      try {
+        await removePresentation(id);
+      } catch (error) {
+        console.error("Failed to delete presentation:", error);
+      }
     }
-  };
-
-  const handlePresent = (presentation: PresentationType) => {
-    onPresent(presentation);
-    startPresentation();
   };
 
   //function choose path an set it to local storage
@@ -301,9 +310,7 @@ export const PresentationList: React.FC<{
     if (typeof path === "string") {
       setSelectedPath(path);
       if (path) {
-        if (path) {
-          localStorage.setItem("evpresenterfilespath", path);
-        }
+        localStorage.setItem("evpresenterfilespath", path);
       }
     } else {
       console.error("Invalid path selected");
@@ -319,77 +326,133 @@ export const PresentationList: React.FC<{
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black px-4 py-6">
+    <div className="flex flex-col h-[94%] bg-[#faeed1] dark:bg-black px-4 py-6 ">
       <div
-        className={`w-full max-w-6xl mx-auto rounded-3xl dark:bg-bgray/60 bg-gray-200 shadow-xl p-6 relative overflow-hidden backdrop-blur-sm h-full`}
+        className={`w-full max-w-6xl mx-auto rounded-3xl bg-[#faeed1]/70 dark:bg-bgray/60 shadow-xl p-6  relative overflow-hidden backdrop-blur-sm h-full border border-[#9a674a]/20`}
       >
         {/* Corner backdrop effects for magical feel */}
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-indigo-400/30 to-purple-500/30 dark:from-indigo-600/20 dark:to-purple-700/20 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute top-1/4 right-0 w-32 h-32 bg-gradient-to-bl from-purple-400/30 to-indigo-500/30 dark:from-purple-600/20 dark:to-indigo-700/20 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-0 left-1/4 w-36 h-36 bg-gradient-to-tr from-indigo-400/30 to-purple-500/30 dark:from-indigo-600/20 dark:to-purple-700/20 rounded-full blur-2xl"></div>
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-[#9a674a]/40 to-[#8b5a3c]/20 dark:from-[#8b5a3c]/20 dark:to-[#8b5a3c]/20 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute top-1/4 right-0 w-60 h-60 bg-gradient-to-bl from-[#8b5a3c]/40 to-[#9a674a]/20 dark:from-[#8b5a3c]/20 dark:to-[#8b5a3c]/20 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-1/4 w-36 h-36 bg-gradient-to-tr from-[#9a674a]/20 to-[#8b5a3c]/20 dark:from-[#8b5a3c]/20 dark:to-[#8b5a3c]/20 rounded-full blur-2xl"></div>
 
         <div className="relative z-10 flex flex-col h-full">
+          {/* Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl flex items-center justify-cen font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl flex items-center justify-cen font-bold text-[#9a674a] dark:bg-gradient-to-r dark:from-[#8b5a3c] dark:to-purple-600 dark:bg-clip-text dark:text-transparent">
                 <span>
                   {type === "sermon" ? "Sermons" : "Other Presentations"}
                 </span>
-                {/* if selected path show path, else button to choose path */}
                 {selectedPath ? (
-                  <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                  <span className="text-sm text-[#9a674a]/70 dark:text-gray-400 ml-2">
                     {selectedPath}
                   </span>
                 ) : (
                   <button
                     onClick={selectEvpd}
-                    className="text-sm text-gray-500 dark:text-gray-400 ml-2"
+                    className="text-sm text-[#9a674a]/70 dark:text-gray-400 ml-2"
                   >
                     Choose path
                   </button>
                 )}
-                <FolderEdit className="text-yellow-500 h-4 w-4 pl-4 animate-pulse cursor-pointer"  onClick={selectEvpd}/>
+                <FolderEdit 
+                  className="text-[#c77c5d] dark:text-yellow-500 h-4 w-4 pl-4 animate-pulse cursor-pointer" 
+                  onClick={selectEvpd}
+                />
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-[#9a674a]/70 dark:text-gray-400">
                 {filteredPresentations.length}{" "}
                 {filteredPresentations.length === 1 ? "item" : "items"} found
               </p>
             </div>
 
+            {/* Search and Controls */}
             <div className="flex w-full md:w-auto gap-3">
-              {/* Search bar */}
-              <div className="relative flex-1 md:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={16} className="text-gray-400" />
+              {/* Category Toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onCategoryChange("sermon")}
+                  className={`px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${
+                    type === "sermon"
+                      ? "bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] shadow-lg"
+                      : "bg-[#9a674a]/10 dark:bg-stone-800 text-[#9a674a] dark:text-gray-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <BookOpen size={18} />
+                  {/* <span>Sermons</span> */}
+                </button>
+                <button
+                  onClick={() => onCategoryChange("other")}
+                  className={`px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${
+                    type === "other"
+                      ? "bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] shadow-lg"
+                      : "bg-[#9a674a]/10 dark:bg-stone-700 text-[#9a674a] dark:text-gray-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <Film size={18} />
+                  {/* <span>Other</span> */}
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <Search
+                    size={18}
+                    className="text-[#9a674a]/50 dark:text-gray-500"
+                  />
                 </div>
                 <input
                   type="text"
-                  placeholder="Search presentations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-100 dark:bg-bgray/50 text-gray-800 dark:text-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 border-none shadow-inner"
+                  placeholder={`Search ${type === "sermon" ? "sermons" : "presentations"}...`}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-[#9a674a]/10 dark:bg-gray-800/50 text-[#9a674a] dark:text-gray-100 placeholder-[#9a674a]/50 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9a674a]/30 dark:focus:ring-primary/50 transition-all"
                 />
               </div>
 
+              {/* New Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClickNew}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-300 whitespace-nowrap"
+                className="px-4 py-2 bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-300 whitespace-nowrap flex items-center gap-2"
               >
-                New {type === "sermon" ? "Sermon" : "Presentation"}
+                <PresentationIcon size={18} />
+                <span>New {type === "sermon" ? "Sermon" : "Presentation"}</span>
               </motion.button>
             </div>
           </div>
 
-          {filteredPresentations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center flex-1 text-gray-500 dark:text-gray-400 p-10">
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-[#9a674a] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[#9a674a] dark:text-gray-400">Loading presentations...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-red-500 dark:text-red-400 text-center">
+                <p className="text-lg font-medium">Failed to load presentations</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !error && filteredPresentations.length === 0 && (
+            <div className="flex flex-col items-center justify-center flex-1 text-[#9a674a] dark:text-gray-400 p-10">
               {searchQuery ? (
                 <>
                   <p>No presentations matching "{searchQuery}"</p>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="mt-3 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="mt-3 px-3 py-1.5 bg-[#9a674a]/10 dark:bg-gray-800 text-sm rounded-lg hover:bg-[#9a674a]/20 dark:hover:bg-gray-700 transition-colors"
                   >
                     Clear search
                   </button>
@@ -401,15 +464,17 @@ export const PresentationList: React.FC<{
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={onClickNew}
-                    className="mt-4 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                    className="mt-4 px-4 py-2 bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] text-[#faeed1] rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   >
-                    Create your first{" "}
-                    {type === "sermon" ? "sermon" : "presentation"}
+                    Create your first {type === "sermon" ? "sermon" : "presentation"}
                   </motion.button>
                 </>
               )}
             </div>
-          ) : (
+          )}
+
+          {/* Presentations Grid */}
+          {!isLoading && !error && filteredPresentations.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto no-scrollbar pb-4 h-full">
               {filteredPresentations.map((presentation) => (
                 <PresentationCard
@@ -418,7 +483,7 @@ export const PresentationList: React.FC<{
                   onSelect={onSelect}
                   onEdit={onEdit}
                   onDelete={handleDelete}
-                  onPresent={handlePresent}
+                  onPresent={onPresent}
                 />
               ))}
             </div>
@@ -428,3 +493,5 @@ export const PresentationList: React.FC<{
     </div>
   );
 };
+
+export default PresentationList;

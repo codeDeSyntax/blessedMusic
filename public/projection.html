@@ -673,17 +673,17 @@
         isExternalDisplay = info.isExternalDisplay;
         const container = document.getElementById('contentContainer');
         
-        if (!isExternalDisplay) {
-          // Show warning if not using external display
-          container.innerHTML = `
-            <div class="display-warning">
-              <h2>Test Mode - No External Display</h2>
-              <p>Currently running in test mode on the main display.</p>
-              <p>Connect an external display (projector/screen) for full projection mode.</p>
-              <p>This window will automatically use the external display when connected.</p>
-            </div>
-          `;
-        }
+        // if (!isExternalDisplay) {
+        //   // Show warning if not using external display
+        //   container.innerHTML = `
+        //     <div class="display-warning">
+        //       <h2>Test Mode - No External Display</h2>
+        //       <p>Currently running in test mode on the main display.</p>
+        //       <p>Connect an external display (projector/screen) for full projection mode.</p>
+        //       <p>This window will automatically use the external display when connected.</p>
+        //     </div>
+        //   `;
+        // }
       });
 
       // Update the display-song handler to show display status

@@ -39,6 +39,7 @@
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
     "antd": "^5.26.2",
+    "aos": "^2.3.4",
     "electron-updater": "^6.1.8",
     "framer-motion": "^11.5.4",
     "lucide-react": "^0.441.0",
@@ -52,6 +53,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.42.1",
+    "@types/aos": "^3.0.7",
     "@types/pdfjs-dist": "^2.10.377",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

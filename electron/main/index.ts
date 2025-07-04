@@ -82,6 +82,7 @@ async function createMainWindow() {
   } else {
     mainWin.maximize();
     mainWin.setMenuBarVisibility(false);
+    // mainWin.webContents.openDevTools();
     mainWin.loadFile(indexHtml);
   }
 
@@ -119,30 +120,30 @@ async function createProjectionWindow() {
   let useMainDisplay = false;
 
   // Find external display (projector)
-  if (displays.length > 1) {
-    projectionDisplay = displays.find(display => 
-      display.bounds.x !== 0 || display.bounds.y !== 0
-    );
-  } else {
-    // Fallback to main display if no external display is found
-    useMainDisplay = true;
-    projectionDisplay = displays[0];
-  }
+  // if (displays.length > 1) {
+  //   projectionDisplay = displays.find(display => 
+  //     display.bounds.x !== 0 || display.bounds.y !== 0
+  //   );
+  // } else {
+  //   // Fallback to main display if no external display is found
+  //   useMainDisplay = true;
+  //   projectionDisplay = displays[0];
+  // }
 
   // Create a new projection window
   projectionWin = new BrowserWindow({
     title: "Projection",
-    x: useMainDisplay ? undefined : projectionDisplay?.bounds.x,
-    y: useMainDisplay ? undefined : projectionDisplay?.bounds.y,
-    width: projectionDisplay?.bounds.width || 800,
-    height: projectionDisplay?.bounds.height || 600,
+    // x: useMainDisplay ? undefined : projectionDisplay?.bounds.x,
+    // y: useMainDisplay ? undefined : projectionDisplay?.bounds.y,
+    // width: projectionDisplay?.bounds.width || 800,
+    // height: projectionDisplay?.bounds.height || 600,
     frame: false,
     show: true,
     minimizable: true,
     fullscreen: true, // Only go fullscreen on external display
     alwaysOnTop: false,
     skipTaskbar: false, // Show in taskbar for easier access
-    icon: path.join(process.env.VITE_PUBLIC || "", "icon.png"),
+    icon: path.join(process.env.VITE_PUBLIC || "", "evv.png"),
     webPreferences: {
       preload,
       nodeIntegration: false,
@@ -152,12 +153,12 @@ async function createProjectionWindow() {
   });
 
   // Send display info to renderer
-  projectionWin.webContents.on('did-finish-load', () => {
-    projectionWin?.webContents.send('display-info', {
-      isExternalDisplay: !useMainDisplay,
-      displayBounds: projectionDisplay?.bounds
-    });
-  });
+  // projectionWin.webContents.on('did-finish-load', () => {
+  //   projectionWin?.webContents.send('display-info', {
+  //     isExternalDisplay: !useMainDisplay,
+  //     displayBounds: projectionDisplay?.bounds
+  //   });
+  // });
 
   if (VITE_DEV_SERVER_URL) {
     projectionWin.loadURL(`${VITE_DEV_SERVER_URL}/projection.html`);
@@ -166,14 +167,14 @@ async function createProjectionWindow() {
   }
 
   // Show window once loaded
-  projectionWin.once('ready-to-show', () => {
-    projectionWin?.show();
-    // If using main display, position it nicely
-    if (useMainDisplay) {
-      projectionWin?.setSize(800, 600);
-      projectionWin?.center();
-    }
-  });
+  // projectionWin.once('ready-to-show', () => {
+  //   projectionWin?.show();
+  //   // If using main display, position it nicely
+  //   if (useMainDisplay) {
+  //     projectionWin?.setSize(800, 600);
+  //     projectionWin?.center();
+  //   }
+  // });
 
   // Track window state changes
   projectionWin.on("minimize", () => {
@@ -647,6 +648,7 @@ PREACHER: ${EvSermon.preacher || ""}
 DATE: ${EvSermon.date || ""}
 CREATED_AT: ${sermon.createdAt}
 UPDATED_AT: ${sermon.updatedAt}
+BACKGROUND_IMAGE: ${EvSermon.backgroundImage || ""}
 
 #SCRIPTURES
 ${
@@ -659,9 +661,7 @@ ${
 
 #CONTENT
 ${EvSermon.mainMessage ? `MAIN_MESSAGE: ${EvSermon.mainMessage}` : ""}
-${EvSermon.quote ? `QUOTE: ${EvSermon.quote}` : ""}
-
-#END`;
+${EvSermon.quote ? `QUOTE: ${EvSermon.quote}` : ""}`;
 }
 
 function formatOtherToText(other: Presentation): string {
@@ -669,145 +669,124 @@ function formatOtherToText(other: Presentation): string {
 
   const EvOther = other as EvOther;
 
-  // Format structured data with clear section separators for easy parsing
   return `#TYPE: other
 #METADATA
 ID: ${other.id}
 TITLE: ${other.title}
 CREATED_AT: ${other.createdAt}
 UPDATED_AT: ${other.updatedAt}
+BACKGROUND_IMAGE: ${EvOther.backgroundImage || ""}
 
 #CONTENT
-MESSAGE: ${EvOther.message || ""}
-
-#END`;
+MESSAGE: ${EvOther.message || ""}`;
 }
 
 function parseSermonFile(content: string, id: string): EvSermon {
-  // Initialize with defaults
+  const lines = content.split("\n");
   const sermon: Partial<EvSermon> = {
     id,
     type: "sermon",
-    title: "",
-    preacher: "",
-    date: "",
     scriptures: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
-  // Handle both old and new format
-  if (content.includes("#METADATA")) {
-    // New structured format
-    const sections = content.split(/\n#[A-Z]+\n/);
-
-    // Parse metadata section
-    if (sections.length > 1) {
-      const metadataLines = sections[1].trim().split("\n");
-      metadataLines.forEach((line) => {
-        if (line.startsWith("TITLE: ")) sermon.title = line.substring(7);
-        else if (line.startsWith("PREACHER: "))
-          sermon.preacher = line.substring(10);
-        else if (line.startsWith("DATE: ")) sermon.date = line.substring(6);
-        else if (line.startsWith("CREATED_AT: "))
-          sermon.createdAt = line.substring(12);
-        else if (line.startsWith("UPDATED_AT: "))
-          sermon.updatedAt = line.substring(12);
-      });
+  let section = "";
+  for (const line of lines) {
+    if (line.startsWith("#")) {
+      section = line.slice(1);
+      continue;
     }
 
-    // Parse scriptures section
-    if (sections.length > 2) {
-      const scriptureLines = sections[2].trim().split("\n");
-      sermon.scriptures = scriptureLines
-        .filter((line) => line.startsWith("SCRIPTURE_"))
-        .map((line) => {
-          const text = line.substring(line.indexOf(":") + 2);
-          return { text };
-        });
-    }
+    if (!line.includes(":")) continue;
 
-    // Parse content section
-    if (sections.length > 3) {
-      const contentLines = sections[3].trim().split("\n");
-      contentLines.forEach((line) => {
-        if (line.startsWith("MAIN_MESSAGE: "))
-          sermon.mainMessage = line.substring(14);
-        else if (line.startsWith("QUOTE: ")) sermon.quote = line.substring(7);
-      });
-    }
-  } else {
-    // Legacy format
-    const lines = content.split("\n");
+    const [key, ...valueParts] = line.split(":");
+    const value = valueParts.join(":").trim(); // Rejoin with : to preserve any : in the value
 
-    lines.forEach((line) => {
-      if (line.startsWith("TITLE: ")) sermon.title = line.substring(7);
-      else if (line.startsWith("PREACHER: "))
-        sermon.preacher = line.substring(10);
-      else if (line.startsWith("DATE: ")) sermon.date = line.substring(6);
-      else if (line.startsWith("SCRIPTURES: ")) {
-        const scriptures = line.substring(12).split("|");
-        sermon.scriptures = scriptures.map((text) => ({ text }));
-      } else if (line.startsWith("MAIN_MESSAGE: "))
-        sermon.mainMessage = line.substring(14);
-      else if (line.startsWith("QUOTE: ")) sermon.quote = line.substring(7);
-      else if (line.startsWith("CREATED_AT: "))
-        sermon.createdAt = line.substring(12);
-      else if (line.startsWith("UPDATED_AT: "))
-        sermon.updatedAt = line.substring(12);
-    });
+    switch (section) {
+      case "METADATA":
+        switch (key.trim()) {
+          case "TITLE":
+            sermon.title = value;
+            break;
+          case "PREACHER":
+            sermon.preacher = value;
+            break;
+          case "DATE":
+            sermon.date = value;
+            break;
+          case "CREATED_AT":
+            sermon.createdAt = value;
+            break;
+          case "UPDATED_AT":
+            sermon.updatedAt = value;
+            break;
+          case "BACKGROUND_IMAGE":
+            sermon.backgroundImage = value || undefined;
+            break;
+        }
+        break;
+      case "SCRIPTURES":
+        if (key.trim().startsWith("SCRIPTURE_")) {
+          sermon.scriptures?.push({ text: value });
+        }
+        break;
+      case "CONTENT":
+        switch (key.trim()) {
+          case "MAIN_MESSAGE":
+            sermon.mainMessage = value;
+            break;
+          case "QUOTE":
+            sermon.quote = value;
+            break;
+        }
+        break;
+    }
   }
 
   return sermon as EvSermon;
 }
 
 function parseOtherFile(content: string, id: string): EvOther {
-  // Initialize with defaults
+  const lines = content.split("\n");
   const other: Partial<EvOther> = {
     id,
     type: "other",
-    title: "",
-    message: "",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
-  // Handle both old and new format
-  if (content.includes("#METADATA")) {
-    // New structured format
-    const sections = content.split(/\n#[A-Z]+\n/);
-
-    // Parse metadata section
-    if (sections.length > 1) {
-      const metadataLines = sections[1].trim().split("\n");
-      metadataLines.forEach((line) => {
-        if (line.startsWith("TITLE: ")) other.title = line.substring(7);
-        else if (line.startsWith("CREATED_AT: "))
-          other.createdAt = line.substring(12);
-        else if (line.startsWith("UPDATED_AT: "))
-          other.updatedAt = line.substring(12);
-      });
+  let section = "";
+  for (const line of lines) {
+    if (line.startsWith("#")) {
+      section = line.slice(1);
+      continue;
     }
 
-    // Parse content section
-    if (sections.length > 2) {
-      const contentLines = sections[2].trim().split("\n");
-      contentLines.forEach((line) => {
-        if (line.startsWith("MESSAGE: ")) other.message = line.substring(9);
-      });
-    }
-  } else {
-    // Legacy format
-    const lines = content.split("\n");
+    if (!line.includes(":")) continue;
 
-    lines.forEach((line) => {
-      if (line.startsWith("TITLE: ")) other.title = line.substring(7);
-      else if (line.startsWith("MESSAGE: ")) other.message = line.substring(9);
-      else if (line.startsWith("CREATED_AT: "))
-        other.createdAt = line.substring(12);
-      else if (line.startsWith("UPDATED_AT: "))
-        other.updatedAt = line.substring(12);
-    });
+    const [key, ...valueParts] = line.split(":");
+    const value = valueParts.join(":").trim(); // Rejoin with : to preserve any : in the value
+
+    switch (section) {
+      case "METADATA":
+        switch (key.trim()) {
+          case "TITLE":
+            other.title = value;
+            break;
+          case "CREATED_AT":
+            other.createdAt = value;
+            break;
+          case "UPDATED_AT":
+            other.updatedAt = value;
+            break;
+          case "BACKGROUND_IMAGE":
+            other.backgroundImage = value || undefined;
+            break;
+        }
+        break;
+      case "CONTENT":
+        if (key.trim() === "MESSAGE") {
+          other.message = value;
+        }
+        break;
+    }
   }
 
   return other as EvOther;
