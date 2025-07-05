@@ -35,13 +35,14 @@ const SongCollectionManager: React.FC = () => {
   // Sample songs (replace with your actual data)
   const { songs, selectedSong, selectSong } = useSongOperations();
   const dispatch = useAppDispatch();
-  
+
   // Window controls
   const handleClose = () => window.api?.closeApp();
   const handleMinimize = () => window.api?.minimizeApp();
   const handleMaximize = () => window.api?.maximizeApp();
   const setSelectedSong = (song: Song) => selectSong(song);
-  const setAndSaveCurrentScreen = (screen: CurrentScreen) => dispatch(setCurrentScreen(screen));
+  const setAndSaveCurrentScreen = (screen: CurrentScreen) =>
+    dispatch(setCurrentScreen(screen));
   const [allMusic, setAllMusic] = useState<Song[]>(songs);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -309,10 +310,11 @@ const SongCollectionManager: React.FC = () => {
 
   const presentSong = (song: Song) => {
     if (song) {
+      // Always use React-based projection (routed through project-song handler)
       window.api.projectSong(song);
-      window.api.onDisplaySong((song: any) => {
-        // handle songData
-        alert(`songData: ${song.title}`);
+
+      window.api.onDisplaySong((songData: any) => {
+        console.log(`Displaying song: ${songData.title}`);
       });
     }
   };

@@ -2,9 +2,7 @@
 
 interface Window {
   // expose in the `electron/preload/index.ts`
-  ipcRenderer: import('electron').IpcRenderer;
-  
-  
+  ipcRenderer: import("electron").IpcRenderer;
 }
 
 interface Window {
@@ -28,14 +26,26 @@ interface Window {
     getPresentationImages: (directory: string) => Promise<string[]>;
     projectSong: (songs: any) => void;
     onDisplaySong: (callback: (songData: Song) => void) => void;
-    getImages: (dirPath:string) => Promise<string[]>,
-    createEvPresentation:(path:string,presentation: Omit<Presentation, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Presentation>,
-    loadEvPresentations: (path:string) => Promise<Presentation[]>,
-    deleteEvPresentation: (id: string,directory:string) => Promise<void>,
-    updateEvPresentation: (id: string,directoryPath:string, presentation: Partial<Presentation>) => Promise<Presentation>,
-
-
+    onDisplayInfo: (callback: (info: any) => void) => void;
+    getImages: (dirPath: string) => Promise<string[]>;
+    createEvPresentation: (
+      path: string,
+      presentation: Omit<Presentation, "id" | "createdAt" | "updatedAt">
+    ) => Promise<Presentation>;
+    loadEvPresentations: (path: string) => Promise<Presentation[]>;
+    deleteEvPresentation: (id: string, directory: string) => Promise<void>;
+    updateEvPresentation: (
+      id: string,
+      directoryPath: string,
+      presentation: Partial<Presentation>
+    ) => Promise<Presentation>;
+    createBiblePresentationWindow: (
+      data: any
+    ) => Promise<{ success: boolean; error?: string }>;
+    sendToBiblePresentation: (data: {
+      type: string;
+      data: any;
+    }) => Promise<{ success: boolean; error?: string }>;
+    focusMainWindow: () => Promise<{ success: boolean; error?: string }>;
   };
-  
-  
 }

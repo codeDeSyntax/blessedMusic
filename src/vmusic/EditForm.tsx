@@ -57,11 +57,14 @@ export default function EditSong() {
   const { selectedSong } = useSongOperations();
   const dispatch = useAppDispatch();
   const theme = useAppSelector((state) => state.app.theme);
-  
+
   // Local functions for missing operations
-  const setSongRepo = (path: string) => localStorage.setItem("songRepoDirectory", path);
-  const setTheme = (theme: string) => localStorage.setItem("bmusictheme", theme);
-  const setSongs = (songs: Song[]) => console.log("TODO: Update songs in Redux store");
+  const setSongRepo = (path: string) =>
+    localStorage.setItem("songRepoDirectory", path);
+  const setTheme = (theme: string) =>
+    localStorage.setItem("bmusictheme", theme);
+  const setSongs = (songs: Song[]) =>
+    console.log("TODO: Update songs in Redux store");
   const refetch = () => console.log("TODO: Implement refetch functionality");
   const songRepo = localStorage.getItem("songRepoDirectory") || "";
   const [formData, setFormData] = useState({
@@ -74,6 +77,16 @@ export default function EditSong() {
     message: string;
     type: "success" | "error" | "warning";
   }>({ show: false, message: "", type: "success" });
+
+  // Helper function to project song - now always uses React-based projection
+  const projectSong = (songData: any) => {
+    // Always use React-based projection (routed through project-song handler)
+    window.api.projectSong(songData);
+
+    window.api.onDisplaySong((songData) => {
+      console.log(`Displaying song: ${songData.title}`);
+    });
+  };
 
   useEffect(() => {
     const savedDirectory = localStorage.getItem("songRepoDirectory");
@@ -135,7 +148,7 @@ export default function EditSong() {
     }
   };
 
- const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateSongData()) {
@@ -198,11 +211,7 @@ export default function EditSong() {
                   <Monitor
                     className="w-6 h-6 text-[#9a674a] hover:scale-105 hover:cursor-pointer"
                     onClick={() => {
-                      window.api.projectSong(formData);
-                      window.api.onDisplaySong((formData) => {
-                        // handle songData
-                        console.log(`songData: ${formData.title}`);
-                      });
+                      projectSong(formData);
                     }}
                   />
                 </div>

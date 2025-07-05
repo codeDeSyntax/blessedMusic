@@ -19,6 +19,7 @@ interface ElectronAPI {
   onDisplaySong: (callback: (songData: any) => void) => () => void;
   onDisplayInfo: (callback: (info: DisplayInfo) => void) => () => void;
   getImages: (dirPath: string) => Promise<string[]>;
+  focusMainWindow: () => Promise<{ success: boolean; error?: string }>;
   // Add other API methods as needed
 }
 
@@ -28,4 +29,4 @@ declare global {
   }
 }
 
-export { DisplayInfo, ElectronAPI }; 
+export { DisplayInfo, ElectronAPI };

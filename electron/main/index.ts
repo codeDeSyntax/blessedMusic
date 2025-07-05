@@ -52,7 +52,10 @@ if (!app.requestSingleInstanceLock()) {
 
 let mainWin: BrowserWindow | null = null;
 let projectionWin: BrowserWindow | null = null;
+let biblePresentationWin: BrowserWindow | null = null;
+let songPresentationWin: BrowserWindow | null = null;
 let isProjectionMinimized = false;
+let isSongPresentationMinimized = false;
 const preload = path.join(__dirname, "../preload/index.mjs");
 const indexHtml = path.join(RENDERER_DIST, "index.html");
 const projectionHtml = path.join(RENDERER_DIST, "projection.html");
@@ -114,6 +117,8 @@ async function createMainWindow() {
   return mainWin;
 }
 
+// DISABLED: Static HTML projection window function
+/*
 async function createProjectionWindow() {
   const displays = screen.getAllDisplays();
   let projectionDisplay = null;
@@ -192,9 +197,22 @@ async function createProjectionWindow() {
 
   return projectionWin;
 }
+*/
 
 // Handle the escape key minimize functionality from the renderer
 ipcMain.on("minimizeProjection", () => {
+  // UPDATED: Now handles both static projection (disabled) and React-based song presentation
+  if (songPresentationWin && !songPresentationWin.isDestroyed()) {
+    songPresentationWin.minimize();
+
+    // Focus the main window after minimizing the projection window
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.focus();
+    }
+  }
+
+  // DISABLED: Static HTML projection minimize
+  /*
   if (projectionWin && !projectionWin.isDestroyed()) {
     projectionWin.minimize();
     isProjectionMinimized = true;
@@ -204,7 +222,124 @@ ipcMain.on("minimizeProjection", () => {
       mainWin.focus();
     }
   }
+  */
 });
+
+async function createBiblePresentationWindow() {
+  const displays = screen.getAllDisplays();
+  let presentationDisplay = displays[0]; // Default to primary display
+
+  // Find external display (projector) if available
+  if (displays.length > 1) {
+    const externalDisplay = displays.find(
+      (display) => display.bounds.x !== 0 || display.bounds.y !== 0
+    );
+    if (externalDisplay) {
+      presentationDisplay = externalDisplay;
+    }
+  }
+
+  // Create Bible presentation window
+  biblePresentationWin = new BrowserWindow({
+    title: "Bible Presentation",
+    x: presentationDisplay.bounds.x,
+    y: presentationDisplay.bounds.y,
+    width: presentationDisplay.bounds.width,
+    height: presentationDisplay.bounds.height,
+    frame: false,
+    show: true,
+    fullscreen: true,
+    alwaysOnTop: false,
+    skipTaskbar: false,
+    icon: path.join(process.env.VITE_PUBLIC || "", "evv.png"),
+    webPreferences: {
+      preload,
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  // Load the presentation display page
+  if (VITE_DEV_SERVER_URL) {
+    biblePresentationWin.loadURL(
+      `${VITE_DEV_SERVER_URL}/#/bible-presentation-display`
+    );
+    biblePresentationWin.webContents.openDevTools(); // Open dev tools for debugging
+  } else {
+    biblePresentationWin.loadFile(indexHtml, {
+      hash: "bible-presentation-display",
+    });
+  }
+
+  biblePresentationWin.on("closed", () => {
+    biblePresentationWin = null;
+  });
+
+  return biblePresentationWin;
+}
+
+async function createSongPresentationWindow() {
+  const displays = screen.getAllDisplays();
+  let presentationDisplay = displays[0]; // Default to primary display
+
+  // Find external display (projector) if available
+  if (displays.length > 1) {
+    const externalDisplay = displays.find(
+      (display) => display.bounds.x !== 0 || display.bounds.y !== 0
+    );
+    if (externalDisplay) {
+      presentationDisplay = externalDisplay;
+    }
+  }
+
+  // Create Song presentation window
+  songPresentationWin = new BrowserWindow({
+    title: "Song Presentation",
+    x: presentationDisplay.bounds.x,
+    y: presentationDisplay.bounds.y,
+    width: presentationDisplay.bounds.width,
+    height: presentationDisplay.bounds.height,
+    frame: false,
+    show: true,
+    fullscreen: true,
+    alwaysOnTop: false,
+    skipTaskbar: false,
+    icon: path.join(process.env.VITE_PUBLIC || "", "evv.png"),
+    webPreferences: {
+      preload,
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  // Load the React-based song presentation display page
+  if (VITE_DEV_SERVER_URL) {
+    songPresentationWin.loadURL(
+      `${VITE_DEV_SERVER_URL}/#/song-presentation-display`
+    );
+  } else {
+    songPresentationWin.loadFile(indexHtml, {
+      hash: "song-presentation-display",
+    });
+  }
+
+  songPresentationWin.on("closed", () => {
+    songPresentationWin = null;
+    isSongPresentationMinimized = false;
+  });
+
+  // Track minimization state
+  songPresentationWin.on("minimize", () => {
+    isSongPresentationMinimized = true;
+  });
+
+  songPresentationWin.on("restore", () => {
+    isSongPresentationMinimized = false;
+  });
+
+  return songPresentationWin;
+}
+
 app.whenReady().then(() => {
   createMainWindow();
   app.on("activate", () => {
@@ -218,31 +353,41 @@ app.on("window-all-closed", () => {
 });
 
 ipcMain.handle("project-song", async (event, songData) => {
-  console.log(songData);
+  console.log("Using React-based song projection:", songData);
 
-  // First check if window exists but is minimized
-  if (projectionWin && !projectionWin.isDestroyed() && isProjectionMinimized) {
-    projectionWin.restore();
-    isProjectionMinimized = false;
+  // Check if window exists but is minimized
+  if (
+    songPresentationWin &&
+    !songPresentationWin.isDestroyed() &&
+    isSongPresentationMinimized
+  ) {
+    songPresentationWin.restore();
+    isSongPresentationMinimized = false;
     setTimeout(() => {
-      projectionWin?.webContents.send("display-song", songData);
-      projectionWin?.focus();
+      songPresentationWin?.webContents.send("display-song", songData);
+      songPresentationWin?.focus();
+      songPresentationWin?.moveTop();
     }, 300); // Short delay to ensure window is restored before sending data
     return;
   }
 
   // If window doesn't exist or was destroyed, create a new one
-  if (!projectionWin || projectionWin.isDestroyed()) {
-    await createProjectionWindow();
+  if (!songPresentationWin || songPresentationWin.isDestroyed()) {
+    await createSongPresentationWindow();
     // Wait for window to be ready before sending data
-    projectionWin?.once("ready-to-show", () => {
-      projectionWin?.webContents.send("display-song", songData);
-      projectionWin?.focus();
+    songPresentationWin?.once("ready-to-show", () => {
+      songPresentationWin?.webContents.send("display-song", songData);
+      // Ensure window is properly focused and visible
+      songPresentationWin?.show();
+      songPresentationWin?.focus();
+      songPresentationWin?.moveTop();
     });
   } else {
-    // Window exists and is not minimized, just send the data
-    projectionWin.webContents.send("display-song", songData);
-    projectionWin.focus();
+    // Window exists and is not minimized, just send the data and ensure it's visible
+    songPresentationWin.webContents.send("display-song", songData);
+    songPresentationWin.show();
+    songPresentationWin.focus();
+    songPresentationWin.moveTop();
   }
 });
 
@@ -436,6 +581,92 @@ async function loadImagesFromDirectory(dirPath: string) {
 
 ipcMain.handle("get-images", async (event, dirPath) => {
   return loadImagesFromDirectory(dirPath); // Return the list of base64-encoded images
+});
+
+// Bible Presentation Window handlers
+ipcMain.handle("create-bible-presentation-window", async (event, data) => {
+  try {
+    if (!biblePresentationWin || biblePresentationWin.isDestroyed()) {
+      await createBiblePresentationWindow();
+
+      // Wait for window to be ready before sending initial data
+      biblePresentationWin?.once("ready-to-show", () => {
+        if (data.presentationData) {
+          biblePresentationWin?.webContents.send("bible-presentation-update", {
+            type: "update-data",
+            data: data.presentationData,
+          });
+        }
+        if (data.settings) {
+          biblePresentationWin?.webContents.send("bible-presentation-update", {
+            type: "update-settings",
+            data: data.settings,
+          });
+        }
+        biblePresentationWin?.focus();
+      });
+    } else {
+      // Window exists, just focus it and update data
+      if (data.presentationData) {
+        biblePresentationWin.webContents.send("bible-presentation-update", {
+          type: "update-data",
+          data: data.presentationData,
+        });
+      }
+      if (data.settings) {
+        biblePresentationWin.webContents.send("bible-presentation-update", {
+          type: "update-settings",
+          data: data.settings,
+        });
+      }
+      biblePresentationWin.focus();
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating Bible presentation window:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("send-to-bible-presentation", async (event, { type, data }) => {
+  try {
+    if (biblePresentationWin && !biblePresentationWin.isDestroyed()) {
+      biblePresentationWin.webContents.send("bible-presentation-update", {
+        type,
+        data,
+      });
+      return { success: true };
+    }
+    return { success: false, error: "Presentation window not found" };
+  } catch (error) {
+    console.error("Error sending to Bible presentation window:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+// Handler to focus the main window from presentation
+ipcMain.handle("focus-main-window", async () => {
+  try {
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.focus();
+      mainWin.show();
+      return { success: true };
+    }
+    return { success: false, error: "Main window not found" };
+  } catch (error) {
+    console.error("Error focusing main window:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 });
 
 // Presentation master handlers
@@ -910,3 +1141,98 @@ function parseCustomFile(content: string, id: string): EvCustom {
 
   return custom as EvCustom;
 }
+
+// New function to create React-based song projection window
+async function createSongProjectionWindow() {
+  const displays = screen.getAllDisplays();
+  let songProjectionDisplay = null;
+  let useMainDisplay = false;
+
+  // Find external display (projector)
+  // if (displays.length > 1) {
+  //   songProjectionDisplay = displays.find(display =>
+  //     display.bounds.x !== 0 || display.bounds.y !== 0
+  //   );
+  // } else {
+  //   // Fallback to main display if no external display is found
+  //   useMainDisplay = true;
+  //   songProjectionDisplay = displays[0];
+  // }
+
+  // Create a new song projection window
+  songPresentationWin = new BrowserWindow({
+    title: "Song Projection",
+    // x: useMainDisplay ? undefined : songProjectionDisplay?.bounds.x,
+    // y: useMainDisplay ? undefined : songProjectionDisplay?.bounds.y,
+    // width: songProjectionDisplay?.bounds.width || 800,
+    // height: songProjectionDisplay?.bounds.height || 600,
+    frame: false,
+    show: true,
+    minimizable: true,
+    fullscreen: true, // Only go fullscreen on external display
+    alwaysOnTop: false,
+    skipTaskbar: false, // Show in taskbar for easier access
+    icon: path.join(process.env.VITE_PUBLIC || "", "evv.png"),
+    webPreferences: {
+      preload,
+      nodeIntegration: false,
+      contextIsolation: true,
+      zoomFactor: 1.0,
+    },
+  });
+
+  if (VITE_DEV_SERVER_URL) {
+    songPresentationWin.loadURL(`${VITE_DEV_SERVER_URL}/song-projection`);
+  } else {
+    songPresentationWin.loadFile(indexHtml, {
+      hash: "song-projection",
+    });
+  }
+
+  // Track window state changes
+  songPresentationWin.on("minimize", () => {
+    isProjectionMinimized = true;
+  });
+
+  songPresentationWin.on("restore", () => {
+    isProjectionMinimized = false;
+  });
+
+  songPresentationWin.on("closed", () => {
+    songPresentationWin = null;
+    isProjectionMinimized = false;
+  });
+
+  return songPresentationWin;
+}
+
+// ipcMain handler for creating song projection window
+ipcMain.handle("create-song-projection-window", async (event, data) => {
+  try {
+    if (!songPresentationWin || songPresentationWin.isDestroyed()) {
+      await createSongProjectionWindow();
+
+      // Wait for window to be ready before sending initial data
+      songPresentationWin?.once("ready-to-show", () => {
+        if (data.songData) {
+          songPresentationWin?.webContents.send("display-song", data.songData);
+        }
+        songPresentationWin?.focus();
+      });
+    } else {
+      // Window exists, just focus it and update data
+      if (data.songData) {
+        songPresentationWin.webContents.send("display-song", data.songData);
+      }
+      songPresentationWin.focus();
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating song projection window:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});

@@ -33,7 +33,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.send("minimizeApp");
   },
   // Add this to your preload script's contextBridge.exposeInMainWorld call
-minimizeProjection: () => ipcRenderer.send('minimizeProjection'),
+  minimizeProjection: () => ipcRenderer.send("minimizeProjection"),
   closeApp: () => {
     console.log("Close action triggered");
     ipcRenderer.send("closeApp");
@@ -65,15 +65,28 @@ minimizeProjection: () => ipcRenderer.send('minimizeProjection'),
       ipcRenderer.removeAllListeners("display-info");
     };
   },
-  getImages: (dirPath:string) => ipcRenderer.invoke('get-images', dirPath),
-  loadEvPresentations: (path:string) => ipcRenderer.invoke('load-presentations',path),
-  createEvPresentation: (path:string,presentation: Omit<Presentation, 'id' | 'createdAt' | 'updatedAt'>) => 
-    ipcRenderer.invoke('create-presentation',path, presentation),
-  updateEvPresentation: (id: string,directoryPath:string, presentation: Partial<Presentation>) => 
-    ipcRenderer.invoke('update-presentation', id,directoryPath, presentation),
-  deleteEvPresentation: (id: string,directory:string) => 
-    ipcRenderer.invoke('delete-presentation', id,directory),
-  
+  getImages: (dirPath: string) => ipcRenderer.invoke("get-images", dirPath),
+  loadEvPresentations: (path: string) =>
+    ipcRenderer.invoke("load-presentations", path),
+  createEvPresentation: (
+    path: string,
+    presentation: Omit<Presentation, "id" | "createdAt" | "updatedAt">
+  ) => ipcRenderer.invoke("create-presentation", path, presentation),
+  updateEvPresentation: (
+    id: string,
+    directoryPath: string,
+    presentation: Partial<Presentation>
+  ) =>
+    ipcRenderer.invoke("update-presentation", id, directoryPath, presentation),
+  deleteEvPresentation: (id: string, directory: string) =>
+    ipcRenderer.invoke("delete-presentation", id, directory),
+
+  // Bible Presentation API
+  createBiblePresentationWindow: (data: any) =>
+    ipcRenderer.invoke("create-bible-presentation-window", data),
+  sendToBiblePresentation: (data: { type: string; data: any }) =>
+    ipcRenderer.invoke("send-to-bible-presentation", data),
+  focusMainWindow: () => ipcRenderer.invoke("focus-main-window"),
 });
 
 // --------- Preload scripts loading ---------

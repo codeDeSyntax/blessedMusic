@@ -12,6 +12,7 @@ interface ScriptureBlockViewProps {
   verseRefs: React.MutableRefObject<{ [key: number]: HTMLDivElement | null }>;
   selectedVerse: number | null;
   getFontSize: () => string;
+  fontSize: string; // Changed to string to match getFontSize return type
   fontFamily: string;
   fontWeight: string;
   theme: string;
@@ -30,6 +31,7 @@ interface ScriptureBlockViewProps {
   highlightVerse: (verse: number, color: string) => void;
   imageBackgroundMode: boolean;
   isFullScreen: boolean;
+  onVerseClick?: (verse: number) => void;
 }
 
 const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
@@ -37,6 +39,7 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
   verseRefs,
   selectedVerse,
   getFontSize,
+  fontSize,
   fontFamily,
   fontWeight,
   theme,
@@ -55,6 +58,7 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
   highlightVerse,
   imageBackgroundMode,
   isFullScreen,
+  onVerseClick,
 }) => {
   const { isDarkMode } = useTheme();
   const formatVerseText = (text: string, highlightColor: string | null) => {
@@ -133,18 +137,19 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
         {verses.map((verse, index) => (
           <div
             key={verse.verse.toString().trim()}
-            className={`relative group px-2 rounded-md hover:bg-white/10 dark:hover:bg-bgray/40 transition-colors duration-150 bg-transparent ${
+            className={`relative group px-2 rounded-md hover:bg-white/10 dark:hover:bg-bgray/40 transition-colors duration-150 bg-transparent cursor-pointer ${
               index === 0 ? "pt-1" : ""
             } ${index === verses.length - 1 ? "pb-1" : ""}`}
             ref={(el) => (verseRefs.current[verse.verse] = el)}
             data-verse={verse.verse}
+            onClick={() => onVerseClick?.(verse.verse)}
           >
             <div className="flex items-start">
               {/* Verse number */}
               <div className="flex-shrink-0 text-center pt-1 ml-2">
                 <span
                   className="text-ltgray dark:text-yellow-700 font-archivo inline-block"
-                  style={{ fontSize: getFontSize() }}
+                  style={{ fontSize: Number(fontSize) - 1 + "rem" }}
                 >
                   {verse.verse}
                 </span>

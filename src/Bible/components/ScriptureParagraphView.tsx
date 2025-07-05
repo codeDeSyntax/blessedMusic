@@ -11,6 +11,7 @@ interface ScriptureParagraphViewProps {
   verseRefs: React.MutableRefObject<{ [key: number]: HTMLDivElement | null }>;
   selectedVerse: number | null;
   getFontSize: () => string;
+  fontSize: string; // Changed to string to match getFontSize return type 
   fontFamily: string;
   fontWeight: string;
   theme: string;
@@ -29,6 +30,7 @@ interface ScriptureParagraphViewProps {
   highlightVerse: (verse: number, color: string) => void;
   imageBackgroundMode: boolean;
   isFullScreen: boolean;
+  onVerseClick?: (verse: number) => void;
 }
 
 const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
@@ -36,6 +38,7 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
   verseRefs,
   selectedVerse,
   getFontSize,
+  fontSize,
   fontFamily,
   fontWeight,
   theme,
@@ -54,6 +57,7 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
   highlightVerse,
   imageBackgroundMode,
   isFullScreen,
+  onVerseClick,
 }) => {
   const [hoveredVerse, setHoveredVerse] = useState<number | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -148,10 +152,11 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
               <sup
                 className={`text-black dark:text-orange-300 font-anton font-bold cursor-pointer hover:bg-gray-200 bg-gray-100 dark:bg-bgray px-1 py-0.5 rounded mr-1 relative`}
                 style={{
-                  fontSize: getFontSize(), // Match verse number size with content
+                  fontSize:( Number(fontSize) - 1 )+ "rem", // Match verse number size with content
                 }}
                 onMouseEnter={() => setHoveredVerse(verse.verse)}
                 onMouseLeave={() => setHoveredVerse(null)}
+                onClick={() => onVerseClick?.(verse.verse)}
               >
                 {verse.verse}
 

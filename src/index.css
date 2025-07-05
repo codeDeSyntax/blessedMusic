@@ -9,7 +9,7 @@ body {
   font-family: "Palatino";
   overflow-x: hidden;
 }
-.wqoute {
+.wqote {
   font-family: "Brush Script MT", "Cursive", "Pacifico", cursive;
 }
 .bod {
@@ -17,11 +17,19 @@ body {
 }
 
 .dottedb {
-  background: radial-gradient(circle, #29282810 1px, white 0); /* Dots - reduced opacity from 20 to 10 */
+  background: radial-gradient(
+    circle,
+    #29282810 1px,
+    white 0
+  ); /* Dots - reduced opacity from 20 to 10 */
   background-size: 20px 20px; /* Adjust the size of the background pattern */
 }
 .dottedb1 {
-  background: radial-gradient(circle, #2c2b2b10 1px, #000000 0); /* Dots - reduced opacity from 20 to 10 */
+  background: radial-gradient(
+    circle,
+    #2c2b2b10 1px,
+    #000000 0
+  ); /* Dots - reduced opacity from 20 to 10 */
   background-size: 20px 20px; /* Adjust the size of the background pattern */
 }
 .gridb {
@@ -67,8 +75,6 @@ button:hover {
   font-size: 15px; /* Adjust font size to modify caret size */
   animation: caret-blink 1s infinite step-end; /* Control blinking rate */
 }
-
-
 
 @font-face {
   font-family: "Anton SC";
@@ -140,7 +146,12 @@ button:hover {
   font-weight: bold;
   font-style: normal;
 }
-
+@font-face {
+  font-family: "LTFuzz";
+  src: url("./fonts/LTFuzz-Regular.ttf") format("truetype");
+  /* font-weight: bold;
+  font-style: normal; */
+}
 @font-face {
   font-family: "Rowdies";
   src: url("./fonts/Rowdies-Bold.ttf") format("truetype");
@@ -176,4 +187,37 @@ button:hover {
   src: url("./fonts/merich.regular.otf") format("truetype");
   /* font-weight: bold;
   font-style: normal; */
+}
+
+/* Custom utilities for sleek presentation */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+}
+
+.text-shadow-lg {
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+}
+
+/* Animation enhancements */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Smooth transitions for font family changes */
+* {
+  transition: font-family 0.3s ease;
 }

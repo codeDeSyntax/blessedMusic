@@ -10,6 +10,8 @@ import SongCollectionManager from "./vmusic/Categorize";
 import UserGuidePage from "./vmusic/Userguide";
 import PresentationBackgroundSelector from "./vmusic/BackgroundChoose";
 import Biblelayout from "./Bible/Bible";
+import BiblePresentationDisplay from "./Bible/components/BiblePresentationDisplay";
+import SongPresentationDisplay from "./vmusic/components/SongPresentationDisplay";
 import PresentationMasterPage from "./EvPresenter/MasterPresentApp";
 import { useAppSelector, useAppDispatch } from "./store";
 import { setCurrentScreen } from "./store/slices/appSlice";
@@ -17,10 +19,30 @@ import { setCurrentScreen } from "./store/slices/appSlice";
 const App = () => {
   const currentScreen = useAppSelector((state) => state.app.currentScreen);
   const dispatch = useAppDispatch();
+  const [currentRoute, setCurrentRoute] = useState(window.location.hash);
+
+  // Handle hash-based routing for special pages like Bible presentation
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentRoute(window.location.hash);
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  // Handle special routes
+  if (currentRoute === "#/bible-presentation-display") {
+    return <BiblePresentationDisplay />;
+  }
+
+  if (currentRoute === "#/song-presentation-display") {
+    return <SongPresentationDisplay />;
+  }
 
   // set up key combinations to navigate between screens
   // ctrl + H ---- Home
-  // ctrl + B ---- Bible  
+  // ctrl + B ---- Bible
   // ctrl + P ---- Presenter
   // ctrl + S ---- Songs
 

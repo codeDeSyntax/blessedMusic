@@ -1,9 +1,19 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export type CurrentScreen = 'Home' | 'Songs' | 'create' | 'edit' | 'Presentation' | 
-  'instRoom' | 'categorize' | 'userguide' | 'backgrounds' | 'bible' | 'mpresenter';
+export type CurrentScreen =
+  | "Home"
+  | "Songs"
+  | "create"
+  | "edit"
+  | "Presentation"
+  | "instRoom"
+  | "categorize"
+  | "userguide"
+  | "backgrounds"
+  | "bible"
+  | "mpresenter";
 
-export type Theme = 'dark' | 'light' | 'creamy';
+export type Theme = "dark" | "light" | "creamy";
 
 export interface AppState {
   currentScreen: CurrentScreen;
@@ -18,19 +28,20 @@ export interface AppState {
 }
 
 const initialState: AppState = {
-  currentScreen: (localStorage.getItem("lastScreen") as CurrentScreen) || "Home",
+  currentScreen:
+    (localStorage.getItem("lastScreen") as CurrentScreen) || "Home",
   theme: (localStorage.getItem("theme") as Theme) || "creamy",
   presentationbgs: [],
   bibleBgs: [], // Initialize as empty since we'll only use custom images
   isFullscreen: false,
   windowDimensions: {
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+    width: typeof window !== "undefined" ? window.innerWidth : 1200,
+    height: typeof window !== "undefined" ? window.innerHeight : 800,
   },
 };
 
 const appSlice = createSlice({
-  name: 'app',
+  name: "app",
   initialState,
   reducers: {
     setCurrentScreen: (state, action: PayloadAction<CurrentScreen>) => {
@@ -50,7 +61,10 @@ const appSlice = createSlice({
     clearBibleBgs: (state) => {
       state.bibleBgs = [];
     },
-    setWindowDimensions: (state, action: PayloadAction<{ width: number; height: number }>) => {
+    setWindowDimensions: (
+      state,
+      action: PayloadAction<{ width: number; height: number }>
+    ) => {
       state.windowDimensions = action.payload;
     },
     toggleFullscreen: (state) => {
@@ -82,4 +96,4 @@ export const {
   closeApp,
 } = appSlice.actions;
 
-export default appSlice.reducer; 
+export default appSlice.reducer;

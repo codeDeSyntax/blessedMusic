@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Keyboard,
+  Monitor,
 } from "lucide-react";
 import { ViewMode } from "../ScriptureContent";
 import { useTheme } from "@/Provider/Theme";
@@ -46,6 +47,7 @@ interface FloatingActionBarProps {
   hideLayoutButtons?: boolean;
   isVerseByVerseView?: boolean;
   hasBackgroundImage?: boolean;
+  onOpenPresentation?: () => void;
 }
 
 const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
@@ -74,6 +76,7 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   hideLayoutButtons = false,
   isVerseByVerseView = false,
   hasBackgroundImage = false,
+  onOpenPresentation,
 }) => {
   const { toggleActiveFeature } = useTheme();
   const dispatch = useAppDispatch();
@@ -684,6 +687,19 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
               >
                 <Keyboard size={16} />
               </button>
+              {onOpenPresentation && (
+                <button
+                  onClick={onOpenPresentation}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    isVerseByVerseView && hasBackgroundImage
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                    : "text-orange-500 dark:text-orange-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                  }`}
+                  title="Open Bible Presentation"
+                >
+                  <Monitor size={16} />
+                </button>
+              )}
             </div>
           </motion.div>
         )}

@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import PresentationOverlay from "./PresentationOverlay";
 import { useTheme } from "@/Provider/Theme";
@@ -95,6 +101,93 @@ const ScriptureContent: React.FC = () => {
   // New state for view mode
   const [viewMode, setViewMode] = useState<ViewMode>("block");
 
+  // Function to open Bible presentation window directly
+  const handleOpenBiblePresentation = () => {
+    // Prepare presentation data
+    if (currentBook && currentChapter && bibleData && currentTranslation) {
+      const translationData = bibleData[currentTranslation];
+      if (translationData && translationData.books) {
+        const bookData = translationData.books.find(
+          (book: any) => book.name === currentBook
+        );
+
+        if (bookData) {
+          const chapterData = bookData.chapters?.find(
+            (ch: any) => ch.chapter === currentChapter
+          );
+
+          if (chapterData?.verses) {
+            const presentationData = {
+              book: currentBook,
+              chapter: currentChapter,
+              verses: chapterData.verses,
+              translation: currentTranslation,
+              selectedVerse: currentVerse || undefined,
+            };
+
+            // Default settings
+            const settings = {
+              fontSize: 6,
+              textColor: "#ffffff",
+              backgroundColor: "#1e293b",
+              versesPerSlide: 1,
+            };
+
+            // Open external presentation window directly
+            if (typeof window !== "undefined" && window.api) {
+              window.api.createBiblePresentationWindow({
+                presentationData,
+                settings,
+              });
+            }
+          }
+        }
+      }
+    }
+  };
+
+  // Function to send live updates to presentation window
+  const sendLiveUpdateToPresentation = useCallback(() => {
+    if (currentBook && currentChapter && bibleData && currentTranslation) {
+      const translationData = bibleData[currentTranslation];
+      if (translationData && translationData.books) {
+        const bookData = translationData.books.find(
+          (book: any) => book.name === currentBook
+        );
+
+        if (bookData) {
+          const chapterData = bookData.chapters?.find(
+            (ch: any) => ch.chapter === currentChapter
+          );
+
+          if (chapterData?.verses) {
+            const presentationData = {
+              book: currentBook,
+              chapter: currentChapter,
+              verses: chapterData.verses,
+              translation: currentTranslation,
+              selectedVerse: currentVerse || undefined,
+            };
+
+            // Send update to presentation window
+            if (typeof window !== "undefined" && window.api) {
+              window.api.sendToBiblePresentation({
+                type: "update-data",
+                data: presentationData,
+              });
+            }
+          }
+        }
+      }
+    }
+  }, [
+    currentBook,
+    currentChapter,
+    currentTranslation,
+    currentVerse,
+    bibleData,
+  ]);
+
   const verses = useMemo(() => {
     return getCurrentChapterVerses();
   }, [currentBook, currentChapter, currentTranslation, bibleData]);
@@ -163,6 +256,22 @@ const ScriptureContent: React.FC = () => {
     setSelectedVerse(null);
     setIsVerseDropdownOpen(false);
   }, [currentBook, currentChapter, currentVerse]);
+
+  // Send live updates to presentation window when navigation changes
+  useEffect(() => {
+    // Add a small delay to avoid sending too many updates during rapid navigation
+    const timeoutId = setTimeout(() => {
+      sendLiveUpdateToPresentation();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    sendLiveUpdateToPresentation,
+    currentBook,
+    currentChapter,
+    currentTranslation,
+    currentVerse,
+  ]);
 
   // Scroll to current verse
   useEffect(() => {
@@ -393,6 +502,11 @@ const ScriptureContent: React.FC = () => {
     addToHistory(`${currentBook} ${currentChapter}:${verse}`);
   };
 
+  // Handler for verse clicks to set current verse
+  const handleVerseClick = (verse: number) => {
+    dispatch(setCurrentVerse(verse));
+  };
+
   // Get chapters and verses
   const getChapters = () => {
     const bookData = bibleData[currentTranslation]?.books.find(
@@ -487,6 +601,49 @@ const ScriptureContent: React.FC = () => {
     }
   }, [currentVerse, dispatch]);
 
+  // Send real-time updates to Bible presentation window when navigation changes
+  useEffect(() => {
+    // Check if presentation window exists and send updates
+    if (currentBook && currentChapter && bibleData && currentTranslation) {
+      const translationData = bibleData[currentTranslation];
+      if (translationData && translationData.books) {
+        const bookData = translationData.books.find(
+          (book: any) => book.name === currentBook
+        );
+
+        if (bookData) {
+          const chapterData = bookData.chapters?.find(
+            (ch: any) => ch.chapter === currentChapter
+          );
+
+          if (chapterData?.verses) {
+            const presentationData = {
+              book: currentBook,
+              chapter: currentChapter,
+              verses: chapterData.verses,
+              translation: currentTranslation,
+              selectedVerse: currentVerse || undefined,
+            };
+
+            // Send update to presentation window if it exists
+            if (typeof window !== "undefined" && window.api) {
+              window.api.sendToBiblePresentation({
+                type: "update-data",
+                data: presentationData,
+              });
+            }
+          }
+        }
+      }
+    }
+  }, [
+    currentBook,
+    currentChapter,
+    currentVerse,
+    currentTranslation,
+    bibleData,
+  ]);
+
   return (
     <div
       className={`h-screen flex flex-col overflow-y-scroll bg-white dark:bg-ltgray no-scrollbar text-gray-900 dark:text-gray-100`}
@@ -533,6 +690,7 @@ const ScriptureContent: React.FC = () => {
               isDarkMode={isDarkMode}
               handlePreviousChapter={handlePreviousChapter}
               handleNextChapter={handleNextChapter}
+              onOpenPresentation={handleOpenBiblePresentation}
             />
           </div>
 
@@ -542,7 +700,8 @@ const ScriptureContent: React.FC = () => {
                 verses={verses}
                 verseRefs={verseRefs}
                 selectedVerse={selectedVerse}
-                getFontSize={() => `${Number(fontSize) - 1.5}rem`}
+                getFontSize={() => `${fontSize}rem`}
+                fontSize={fontSize}
                 fontFamily={fontFamily}
                 fontWeight={fontWeight}
                 theme={theme}
@@ -561,6 +720,7 @@ const ScriptureContent: React.FC = () => {
                 highlightVerse={highlightVerse}
                 imageBackgroundMode={imageBackgroundMode}
                 isFullScreen={isFullScreen}
+                onVerseClick={handleVerseClick} // Add onVerseClick handler
               />
             ) : (
               <ScriptureParagraphView
@@ -568,6 +728,7 @@ const ScriptureContent: React.FC = () => {
                 verseRefs={verseRefs}
                 selectedVerse={selectedVerse}
                 getFontSize={() => `${fontSize}rem`}
+                fontSize={fontSize}
                 fontFamily={fontFamily}
                 fontWeight={fontWeight}
                 theme={theme}
@@ -586,6 +747,7 @@ const ScriptureContent: React.FC = () => {
                 highlightVerse={highlightVerse}
                 imageBackgroundMode={imageBackgroundMode}
                 isFullScreen={isFullScreen}
+                onVerseClick={handleVerseClick} // Add onVerseClick handler
               />
             )}
           </div>
