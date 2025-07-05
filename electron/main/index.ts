@@ -264,7 +264,7 @@ async function createBiblePresentationWindow() {
     biblePresentationWin.loadURL(
       `${VITE_DEV_SERVER_URL}/#/bible-presentation-display`
     );
-    biblePresentationWin.webContents.openDevTools(); // Open dev tools for debugging
+    // biblePresentationWin.webContents.openDevTools(); // Open dev tools for debugging
   } else {
     biblePresentationWin.loadFile(indexHtml, {
       hash: "bible-presentation-display",
