@@ -88,7 +88,7 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
                   ? {
                       backgroundColor: `${highlightColor}80`,
                       color: `${verseTextColor}`,
-                      lineHeight: 1.2
+                      lineHeight: 1.2,
                       // textDecoration: "underline",
                     }
                   : {}
@@ -106,16 +106,18 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`relative min-h-screen w-full ${
-        imageBackgroundMode ? 'bg-cover bg-center bg-no-repeat' : 'bg-white dark:bg-ltgray'
+        imageBackgroundMode
+          ? "bg-cover bg-center bg-no-repeat"
+          : "bg-white dark:bg-ltgray"
       }`}
       style={
-        imageBackgroundMode 
-          ? { 
+        imageBackgroundMode
+          ? {
               backgroundImage: `url(${selectedBg})`,
-              height: '100vh'
-            } 
+              height: "100vh",
+            }
           : {}
       }
     >
@@ -125,7 +127,10 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
           fontFamily,
           fontWeight,
           fontSize: getFontSize(),
-          color: theme === "dark" ? verseTextColor || "#f9fafb" : verseTextColor || "#78716c",
+          color:
+            theme === "dark"
+              ? verseTextColor || "#f9fafb"
+              : verseTextColor || "#78716c",
         }}
       >
         <p className="text-left leading-normal scripturetext">
@@ -136,6 +141,7 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
                 ref={(el) => (verseRefs.current[verse.verse] = el)}
                 className="absolute"
                 style={{ top: "-60px" }}
+                data-verse={verse.verse}
               />
 
               {/* Verse number */}
@@ -193,12 +199,19 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
                         {activeDropdownVerse === verse.verse && (
                           <div className="absolute top-6 left-0 bg-transparent shadow-md rounded-md p-1 z-10 w-auto">
                             <div className="flex flex-row -space-x-2 overflow-x-auto py-1 px-1 max-w-40">
-                              {bibleBgs.length === 0 && "No backgrounds available"}
+                              {bibleBgs.length === 0 &&
+                                "No backgrounds available"}
                               {bibleBgs.map((bg, index) => (
                                 <div
                                   key={index}
                                   className="relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                                  onClick={() => handlePresentVerse(verse.text, bg, verse.verse)}
+                                  onClick={() =>
+                                    handlePresentVerse(
+                                      verse.text,
+                                      bg,
+                                      verse.verse
+                                    )
+                                  }
                                 >
                                   <img
                                     src={bg}

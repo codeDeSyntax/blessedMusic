@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
-import { Presentation, EvSermon, EvOther } from "@/types";
+import { Presentation, EvSermon, EvOther, EvCustom } from "@/types";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -69,7 +69,7 @@ async function createMainWindow() {
       // devTools: false,
       nodeIntegration: false,
       contextIsolation: true,
-      zoomFactor: 1.0
+      zoomFactor: 1.0,
     },
   });
 
@@ -121,7 +121,7 @@ async function createProjectionWindow() {
 
   // Find external display (projector)
   // if (displays.length > 1) {
-  //   projectionDisplay = displays.find(display => 
+  //   projectionDisplay = displays.find(display =>
   //     display.bounds.x !== 0 || display.bounds.y !== 0
   //   );
   // } else {
@@ -148,7 +148,7 @@ async function createProjectionWindow() {
       preload,
       nodeIntegration: false,
       contextIsolation: true,
-      zoomFactor: 1.0
+      zoomFactor: 1.0,
     },
   });
 
@@ -259,7 +259,9 @@ ipcMain.handle("save-song", async (event, { directory, title, content }) => {
   try {
     // Validate inputs
     if (!directory || !title || content === undefined) {
-      throw new Error("Missing required fields: directory, title, and content are required.");
+      throw new Error(
+        "Missing required fields: directory, title, and content are required."
+      );
     }
 
     // Validate title format
@@ -267,36 +269,39 @@ ipcMain.handle("save-song", async (event, { directory, title, content }) => {
       throw new Error("Song title cannot be empty.");
     }
 
-
     // Check if directory exists
     if (!fs.existsSync(directory)) {
-      throw new Error("The specified directory does not exist. Please select a valid folder.");
+      throw new Error(
+        "The specified directory does not exist. Please select a valid folder."
+      );
     }
 
     // Check directory permissions
     try {
       fs.accessSync(directory, fs.constants.W_OK);
     } catch (permissionError) {
-      throw new Error("Permission denied. You don't have write access to the selected directory.");
+      throw new Error(
+        "Permission denied. You don't have write access to the selected directory."
+      );
     }
 
     const filePath = path.join(directory, `${title.trim()}.txt`);
     const fileExists = fs.existsSync(filePath);
-    
+
     // Write the file (create new or overwrite existing)
     fs.writeFileSync(filePath, content, "utf8");
-    
+
     return {
       success: true,
       filePath,
       isNewFile: !fileExists,
-      message: fileExists 
+      message: fileExists
         ? `Song "${title}" has been successfully updated.`
-        : `Song "${title}" has been successfully created.`
+        : `Song "${title}" has been successfully created.`,
     };
   } catch (error) {
     console.error("Error saving song:", error);
-    
+
     // Handle specific error types
     if (
       typeof error === "object" &&
@@ -305,14 +310,20 @@ ipcMain.handle("save-song", async (event, { directory, title, content }) => {
       typeof (error as any).code === "string"
     ) {
       const code = (error as any).code;
-      if (code === 'ENOENT') {
-        throw new Error("The file path is invalid or the directory no longer exists.");
-      } else if (code === 'EACCES' || code === 'EPERM') {
-        throw new Error("Permission denied. Cannot write to the selected location.");
-      } else if (code === 'ENOSPC') {
+      if (code === "ENOENT") {
+        throw new Error(
+          "The file path is invalid or the directory no longer exists."
+        );
+      } else if (code === "EACCES" || code === "EPERM") {
+        throw new Error(
+          "Permission denied. Cannot write to the selected location."
+        );
+      } else if (code === "ENOSPC") {
         throw new Error("Not enough disk space to save the file.");
-      } else if (code === 'EMFILE' || code === 'ENFILE') {
-        throw new Error("Too many files are open. Please close some applications and try again.");
+      } else if (code === "EMFILE" || code === "ENFILE") {
+        throw new Error(
+          "Too many files are open. Please close some applications and try again."
+        );
       }
     }
     // Re-throw custom validation errors or unknown errors
@@ -501,9 +512,11 @@ ipcMain.handle(
       let content: string;
 
       if (newPresentation.type === "sermon") {
-        content = formatSermonToText(newPresentation);
+        content = formatSermonToText(newPresentation as EvSermon);
+      } else if (newPresentation.type === "custom") {
+        content = formatCustomToText(newPresentation as EvCustom);
       } else {
-        content = formatOtherToText(newPresentation);
+        content = formatOtherToText(newPresentation as EvOther);
       }
 
       // Create filename based on title and ID
@@ -528,7 +541,7 @@ ipcMain.handle(
   ) => {
     try {
       // Find the existing file by ID
-      console.log("path for update",directoryPath)
+      console.log("path for update", directoryPath);
       const files = fs.readdirSync(directoryPath);
       let existingFile = "";
 
@@ -557,6 +570,11 @@ ipcMain.handle(
         content.includes("TYPE: sermon")
       ) {
         existingPresentation = parseSermonFile(content, id);
+      } else if (
+        content.includes("#TYPE: custom") ||
+        content.includes("TYPE: custom")
+      ) {
+        existingPresentation = parseCustomFile(content, id);
       } else {
         existingPresentation = parseOtherFile(content, id);
       }
@@ -571,17 +589,13 @@ ipcMain.handle(
       // Create new content based on updated type
       let newContent: string;
       if (updatedPresentation.type === "sermon") {
-        if (updatedPresentation.type === "sermon") {
-          newContent = formatSermonToText(updatedPresentation as EvSermon);
-        } else {
-          throw new Error("Invalid type for formatSermonToText");
-        }
+        newContent = formatSermonToText(updatedPresentation as EvSermon);
+      } else if (updatedPresentation.type === "custom") {
+        newContent = formatCustomToText(updatedPresentation as EvCustom);
+      } else if (updatedPresentation.type === "other") {
+        newContent = formatOtherToText(updatedPresentation as EvOther);
       } else {
-        if (updatedPresentation.type === "other") {
-          newContent = formatOtherToText(updatedPresentation as EvOther);
-        } else {
-          throw new Error("Invalid type for formatOtherToText");
-        }
+        throw new Error("Invalid presentation type");
       }
 
       // If title changed, create new filename
@@ -661,7 +675,17 @@ ${
 
 #CONTENT
 ${EvSermon.mainMessage ? `MAIN_MESSAGE: ${EvSermon.mainMessage}` : ""}
-${EvSermon.quote ? `QUOTE: ${EvSermon.quote}` : ""}`;
+${
+  EvSermon.mainMessagePoints && EvSermon.mainMessagePoints.length > 0
+    ? EvSermon.mainMessagePoints
+        .map((point, index) => `MESSAGE_POINT_${index + 1}: ${point.text}`)
+        .join("\n")
+    : ""
+}
+${EvSermon.quote ? `QUOTE: ${EvSermon.quote}` : ""}
+
+#IMAGE_DATA
+${EvSermon.backgroundImage || ""}`;
 }
 
 function formatOtherToText(other: Presentation): string {
@@ -675,10 +699,38 @@ ID: ${other.id}
 TITLE: ${other.title}
 CREATED_AT: ${other.createdAt}
 UPDATED_AT: ${other.updatedAt}
-BACKGROUND_IMAGE: ${EvOther.backgroundImage || ""}
 
 #CONTENT
-MESSAGE: ${EvOther.message || ""}`;
+MESSAGE: ${EvOther.message || ""}
+
+#IMAGE_DATA
+${EvOther.backgroundImage || ""}`;
+}
+
+function formatCustomToText(custom: Presentation): string {
+  if (custom.type !== "custom") throw new Error("Not a custom presentation");
+
+  const EvCustom = custom as EvCustom;
+
+  return `#TYPE: custom
+#METADATA
+ID: ${custom.id}
+TITLE: ${custom.title}
+DESCRIPTION: ${EvCustom.description || ""}
+CREATED_AT: ${custom.createdAt}
+UPDATED_AT: ${custom.updatedAt}
+
+#SLIDES
+${
+  EvCustom.slides
+    ? EvCustom.slides
+        .map((slide, index) => `SLIDE_${index + 1}: ${JSON.stringify(slide)}`)
+        .join("\n")
+    : ""
+}
+
+#IMAGE_DATA
+${EvCustom.backgroundImage || ""}`;
 }
 
 function parseSermonFile(content: string, id: string): EvSermon {
@@ -687,12 +739,13 @@ function parseSermonFile(content: string, id: string): EvSermon {
     id,
     type: "sermon",
     scriptures: [],
+    mainMessagePoints: [], // Initialize message points array
   };
 
   let section = "";
   for (const line of lines) {
     if (line.startsWith("#")) {
-      section = line.slice(1);
+      section = line.slice(1).trim(); // Add trim() here to remove whitespace
       continue;
     }
 
@@ -738,6 +791,10 @@ function parseSermonFile(content: string, id: string): EvSermon {
             sermon.quote = value;
             break;
         }
+        // Handle message points
+        if (key.trim().startsWith("MESSAGE_POINT_")) {
+          sermon.mainMessagePoints?.push({ text: value });
+        }
         break;
     }
   }
@@ -755,7 +812,7 @@ function parseOtherFile(content: string, id: string): EvOther {
   let section = "";
   for (const line of lines) {
     if (line.startsWith("#")) {
-      section = line.slice(1);
+      section = line.slice(1).trim(); // Add trim() here to remove whitespace
       continue;
     }
 
@@ -776,9 +833,6 @@ function parseOtherFile(content: string, id: string): EvOther {
           case "UPDATED_AT":
             other.updatedAt = value;
             break;
-          case "BACKGROUND_IMAGE":
-            other.backgroundImage = value || undefined;
-            break;
         }
         break;
       case "CONTENT":
@@ -786,8 +840,73 @@ function parseOtherFile(content: string, id: string): EvOther {
           other.message = value;
         }
         break;
+      case "IMAGE_DATA":
+        // Handle background image from the IMAGE_DATA section
+        if (value.trim()) {
+          other.backgroundImage = value;
+        }
+        break;
     }
   }
 
   return other as EvOther;
+}
+
+function parseCustomFile(content: string, id: string): EvCustom {
+  const lines = content.split("\n");
+  const custom: Partial<EvCustom> = {
+    id,
+    type: "custom",
+    slides: [],
+  };
+
+  let section = "";
+  for (const line of lines) {
+    if (line.startsWith("#")) {
+      section = line.slice(1).trim(); // Add trim() here to remove whitespace
+      continue;
+    }
+
+    if (!line.includes(":")) continue;
+
+    const [key, ...valueParts] = line.split(":");
+    const value = valueParts.join(":").trim(); // Rejoin with : to preserve any : in the value
+
+    switch (section) {
+      case "METADATA":
+        switch (key.trim()) {
+          case "TITLE":
+            custom.title = value;
+            break;
+          case "DESCRIPTION":
+            custom.description = value;
+            break;
+          case "CREATED_AT":
+            custom.createdAt = value;
+            break;
+          case "UPDATED_AT":
+            custom.updatedAt = value;
+            break;
+        }
+        break;
+      case "SLIDES":
+        if (key.trim().startsWith("SLIDE_")) {
+          try {
+            const slide = JSON.parse(value);
+            custom.slides?.push(slide);
+          } catch (error) {
+            console.error("Failed to parse slide:", error);
+          }
+        }
+        break;
+      case "IMAGE_DATA":
+        // Handle background image from the IMAGE_DATA section
+        if (value.trim()) {
+          custom.backgroundImage = value;
+        }
+        break;
+    }
+  }
+
+  return custom as EvCustom;
 }

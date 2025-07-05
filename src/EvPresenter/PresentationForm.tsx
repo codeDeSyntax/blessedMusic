@@ -18,7 +18,7 @@ import {
   FolderUp,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
-import { Presentation, Scripture } from "@/types";
+import { Presentation, Scripture, MessagePoint } from "@/types";
 import { useTheme } from "@/Provider/Theme";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
@@ -29,8 +29,10 @@ interface SermonFormProps {
 }
 
 // Update input classes to use primary color for focus
-const inputClasses = "w-full px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm";
-const halfInputClasses = "w-[80%] px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm";
+const inputClasses =
+  "w-full px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm";
+const halfInputClasses =
+  "w-[80%] px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm";
 
 export const SermonForm: React.FC<SermonFormProps> = ({
   initialData,
@@ -38,7 +40,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   onCancel,
 }) => {
   const { createPresentation, savePresentation } = usePresenterOperations();
-  
+
   // Local path management
   const selectedPath = localStorage.getItem("evpresenterfilespath") || "";
   const { isDarkMode } = useTheme();
@@ -56,11 +58,17 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   const [mainMessage, setMainMessage] = useState(
     (initialData as any)?.mainMessage || ""
   );
+  const [mainMessagePoints, setMainMessagePoints] = useState<MessagePoint[]>(
+    (initialData as any)?.mainMessagePoints || []
+  );
   const [quote, setQuote] = useState((initialData as any)?.quote || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [newScripture, setNewScripture] = useState("");
-  const [backgroundImage, setBackgroundImage] = useState(initialData?.backgroundImage || "");
+  const [newMessagePoint, setNewMessagePoint] = useState("");
+  const [backgroundImage, setBackgroundImage] = useState(
+    initialData?.backgroundImage || ""
+  );
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
 
   const [customImagesPath, setCustomImagesPath] = useState(
@@ -87,7 +95,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   const handleSelectImagesDirectory = async () => {
     try {
       const result = await window.api.selectDirectory();
-      if (typeof result === 'string' && result) {
+      if (typeof result === "string" && result) {
         setCustomImagesPath(result);
         localStorage.setItem("evpresenterimagespath", result);
       }
@@ -109,10 +117,33 @@ export const SermonForm: React.FC<SermonFormProps> = ({
     setScriptures(updatedScriptures);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && newScripture.trim()) {
+  const addMessagePoint = () => {
+    if (newMessagePoint.trim()) {
+      setMainMessagePoints([
+        ...mainMessagePoints,
+        { text: newMessagePoint.trim() },
+      ]);
+      setNewMessagePoint("");
+    }
+  };
+
+  const removeMessagePoint = (index: number) => {
+    const updatedPoints = [...mainMessagePoints];
+    updatedPoints.splice(index, 1);
+    setMainMessagePoints(updatedPoints);
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent,
+    type: "scripture" | "messagePoint"
+  ) => {
+    if (e.key === "Enter") {
       e.preventDefault();
-      addScripture();
+      if (type === "scripture" && newScripture.trim()) {
+        addScripture();
+      } else if (type === "messagePoint" && newMessagePoint.trim()) {
+        addMessagePoint();
+      }
     }
   };
 
@@ -128,6 +159,8 @@ export const SermonForm: React.FC<SermonFormProps> = ({
         date,
         scriptures,
         mainMessage: mainMessage || undefined,
+        mainMessagePoints:
+          mainMessagePoints.length > 0 ? mainMessagePoints : undefined,
         quote: quote || undefined,
         slides: initialData?.slides || [],
         backgroundImage,
@@ -169,7 +202,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
         style={{
           borderWidth: 2,
           borderStyle: "dashed",
-          borderColor:  "#9a674a",
+          borderColor: "#9a674a",
         }}
       >
         {/* Form Header - Fixed */}
@@ -255,7 +288,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                   type="text"
                   value={newScripture}
                   onChange={(e) => setNewScripture(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => handleKeyDown(e, "scripture")}
                   placeholder="Add scripture reference"
                   className={inputClasses}
                 />
@@ -319,14 +352,15 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                           type="button"
                           onClick={() => setBackgroundImage(img)}
                           className={`relative w-24 h-16 rounded-lg overflow-hidden hover:translate-y-[-4px] transform transition-all duration-200 ${
-                            backgroundImage === img 
-                              ? 'ring-2 ring-[#9a674a] translate-y-[-4px] z-10' 
-                              : 'hover:z-10'
+                            backgroundImage === img
+                              ? "ring-2 ring-[#9a674a] translate-y-[-4px] z-10"
+                              : "hover:z-10"
                           }`}
                           style={{
-                            boxShadow: backgroundImage === img 
-                              ? '0 4px 12px rgba(154, 103, 74, 0.2)' 
-                              : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                            boxShadow:
+                              backgroundImage === img
+                                ? "0 4px 12px rgba(154, 103, 74, 0.2)"
+                                : "0 2px 8px rgba(0, 0, 0, 0.1)",
                           }}
                         >
                           <img
@@ -382,6 +416,54 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 rows={3}
                 className="w-[90%] px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-gray-700 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-purple-500 transition-all shadow-sm resize-none"
               />
+            </div>
+
+            {/* Main Message Points */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+                <div className="flex items-center">
+                  <MessageSquare size={16} className="mr-1" />
+                  <span>Message Points (Optional)</span>
+                </div>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessagePoint}
+                  onChange={(e) => setNewMessagePoint(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, "messagePoint")}
+                  placeholder="Add main message point"
+                  className={inputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={addMessagePoint}
+                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#8b5a3c] dark:hover:bg-purple-700 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  Add
+                </button>
+              </div>
+              <div className="mt-2 space-y-2">
+                {mainMessagePoints.map((point, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 px-4 py-3 rounded-lg bg-[#fdf4d0] dark:bg-gray-800/30 border border-[#9a674a]/20 dark:border-gray-700"
+                  >
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#9a674a] mt-2"></div>
+                    <span className="flex-1 text-sm text-[#9a674a] dark:text-gray-300">
+                      {point.text}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeMessagePoint(index)}
+                      className="p-1 rounded-full hover:bg-[#9a674a]/10 dark:hover:bg-gray-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Quote Input */}
@@ -446,7 +528,9 @@ export const OtherForm: React.FC<SermonFormProps> = ({
   const [title, setTitle] = useState(initialData?.title || "");
   const [message, setMessage] = useState((initialData as any)?.message || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState(initialData?.backgroundImage || "");
+  const [backgroundImage, setBackgroundImage] = useState(
+    initialData?.backgroundImage || ""
+  );
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
 
   const [customImagesPath, setCustomImagesPath] = useState(
@@ -473,7 +557,7 @@ export const OtherForm: React.FC<SermonFormProps> = ({
   const handleSelectImagesDirectory = async () => {
     try {
       const result = await window.api.selectDirectory();
-      if (typeof result === 'string' && result) {
+      if (typeof result === "string" && result) {
         setCustomImagesPath(result);
         localStorage.setItem("evpresenterimagespath", result);
       }
@@ -596,14 +680,15 @@ export const OtherForm: React.FC<SermonFormProps> = ({
                           type="button"
                           onClick={() => setBackgroundImage(img)}
                           className={`relative w-24 h-16 rounded-lg overflow-hidden hover:translate-y-[-4px] transform transition-all duration-200 ${
-                            backgroundImage === img 
-                              ? 'ring-2 ring-[#9a674a] translate-y-[-4px] z-10' 
-                              : 'hover:z-10'
+                            backgroundImage === img
+                              ? "ring-2 ring-[#9a674a] translate-y-[-4px] z-10"
+                              : "hover:z-10"
                           }`}
                           style={{
-                            boxShadow: backgroundImage === img 
-                              ? '0 4px 12px rgba(154, 103, 74, 0.2)' 
-                              : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                            boxShadow:
+                              backgroundImage === img
+                                ? "0 4px 12px rgba(154, 103, 74, 0.2)"
+                                : "0 2px 8px rgba(0, 0, 0, 0.1)",
                           }}
                         >
                           <img

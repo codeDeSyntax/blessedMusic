@@ -15,6 +15,7 @@ import {
   FileText,
   Clock,
   FolderEdit,
+  Layers,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
@@ -47,7 +48,7 @@ const PresentationCard: React.FC<{
   const { isDarkMode } = useTheme();
   // Determine accent colors based on presentation type
   // const accentColor = presentation.type === "sermon" && isDarkMode ? "9a674a" : "8b5a3c";
-  const backgroundImage =  (isDarkMode ? "./wood10.jpg" : "./wood11.jpg");
+  const backgroundImage = isDarkMode ? "./wood10.jpg" : "./wood11.jpg";
 
   // Format date nicely
   const formattedDate = new Date(presentation.updatedAt).toLocaleDateString(
@@ -72,7 +73,7 @@ const PresentationCard: React.FC<{
     <motion.div
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
-      className={`flex flex-col rounded-lg shadow-lg hover:shadow-xl transition-all  duration-500 h-full bg-[#faeed1] dark:bg-ltgray border border-[#9a674a]/20 dark:border-gray-800`}
+      className={`flex flex-col  rounded-lg shadow-lg hover:shadow-xl transition-all  duration-500 h-full bg-[#faeed1] dark:bg-ltgray border border-[#9a674a]/20 dark:border-gray-800`}
       style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264.888-.14 1.652-1.1 2.782.14 3.68.14 1.074 0 2.14-.156 3.204-.156 1.23 0 2.46.156 3.7.156 1.326 0 2.4-.156 3.7-.156' stroke='%23${
           isDarkMode ? "#555555" : "#9a674a"
@@ -89,7 +90,9 @@ const PresentationCard: React.FC<{
         <div
           className="h-12 bg-center bg-cover rounded-lg"
           style={{
-            backgroundImage: `url(${backgroundImage})`,
+            backgroundImage: `url(${
+              presentation.backgroundImage || backgroundImage
+            })`,
             backgroundPosition: "center",
           }}
         ></div>
@@ -102,12 +105,23 @@ const PresentationCard: React.FC<{
 
           {/* Type Badge */}
           <div
-            className={`bg-yellow-100 dark:bg-stone-600  dark:bg-${presentation.type === "sermon" ? "indigo" : "purple"}-600 text-black dark:text-white px-3 py-1 rounded-full text-xs font-medium flex items-center`}
+            className={`bg-yellow-100 dark:bg-stone-600  dark:bg-${
+              presentation.type === "sermon"
+                ? "indigo"
+                : presentation.type === "custom"
+                ? "green"
+                : "purple"
+            }-600 text-black dark:text-white px-3 py-1 rounded-full text-xs font-medium flex items-center`}
           >
             {presentation.type === "sermon" ? (
               <>
                 <BookOpen size={12} className="mr-1" />
                 <span>Sermon</span>
+              </>
+            ) : presentation.type === "custom" ? (
+              <>
+                <Layers size={12} className="mr-1" />
+                <span>Custom</span>
               </>
             ) : (
               <>
@@ -130,11 +144,11 @@ const PresentationCard: React.FC<{
       </div>
 
       {/* Receipt Content */}
-      <div className="flex flex-col p-4 flex-grow">
+      <div className="flex flex-col p-2 flex-grow">
         {/* Receipt Details */}
         <div className="space-y-3 mb-4">
           {/* Date and Time - Receipt Style */}
-          <div className="flex justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
+          <div className="flex justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
             <div className="flex items-center">
               <Calendar size={12} className="mr-1" />
               <span>{formattedDate}</span>
@@ -147,7 +161,7 @@ const PresentationCard: React.FC<{
 
           {/* Preacher Info */}
           {presentation.type === "sermon" && (
-            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
+            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
               <div className="flex items-center">
                 <User size={12} className="mr-1" />
                 <span>Preacher:</span>
@@ -172,7 +186,7 @@ const PresentationCard: React.FC<{
           )}
 
           {/* Presentation ID - Receipt Number */}
-          <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
+          <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
             <div className="flex items-center">
               <FileText size={12} className="mr-1" />
               <span>SermonID #:</span>
@@ -184,7 +198,7 @@ const PresentationCard: React.FC<{
 
           {/* Background Image Preview */}
           {presentation.backgroundImage && (
-            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2">
+            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700  px-1 py-1">
               <div className="flex items-center">
                 <Film size={12} className="mr-1" />
                 <span>Background:</span>
@@ -202,7 +216,7 @@ const PresentationCard: React.FC<{
 
         {/* Receipt Footer with Actions */}
         <div className="mt-auto pt-3 border-t border-[#9a674a]/30 dark:border-gray-700">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -210,7 +224,9 @@ const PresentationCard: React.FC<{
                 e.stopPropagation();
                 onEdit(presentation);
               }}
-              className={`flex items-center justify-center h-10 w-10 rounded-full bg-[#9a674a]/10 dark:bg-bgray dark:text-white text-[#9a674a] dark:text-${presentation.type === "sermon" ? "indigo" : "purple"}-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700 transition-colors`}
+              className={`flex items-center justify-center h-10 w-10 rounded-full bg-transparent dark:text-white text-[#9a674a] dark:text-${
+                presentation.type === "sermon" ? "indigo" : "purple"
+              }-400 hover:bg-[#9a674a]/20 dark:hover:bg-stone-700 transition-colors`}
             >
               <Pencil size={16} />
             </motion.button>
@@ -222,7 +238,7 @@ const PresentationCard: React.FC<{
                 e.stopPropagation();
                 onPresent(presentation);
               }}
-              className={`flex items-center justify-center h-10 w-10 rounded-full bg-[#faeed1] dark:bg-stone-500 dark:text-[#faeed1] text-black shadow-md hover:shadow-lg transition-all duration-300`}
+              className={`flex items-center justify-center h-10 w-10 rounded-full bg-transparent dark:text-[#faeed1] text-black shadow-md hover:shadow-lg transition-all duration-300`}
             >
               <PresentationIcon size={16} />
             </motion.button>
@@ -234,7 +250,7 @@ const PresentationCard: React.FC<{
                 e.stopPropagation();
                 onDelete(presentation.id);
               }}
-              className="flex items-center justify-center h-10 w-10 rounded-full bg-[#9a674a]/5 dark:bg-purple-900/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+              className="flex items-center justify-center h-10 w-10 rounded-full bg-transparent text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
             >
               <Trash2 size={16} />
             </motion.button>
@@ -258,16 +274,32 @@ const PresentationCard: React.FC<{
 };
 
 export const PresentationList: React.FC<{
-  type: "sermon" | "other";
+  type: "sermon" | "other" | "custom";
   onBack: () => void;
   onSelect: (presentation: PresentationType) => void;
   onEdit: (presentation: PresentationType) => void;
   onNew: () => void;
   onPresent: (presentation: PresentationType) => void;
-  onCategoryChange: (category: "sermon" | "other") => void;
-}> = ({ type, onBack, onSelect, onEdit, onNew, onPresent, onCategoryChange }) => {
+  onCategoryChange: (category: "sermon" | "other" | "custom") => void;
+  onNewCustom?: () => void;
+}> = ({
+  type,
+  onBack,
+  onSelect,
+  onEdit,
+  onNew,
+  onPresent,
+  onCategoryChange,
+  onNewCustom,
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { presentations, loadPresentations, removePresentation, isLoading, error } = usePresenterOperations();
+  const {
+    presentations,
+    loadPresentations,
+    removePresentation,
+    isLoading,
+    error,
+  } = usePresenterOperations();
   const { isDarkMode } = useTheme();
 
   // Local state for path management
@@ -289,9 +321,13 @@ export const PresentationList: React.FC<{
 
   const filteredPresentations = sortedPresentations
     .filter((p) => p.type === type)
-    .filter((p) =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.type === "sermon" && (p as any).preacher?.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(
+      (p) =>
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.type === "sermon" &&
+          (p as any).preacher
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()))
     );
 
   const handleDelete = async (id: string) => {
@@ -322,7 +358,11 @@ export const PresentationList: React.FC<{
       alert("Please select a path first to save presentations.");
       return;
     }
-    onNew();
+    if (type === "custom" && onNewCustom) {
+      onNewCustom();
+    } else {
+      onNew();
+    }
   };
 
   return (
@@ -341,7 +381,11 @@ export const PresentationList: React.FC<{
             <div>
               <h1 className="text-2xl flex items-center justify-cen font-bold text-[#9a674a] dark:bg-gradient-to-r dark:from-[#8b5a3c] dark:to-purple-600 dark:bg-clip-text dark:text-transparent">
                 <span>
-                  {type === "sermon" ? "Sermons" : "Other Presentations"}
+                  {type === "sermon"
+                    ? "Sermons"
+                    : type === "custom"
+                    ? "Custom Presentations"
+                    : "Other Presentations"}
                 </span>
                 {selectedPath ? (
                   <span className="text-sm text-[#9a674a]/70 dark:text-gray-400 ml-2">
@@ -355,8 +399,8 @@ export const PresentationList: React.FC<{
                     Choose path
                   </button>
                 )}
-                <FolderEdit 
-                  className="text-[#c77c5d] dark:text-yellow-500 h-4 w-4 pl-4 animate-pulse cursor-pointer" 
+                <FolderEdit
+                  className="text-[#c77c5d] dark:text-yellow-500 h-4 w-4 pl-4 animate-pulse cursor-pointer"
                   onClick={selectEvpd}
                 />
               </h1>
@@ -392,6 +436,17 @@ export const PresentationList: React.FC<{
                   <Film size={18} />
                   {/* <span>Other</span> */}
                 </button>
+                <button
+                  onClick={() => onCategoryChange("custom")}
+                  className={`px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${
+                    type === "custom"
+                      ? "bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] shadow-lg"
+                      : "bg-[#9a674a]/10 dark:bg-stone-700 text-[#9a674a] dark:text-gray-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <Layers size={18} />
+                  {/* <span>Custom</span> */}
+                </button>
               </div>
 
               {/* Search Bar */}
@@ -406,8 +461,14 @@ export const PresentationList: React.FC<{
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Search ${type === "sermon" ? "sermons" : "presentations"}...`}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-[#9a674a]/10 dark:bg-gray-800/50 text-[#9a674a] dark:text-gray-100 placeholder-[#9a674a]/50 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9a674a]/30 dark:focus:ring-primary/50 transition-all"
+                  placeholder={`Search ${
+                    type === "sermon"
+                      ? "sermons"
+                      : type === "custom"
+                      ? "custom presentations"
+                      : "presentations"
+                  }...`}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-[#9a674a]/10 dark:bg-stone-800/50 text-[#9a674a] dark:text-gray-100 placeholder-[#9a674a]/50 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9a674a]/30 dark:focus:ring-primary/50 transition-all"
                 />
               </div>
 
@@ -419,7 +480,14 @@ export const PresentationList: React.FC<{
                 className="px-4 py-2 bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-300 whitespace-nowrap flex items-center gap-2"
               >
                 <PresentationIcon size={18} />
-                <span>New {type === "sermon" ? "Sermon" : "Presentation"}</span>
+                <span>
+                  New{" "}
+                  {type === "sermon"
+                    ? "Sermon"
+                    : type === "custom"
+                    ? "Custom Slides"
+                    : "Presentation"}
+                </span>
               </motion.button>
             </div>
           </div>
@@ -429,7 +497,9 @@ export const PresentationList: React.FC<{
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 border-2 border-[#9a674a] border-t-transparent rounded-full animate-spin" />
-                <span className="text-[#9a674a] dark:text-gray-400">Loading presentations...</span>
+                <span className="text-[#9a674a] dark:text-gray-400">
+                  Loading presentations...
+                </span>
               </div>
             </div>
           )}
@@ -438,7 +508,9 @@ export const PresentationList: React.FC<{
           {error && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-red-500 dark:text-red-400 text-center">
-                <p className="text-lg font-medium">Failed to load presentations</p>
+                <p className="text-lg font-medium">
+                  Failed to load presentations
+                </p>
                 <p className="text-sm mt-1">{error}</p>
               </div>
             </div>
@@ -466,7 +538,12 @@ export const PresentationList: React.FC<{
                     onClick={onClickNew}
                     className="mt-4 px-4 py-2 bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] text-[#faeed1] rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   >
-                    Create your first {type === "sermon" ? "sermon" : "presentation"}
+                    Create your first{" "}
+                    {type === "sermon"
+                      ? "sermon"
+                      : type === "custom"
+                      ? "custom presentation"
+                      : "presentation"}
                   </motion.button>
                 </>
               )}
@@ -475,7 +552,7 @@ export const PresentationList: React.FC<{
 
           {/* Presentations Grid */}
           {!isLoading && !error && filteredPresentations.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto no-scrollbar pb-4 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-6 overflow-y-auto overflow-x-hidden no-scrollbar pb-4 h-full">
               {filteredPresentations.map((presentation) => (
                 <PresentationCard
                   key={presentation.id}

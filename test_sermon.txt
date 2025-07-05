@@ -1,0 +1,22 @@
+#TYPE: sermon
+#METADATA
+ID: test123
+TITLE: Test Sermon with Message Points
+PREACHER: Test Preacher
+DATE: 2025-01-01
+CREATED_AT: 2025-01-01T00:00:00.000Z
+UPDATED_AT: 2025-01-01T00:00:00.000Z
+
+#SCRIPTURES
+SCRIPTURE_1: John 3:16 - For God so loved the world
+SCRIPTURE_2: Romans 10:9 - If you confess with your mouth
+
+#CONTENT
+MAIN_MESSAGE: This is the main message of the sermon
+MESSAGE_POINT_1: First main message point
+MESSAGE_POINT_2: Second main message point  
+MESSAGE_POINT_3: Third main message point
+QUOTE: This is a quote
+
+#IMAGE_DATA
+/path/to/background/image.jpg

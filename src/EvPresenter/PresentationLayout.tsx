@@ -54,7 +54,7 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
   //   }
 
   return (
-    <div className="flex flex-col h-screen bg-black text-[#9a674a] dark:text-white">
+    <div className="flex flex-col h-screen bg-[#faeed1] dark:bg-black text-[#9a674a] dark:text-white">
       {/* Window Controls */}
       <div className="flex items-center justify-between px-2 h-[5%] z-40 bg-transparent">
         <div className="flex items-center gap-3">
@@ -92,7 +92,7 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <div className="overflow-y-hidden no-scrollbar px-3 h-[94%]  rounded-t-3xl  bg-black">
+      <div className="overflow-y-hidden no-scrollbar px-3 h-[94%] bg-[#faeed1] rounded-t-3xl    dark:bg-black">
         {children}
       </div>
     </div>

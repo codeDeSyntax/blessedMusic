@@ -34,8 +34,8 @@ export interface Sermon {
   sermon?: string;
   type?: string;
   audioUrl?: string;
-  downloadLink?:string;
-  location?:string;
+  downloadLink?: string;
+  location?: string;
   lastRead?: string;
 }
 
@@ -43,22 +43,44 @@ export type Scripture = {
   text: string;
 };
 
+export type MessagePoint = {
+  text: string;
+};
+
 export interface Slide {
   id: string;
-  type: 'title' | 'content' | 'scripture' | 'image';
+  type: "title" | "content" | "scripture" | "image" | "custom";
   title?: string;
   content?: string;
   background?: string;
   animation?: string;
   duration?: number;
+  // For custom slides
+  elements?: SlideElement[];
+}
+
+export interface SlideElement {
+  id: string;
+  type: "text" | "image" | "shape";
+  content: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  style: {
+    fontSize?: number;
+    fontWeight?: string;
+    color?: string;
+    backgroundColor?: string;
+    borderRadius?: number;
+  };
 }
 
 export type EvSermon = {
   id: string;
-  type: 'sermon';
+  type: "sermon";
   title: string;
   scriptures: Scripture[];
   mainMessage?: string;
+  mainMessagePoints?: MessagePoint[];
   preacher: string;
   quote?: string;
   date: string;
@@ -70,7 +92,7 @@ export type EvSermon = {
 
 export type EvOther = {
   id: string;
-  type: 'other';
+  type: "other";
   title: string;
   message: string;
   slides: Slide[];
@@ -79,4 +101,15 @@ export type EvOther = {
   backgroundImage?: string;
 };
 
-export type Presentation = EvSermon | EvOther;
+export type EvCustom = {
+  id: string;
+  type: "custom";
+  title: string;
+  slides: Slide[];
+  createdAt: string;
+  updatedAt: string;
+  backgroundImage?: string;
+  description?: string;
+};
+
+export type Presentation = EvSermon | EvOther | EvCustom;

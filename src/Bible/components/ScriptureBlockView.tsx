@@ -103,16 +103,18 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`relative min-h-screen w-full ${
-        imageBackgroundMode ? 'bg-cover bg-center bg-no-repeat' : 'bg-white dark:bg-ltgray'
+        imageBackgroundMode
+          ? "bg-cover bg-center bg-no-repeat"
+          : "bg-white dark:bg-ltgray"
       }`}
       style={
-        imageBackgroundMode 
-          ? { 
+        imageBackgroundMode
+          ? {
               backgroundImage: `url(${selectedBg})`,
-              height: '100vh'
-            } 
+              height: "100vh",
+            }
           : {}
       }
     >
@@ -122,7 +124,10 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
           fontFamily,
           fontWeight,
           fontSize: getFontSize(),
-          color: theme === "dark" ? verseTextColor || "#f9fafb" : verseTextColor || "#78716c",
+          color:
+            theme === "dark"
+              ? verseTextColor || "#f9fafb"
+              : verseTextColor || "#78716c",
         }}
       >
         {verses.map((verse, index) => (
@@ -132,6 +137,7 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
               index === 0 ? "pt-1" : ""
             } ${index === verses.length - 1 ? "pb-1" : ""}`}
             ref={(el) => (verseRefs.current[verse.verse] = el)}
+            data-verse={verse.verse}
           >
             <div className="flex items-start">
               {/* Verse number */}
@@ -149,7 +155,8 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                 <p
                   className="text-left leading-normal px-3 scripturetext pr-10"
                   style={{
-                    color: getVerseHighlight(verse.verse) ||
+                    color:
+                      getVerseHighlight(verse.verse) ||
                       (theme === "dark"
                         ? verseTextColor || "#f9fafb"
                         : verseTextColor || "#78716c"),
@@ -188,7 +195,9 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                   onClick={() => toggleBookmark(verse.verse)}
                   className="flex outline-none border-none items-center justify-center h-6 w-6 shadow bg-white dark:bg-ltgray p-1 rounded-full dark:hover:bg-gray-800 hover:bg-gray-200"
                   title={
-                    isBookmarked(verse.verse) ? "Remove bookmark" : "Add bookmark"
+                    isBookmarked(verse.verse)
+                      ? "Remove bookmark"
+                      : "Add bookmark"
                   }
                 >
                   {isBookmarked(verse.verse) ? (
@@ -227,7 +236,9 @@ const ScriptureBlockView: React.FC<ScriptureBlockViewProps> = ({
                           <div
                             key={index}
                             className="relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                            onClick={() => handlePresentVerse(verse.text, bg, verse.verse)}
+                            onClick={() =>
+                              handlePresentVerse(verse.text, bg, verse.verse)
+                            }
                           >
                             <img
                               src={bg}

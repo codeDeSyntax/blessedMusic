@@ -8,7 +8,15 @@ import ScriptureBlockView from "./components/ScriptureBlockView";
 import ScriptureParagraphView from "./components/ScriptureParagraphView";
 import VerseByVerseView from "./components/VerseByVerseView";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
-import { setCurrentBook, setCurrentChapter, setCurrentVerse, setVerseTextColor, addBookmark, removeBookmark, addToHistory } from "@/store/slices/bibleSlice";
+import {
+  setCurrentBook,
+  setCurrentChapter,
+  setCurrentVerse,
+  setVerseTextColor,
+  addBookmark,
+  removeBookmark,
+  addToHistory,
+} from "@/store/slices/bibleSlice";
 
 export type ViewMode = "block" | "paragraph" | "verse-by-verse";
 
@@ -21,25 +29,33 @@ interface Book {
 const ScriptureContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const { getCurrentChapterVerses, getBookChapterCount } = useBibleOperations();
-  
+
   // Select state from Redux
   const currentBook = useAppSelector((state) => state.bible.currentBook);
   const currentChapter = useAppSelector((state) => state.bible.currentChapter);
   const currentVerse = useAppSelector((state) => state.bible.currentVerse);
   const theme = useAppSelector((state) => state.bible.theme);
   const fontSize = useAppSelector((state) => state.bible.fontSize);
-  const fontFamily = useAppSelector((state) => state.bible.fontFamily) ;
+  const fontFamily = useAppSelector((state) => state.bible.fontFamily);
   const fontWeight = useAppSelector((state) => state.bible.fontWeight);
   const verseTextColor = useAppSelector((state) => state.bible.verseTextColor);
   const bookmarks = useAppSelector((state) => state.bible.bookmarks);
   const bookList = useAppSelector((state) => state.bible.bookList);
   const bibleData = useAppSelector((state) => state.bible.bibleData);
-  const currentTranslation = useAppSelector((state) => state.bible.currentTranslation);
+  const currentTranslation = useAppSelector(
+    (state) => state.bible.currentTranslation
+  );
   const bibleBgs = useAppSelector((state) => state.app.bibleBgs);
-  const verseByVerseMode = useAppSelector((state) => state.bible.verseByVerseMode);
+  const verseByVerseMode = useAppSelector(
+    (state) => state.bible.verseByVerseMode
+  );
   const isFullScreen = useAppSelector((state) => state.bible.isFullScreen);
-  const imageBackgroundMode = useAppSelector((state) => state.bible.imageBackgroundMode);
-  const selectedBackground = useAppSelector((state) => state.bible.selectedBackground);
+  const imageBackgroundMode = useAppSelector(
+    (state) => state.bible.imageBackgroundMode
+  );
+  const selectedBackground = useAppSelector(
+    (state) => state.bible.selectedBackground
+  );
 
   const { isDarkMode } = useTheme();
 
@@ -150,21 +166,55 @@ const ScriptureContent: React.FC = () => {
 
   // Scroll to current verse
   useEffect(() => {
-    if (currentVerse && verseRefs.current[currentVerse]) {
-      setTimeout(() => {
-        verseRefs.current[currentVerse]?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-          inline: "nearest",
-        });
-      }, 300);
+    if (currentVerse) {
+      // Use a longer timeout to ensure DOM updates and navigation complete
+      const timeout = setTimeout(() => {
+        // Try multiple methods to find and scroll to the verse
+        const scrollToVerse = () => {
+          // Method 1: Use ref
+          const verseElement = verseRefs.current[currentVerse];
+          if (verseElement) {
+            verseElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+              inline: "nearest",
+            });
+            return true;
+          }
+
+          // Method 2: Use data attribute selector
+          const verseByDataAttr = document.querySelector(
+            `[data-verse="${currentVerse}"]`
+          ) as HTMLElement;
+          if (verseByDataAttr) {
+            verseByDataAttr.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+              inline: "nearest",
+            });
+            return true;
+          }
+
+          return false;
+        };
+
+        // Try immediately
+        if (!scrollToVerse()) {
+          // If first attempt fails, try again after a short delay
+          setTimeout(scrollToVerse, 200);
+        }
+      }, 500); // Increased timeout for better reliability
+
+      return () => clearTimeout(timeout);
     }
-  }, [currentVerse, currentBook, currentChapter]);
+  }, [currentVerse, currentBook, currentChapter, viewMode]); // Added viewMode dependency
 
   // Navigation handlers
   const handlePreviousChapter = () => {
     if (currentChapter > 1) {
-      dispatch(addToHistory(`${currentBook} ${currentChapter}:${selectedVerse || 1}`));
+      dispatch(
+        addToHistory(`${currentBook} ${currentChapter}:${selectedVerse || 1}`)
+      );
       dispatch(setCurrentChapter(Number(currentChapter) - 1));
     }
     dispatch(setCurrentVerse(1));
@@ -289,7 +339,9 @@ const ScriptureContent: React.FC = () => {
   // Selection handlers
   const handleBookSelect = (book: string) => {
     if (currentBook !== book) {
-      dispatch(addToHistory(`${currentBook} ${currentChapter}:${selectedVerse || 1}`));
+      dispatch(
+        addToHistory(`${currentBook} ${currentChapter}:${selectedVerse || 1}`)
+      );
     }
 
     dispatch(setCurrentBook(book));
@@ -309,7 +361,9 @@ const ScriptureContent: React.FC = () => {
 
   const handleChapterSelect = (chapter: number) => {
     if (currentChapter !== chapter) {
-      dispatch(addToHistory(`${currentBook} ${currentChapter}:${selectedVerse || 1}`));
+      dispatch(
+        addToHistory(`${currentBook} ${currentChapter}:${selectedVerse || 1}`)
+      );
     }
 
     dispatch(setCurrentChapter(chapter));
@@ -418,8 +472,8 @@ const ScriptureContent: React.FC = () => {
   }, []);
 
   // Handle verse-by-verse navigation
-  const handleVerseByVerseNavigation = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
+  const handleVerseByVerseNavigation = (direction: "prev" | "next") => {
+    if (direction === "prev") {
       handlePreviousChapter();
     } else {
       handleNextChapter();
@@ -439,10 +493,13 @@ const ScriptureContent: React.FC = () => {
       id="biblediv"
       ref={contentRef}
       style={{
-        backgroundImage: verseByVerseMode && imageBackgroundMode && selectedBackground ? `url(${selectedBackground})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
+        backgroundImage:
+          verseByVerseMode && imageBackgroundMode && selectedBackground
+            ? `url(${selectedBackground})`
+            : "none",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       {/* Language Toggler - Fixed Position */}
@@ -534,7 +591,7 @@ const ScriptureContent: React.FC = () => {
           </div>
         </>
       ) : (
-        <VerseByVerseView 
+        <VerseByVerseView
           onNavigate={handleVerseByVerseNavigation}
           currentBook={currentBook}
           currentChapter={currentChapter}

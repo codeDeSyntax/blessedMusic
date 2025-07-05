@@ -128317,11 +128317,11 @@
       ]
     },
     {
-      "name": "I John",
+      "name": "1 John",
       "testament": "new",
       "chapters": [
         {
-          "chapter": "1",
+          "chapter": 1,
           "verses": [
             {
               "verse": "1",
@@ -128768,7 +128768,7 @@
       ]
     },
     {
-      "name": "II John",
+      "name": "2 John",
       "testament": "new",
       "chapters": [
         {

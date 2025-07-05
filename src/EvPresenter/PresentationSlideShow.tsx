@@ -385,11 +385,24 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     return saved || "#ffffff"; // Default to white
   });
 
+  const [mainMessageColor, setMainMessageColor] = useState(() => {
+    const saved = localStorage.getItem("presentationMainMessageColor");
+    return saved || "#ffffff"; // Default to white
+  });
+
+  // Font size state for main message
+  const [mainMessageFontSize, setMainMessageFontSize] = useState(() => {
+    const saved = localStorage.getItem("presentationMainMessageFontSize");
+    return saved ? parseInt(saved) : 4; // Default to medium size
+  });
+
   // Inline color picker states
   const [showTitleColorPicker, setShowTitleColorPicker] = useState(false);
   const [showScriptureColorPicker, setShowScriptureColorPicker] =
     useState(false);
   const [showQuoteColorPicker, setShowQuoteColorPicker] = useState(false);
+  const [showMainMessageColorPicker, setShowMainMessageColorPicker] =
+    useState(false);
   const [colorPickerPosition, setColorPickerPosition] = useState({
     x: 0,
     y: 0,
@@ -449,6 +462,11 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     localStorage.setItem("presentationQuoteFontSize", size.toString());
   };
 
+  const handleMainMessageFontSizeChange = (size: number) => {
+    setMainMessageFontSize(size);
+    localStorage.setItem("presentationMainMessageFontSize", size.toString());
+  };
+
   // Color handlers with persistence
   const handleTitleColorChange = (color: string) => {
     setTitleColor(color);
@@ -465,10 +483,15 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     localStorage.setItem("presentationQuoteColor", color);
   };
 
+  const handleMainMessageColorChange = (color: string) => {
+    setMainMessageColor(color);
+    localStorage.setItem("presentationMainMessageColor", color);
+  };
+
   // Inline color picker handlers
   const handleTextClick = (
     event: React.MouseEvent,
-    type: "title" | "scripture" | "quote"
+    type: "title" | "scripture" | "quote" | "mainMessage"
   ) => {
     if (!isPresentationMode) {
       event.stopPropagation();
@@ -482,11 +505,13 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       setShowTitleColorPicker(false);
       setShowScriptureColorPicker(false);
       setShowQuoteColorPicker(false);
+      setShowMainMessageColorPicker(false);
 
       // Open the specific picker
       if (type === "title") setShowTitleColorPicker(true);
       else if (type === "scripture") setShowScriptureColorPicker(true);
       else if (type === "quote") setShowQuoteColorPicker(true);
+      else if (type === "mainMessage") setShowMainMessageColorPicker(true);
     }
   };
 
@@ -494,6 +519,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     setShowTitleColorPicker(false);
     setShowScriptureColorPicker(false);
     setShowQuoteColorPicker(false);
+    setShowMainMessageColorPicker(false);
   };
 
   // Click outside to close settings
@@ -599,6 +625,20 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     return sizeMap[quoteFontSize] || "text-5xl";
   };
 
+  const getMainMessageFontClass = () => {
+    const sizeMap: { [key: number]: string } = {
+      1: "text-xl",
+      2: "text-2xl",
+      3: "text-3xl",
+      4: "text-4xl",
+      5: "text-5xl",
+      6: "text-6xl",
+      7: "text-7xl",
+      8: "text-8xl",
+    };
+    return sizeMap[mainMessageFontSize] || "text-4xl";
+  };
+
   // Add this effect to load custom images
   useEffect(() => {
     const loadCustomImages = async () => {
@@ -697,6 +737,70 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     return slides;
   };
 
+  const createMainMessageSlides = (text: string, title?: string) => {
+    const wordLimit = 100; // Adjust based on your visual preference
+    const words = text.split(" ");
+
+    if (words.length <= wordLimit) {
+      return [
+        <div className="space-y-3 overflow-y-auto max-h-[80vh] no-scrollbar">
+          {title && (
+            <h2
+              className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
+            >
+              {title}
+            </h2>
+          )}
+          <p
+            className={`${getMainMessageFontClass()} font-cooper leading-relaxed cursor-pointer hover:opacity-80 transition-opacity`}
+            style={{
+              lineHeight: 1.4,
+              color: mainMessageColor,
+            }}
+            onClick={(e) => handleTextClick(e, "mainMessage")}
+            title="Click to change color and font size"
+          >
+            {text}
+          </p>
+        </div>,
+      ];
+    }
+
+    // Break into multiple slides
+    const slides = [];
+    for (let i = 0; i < words.length; i += wordLimit) {
+      const slideText = words.slice(i, i + wordLimit).join(" ");
+      slides.push(
+        <div className=" overflow-y-auto max-h-[80vh] no-scrollbar rounded-t-3xl">
+          {title && i === 0 && (
+            <h2
+              className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
+            >
+              {title}
+            </h2>
+          )}
+          {i > 0 && (
+            <h2 className="text-xl text-[#9a674a] dark:text-purple-300 mb-2">
+              {title} (Continued {Math.floor(i / wordLimit) + 1})
+            </h2>
+          )}
+          <p
+            className={`${getMainMessageFontClass()} font-oswald leading-relaxed cursor-pointer hover:opacity-80 transition-opacity`}
+            style={{
+              lineHeight: 1.4,
+              color: mainMessageColor,
+            }}
+            onClick={(e) => handleTextClick(e, "mainMessage")}
+            title="Click to change color and font size"
+          >
+            {slideText}
+          </p>
+        </div>
+      );
+    }
+    return slides;
+  };
+
   useEffect(() => {
     if (!currentPresentation) return;
 
@@ -727,10 +831,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
         if ((currentPresentation as any).scriptures?.length > 0) {
           newSlides.push(
             <div className="space-y-8 flex items-center justify-center flex-col">
-              <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-2">
+              {/* <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-2">
                 Scripture References
-              </h2>
-              <div className="flex flex-wrap  gap-4 justify-center items-center">
+              </h2> */}
+              <div className="flex flex-wrap  gap-4 justify-center items-center overflow-y-scroll no-scrollbar">
                 {(currentPresentation as any).scriptures.map(
                   (scripture: any, idx: number) => (
                     <div
@@ -756,11 +860,48 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
 
         // Main message slide(s) - break into multiple slides if needed
         if ((currentPresentation as any).mainMessage) {
-          const messageSlides = createContentSlides(
+          const messageSlides = createMainMessageSlides(
             (currentPresentation as any).mainMessage,
             "Main Message"
           );
           messageSlides.forEach((slide) => newSlides.push(slide));
+        }
+
+        // Main message points slide (if exists)
+        if ((currentPresentation as any).mainMessagePoints?.length > 0) {
+          newSlides.push(
+            <div className="space-y-1 overflow-y-auto max-h-[80vh] no-scrollbar">
+              {/* <h2 className="text-2xl md:text-3xl font-semibold text-white bg-clip-border text-clip mb-2">
+                Key Points
+              </h2> */}
+              <div className="flex flex-col gap-1">
+                {(currentPresentation as any).mainMessagePoints.map(
+                  (point: any, idx: number) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: -50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.2 }}
+                      className="flex items-center justify-center gap-3 py-1 max-h-24 "
+                    >
+                      <div
+                        className="flex-shrink-0 w-4 h-4 rounded-full bg-gradient-to-r from-[white] to-[white] message-bullet"
+                        style={{ color: mainMessageColor }}
+                      ></div>
+                      <p
+                        className={`${getMainMessageFontClass()} font-teko leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 hover:translate-x-1`}
+                        style={{ color: mainMessageColor }}
+                        onClick={(e) => handleTextClick(e, "mainMessage")}
+                        title="Click to change color and font size"
+                      >
+                        {point.text}
+                      </p>
+                    </motion.div>
+                  )
+                )}
+              </div>
+            </div>
+          );
         }
 
         // Quote slide (if exists)
@@ -792,6 +933,40 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             </div>
           );
         }
+      } else if (currentPresentation.type === "custom") {
+        // Custom slides - render each slide's elements
+        const customSlides = (currentPresentation as any).slides || [];
+        customSlides.forEach((slide: any) => {
+          newSlides.push(
+            <div className="w-full h-full relative">
+              {slide.elements?.map((element: any) => (
+                <div
+                  key={element.id}
+                  className="absolute"
+                  style={{
+                    left: element.position.x,
+                    top: element.position.y,
+                    width: element.size.width,
+                    height: element.size.height,
+                    backgroundColor: element.style.backgroundColor,
+                    borderRadius: element.style.borderRadius,
+                    color: element.style.color,
+                    fontSize: element.style.fontSize,
+                    fontWeight: element.style.fontWeight,
+                  }}
+                >
+                  {element.type === "text" ? (
+                    <div className="w-full h-full p-2 overflow-hidden">
+                      {element.content}
+                    </div>
+                  ) : element.type === "shape" ? (
+                    <div className="w-full h-full" />
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          );
+        });
       } else {
         // Content slide(s) for "other" type - also break into multiple slides if needed
         if ((currentPresentation as any).message) {
@@ -812,9 +987,11 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     titleFontSize,
     scriptureFontSize,
     quoteFontSize,
+    mainMessageFontSize,
     titleColor,
     scriptureColor,
     quoteColor,
+    mainMessageColor,
   ]);
 
   const nextSlide = useCallback(() => {
@@ -1077,7 +1254,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               </div>
 
               {/* Settings Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {/* Auto-play & Animation Column */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
@@ -1163,6 +1340,64 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                     <div className="text-xs text-blue-400 dark:text-blue-300 mt-2">
                       💡 Tip: Click on text elements to change colors & font
                       sizes!
+                    </div>
+                  </div>
+                  {/* Background Images Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
+                      🖼️ Backgrounds
+                    </h4>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
+                        Background Images
+                      </label>
+                      <div className="relative overflow-hidden">
+                        <div
+                          className="flex space-x-[-12px] overflow-x-auto scrollbar-hide pb-2"
+                          style={{
+                            scrollbarWidth: "none",
+                            msOverflowStyle: "none",
+                          }}
+                        >
+                          {presentationbgs.map((bg, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handleBackgroundChange(bg)}
+                              className={`relative flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-300 transform hover:scale-105 hover:z-10 hover:shadow-lg ${
+                                backgroundImage === bg
+                                  ? "border-[#9a674a] shadow-lg ring-1 ring-[#9a674a]/50 z-20 scale-105"
+                                  : "border-white/20 hover:border-[#9a674a]/60"
+                              }`}
+                              style={{
+                                marginLeft: index === 0 ? "0" : "-8px",
+                                zIndex:
+                                  backgroundImage === bg ? 20 : 10 - index,
+                              }}
+                            >
+                              <img
+                                src={bg}
+                                alt={`BG ${index + 1}`}
+                                className="w-full h-full object-cover rounded-full"
+                              />
+                              <div
+                                className={`absolute inset-0 bg-gradient-to-t from-black/20 to-transparent transition-opacity duration-300 ${
+                                  backgroundImage === bg
+                                    ? "opacity-100"
+                                    : "opacity-0 hover:opacity-60"
+                                }`}
+                              />
+                              {backgroundImage === bg && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-[#9a674a] shadow-lg border border-white animate-pulse" />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {/* Scroll hint indicator */}
+                        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white/20 to-transparent pointer-events-none" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1630,6 +1865,107 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             </button>
           </motion.div>
         )}
+
+        {showMainMessageColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="fixed z-50 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border color-picker-container"
+            style={{
+              left: colorPickerPosition.x - 120,
+              top: colorPickerPosition.y - 80,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+                Main Message Style
+              </h4>
+            </div>
+
+            {/* Font Size Control */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  Font Size
+                </label>
+                <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  {getMainMessageFontClass().replace("text-", "")}
+                </div>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                step="1"
+                value={mainMessageFontSize}
+                onChange={(e) =>
+                  handleMainMessageFontSizeChange(parseInt(e.target.value))
+                }
+                className="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+
+            {/* Color Picker */}
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-2">
+                Color
+              </label>
+              <ColorPicker
+                value={mainMessageColor}
+                onChange={(color) => {
+                  handleMainMessageColorChange(color.toHexString());
+                }}
+                size="large"
+                showText
+                format="hex"
+                placement="bottom"
+                presets={[
+                  {
+                    label: "Common",
+                    colors: [
+                      "#ffffff",
+                      "#000000",
+                      "#ff4d4f",
+                      "#52c41a",
+                      "#1890ff",
+                      "#faad14",
+                      "#722ed1",
+                      "#eb2f96",
+                    ],
+                  },
+                ]}
+                onOpenChange={(open) => {
+                  // Prevent auto-closing
+                  if (!open && showMainMessageColorPicker) {
+                    // Force it to stay open
+                    setTimeout(() => {
+                      const colorPicker =
+                        document.querySelector(".ant-color-picker");
+                      if (colorPicker) {
+                        (colorPicker as HTMLElement).click();
+                      }
+                    }, 0);
+                  }
+                }}
+              />
+            </div>
+
+            <button
+              onClick={closeAllColorPickers}
+              className="mt-3 w-full px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <style>{`
@@ -1674,6 +2010,62 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+
+        /* Stylish blinking bullet animation */
+        @keyframes stylishBlink {
+          0%, 100% { 
+            opacity: 1; 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(154, 103, 74, 0.8);
+          }
+          50% { 
+            opacity: 0.4; 
+            transform: scale(1.2);
+            box-shadow: 0 0 0 10px rgba(154, 103, 74, 0);
+          }
+        }
+
+        @keyframes bulletGlow {
+          0%, 100% { 
+            box-shadow: 0 0 5px rgba(154, 103, 74, 0.6), 0 0 10px rgba(154, 103, 74, 0.4);
+          }
+          50% { 
+            box-shadow: 0 0 10px rgba(154, 103, 74, 0.8), 0 0 20px rgba(154, 103, 74, 0.6);
+          }
+        }
+
+        .message-bullet {
+          animation: stylishBlink 3s ease-in-out infinite, bulletGlow 2s ease-in-out infinite alternate;
+          position: relative;
+        }
+
+        .message-bullet::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 6px;
+          height: 6px;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          animation: innerGlow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes innerGlow {
+          0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.8); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .message-bullet:hover {
+          animation-play-state: paused;
+          transform: scale(1.3);
+          box-shadow: 0 0 15px rgba(154, 103, 74, 0.8), 0 0 25px rgba(154, 103, 74, 0.6);
+        }
+
+        .message-bullet:hover::before {
+          animation-play-state: paused;
         }
       `}</style>
     </div>
