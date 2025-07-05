@@ -6,12 +6,18 @@ import SettingsModal from "./components/SettingsModal";
 import ShortcutsModal from "./components/ShortcutsModal";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
-import { TRANSLATIONS, setActiveFeature, setFullScreen } from "@/store/slices/bibleSlice";
+import {
+  TRANSLATIONS,
+  setActiveFeature,
+  setFullScreen,
+} from "@/store/slices/bibleSlice";
 import { setBibleBgs } from "@/store/slices/appSlice";
 
 const Biblelayout: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { theme, currentTranslation, activeFeature } = useAppSelector((state) => state.bible);
+  const { theme, currentTranslation, activeFeature } = useAppSelector(
+    (state) => state.bible
+  );
   const isFullScreen = useAppSelector((state) => state.bible.isFullScreen);
   const { initializeBibleData } = useBibleOperations();
   const initializationRef = useRef(false);
@@ -19,7 +25,11 @@ const Biblelayout: React.FC = () => {
   // Initialize Bible data
   useEffect(() => {
     // Only initialize if we have a valid translation
-    if (!initializationRef.current && currentTranslation && Object.keys(TRANSLATIONS).includes(currentTranslation)) {
+    if (
+      !initializationRef.current &&
+      currentTranslation &&
+      Object.keys(TRANSLATIONS).includes(currentTranslation)
+    ) {
       initializationRef.current = true;
       initializeBibleData();
     }
@@ -36,27 +46,31 @@ const Biblelayout: React.FC = () => {
         } catch (error) {
           console.error("Failed to load custom images:", error);
           // Load default backgrounds if custom images fail
-          dispatch(setBibleBgs([
+          dispatch(
+            setBibleBgs([
+              "./wood2.jpg",
+              "./snow1.jpg",
+              "./wood6.jpg",
+              "./wood7.png",
+              "./pic2.jpg",
+              "./wood10.jpg",
+              "./wood11.jpg",
+            ])
+          );
+        }
+      } else {
+        // Load default backgrounds if no custom path
+        dispatch(
+          setBibleBgs([
             "./wood2.jpg",
             "./snow1.jpg",
             "./wood6.jpg",
             "./wood7.png",
             "./pic2.jpg",
             "./wood10.jpg",
-            "./wood11.jpg"
-          ]));
-        }
-      } else {
-        // Load default backgrounds if no custom path
-        dispatch(setBibleBgs([
-          "./wood2.jpg",
-          "./snow1.jpg",
-          "./wood6.jpg",
-          "./wood7.png",
-          "./pic2.jpg",
-          "./wood10.jpg",
-          "./wood11.jpg"
-        ]));
+            "./wood11.jpg",
+          ])
+        );
       }
     };
 
@@ -78,37 +92,52 @@ const Biblelayout: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger shortcuts if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
         return;
       }
 
       switch (e.key.toLowerCase()) {
-        case 'l':
-          dispatch(setActiveFeature(activeFeature === 'library' ? null : 'library'));
+        case "l":
+          dispatch(
+            setActiveFeature(activeFeature === "library" ? null : "library")
+          );
           break;
-        case 'b':
-          dispatch(setActiveFeature(activeFeature === 'bookmarks' ? null : 'bookmarks'));
+        case "b":
+          dispatch(
+            setActiveFeature(activeFeature === "bookmarks" ? null : "bookmarks")
+          );
           break;
-        case 'h':
-          dispatch(setActiveFeature(activeFeature === 'history' ? null : 'history'));
+        case "h":
+          dispatch(
+            setActiveFeature(activeFeature === "history" ? null : "history")
+          );
           break;
-        case 's':
-          dispatch(setActiveFeature(activeFeature === 'settings' ? null : 'settings'));
+        case "s":
+          dispatch(
+            setActiveFeature(activeFeature === "settings" ? null : "settings")
+          );
           break;
-        case '/':
+        case "/":
           e.preventDefault();
-          dispatch(setActiveFeature(activeFeature === 'search' ? null : 'search'));
+          dispatch(
+            setActiveFeature(activeFeature === "search" ? null : "search")
+          );
           break;
-        case '?':
-          dispatch(setActiveFeature(activeFeature === 'shortcuts' ? null : 'shortcuts'));
+        case "?":
+          dispatch(
+            setActiveFeature(activeFeature === "shortcuts" ? null : "shortcuts")
+          );
           break;
-        case 'f':
+        case "f":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             dispatch(setFullScreen(!isFullScreen));
           }
           break;
-        case 'escape':
+        case "escape":
           if (isFullScreen) {
             dispatch(setFullScreen(false));
           } else {
@@ -118,8 +147,8 @@ const Biblelayout: React.FC = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [dispatch, activeFeature, isFullScreen]);
 
   return (
@@ -129,7 +158,9 @@ const Biblelayout: React.FC = () => {
     >
       {!isFullScreen && <TitleBar />}
 
-      <div className={`flex-1 flex overflow-hidden ${isFullScreen ? '' : 'mt-1'}`}>
+      <div
+        className={`flex-1 flex overflow-hidden ${isFullScreen ? "" : "mt-1"}`}
+      >
         {/* Main content */}
         <main className="flex-1">
           <ScriptureContent />

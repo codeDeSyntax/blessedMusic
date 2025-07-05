@@ -12,14 +12,11 @@ const SettingsPanel: React.FC = () => {
   const verseTextColor = useAppSelector((state) => state.bible.verseTextColor);
 
   const fontOptions = [
-    { value: "'Times New Roman', Times, serif", text: "Times New Roman" },
-    { value: "'Arial', sans-serif", text: "Arial" },
     { value: "'Helvetica', sans-serif", text: "Helvetica" },
     { value: "'Courier New', Courier, monospace", text: "Courier New" },
     { value: "'Verdana', sans-serif", text: "Verdana" },
     { value: "'Impact', Charcoal, sans-serif", text: "Impact" },
     { value: "'Georgia', serif", text: "Georgia" },
-    // { value: "'Monospace', monospace", text: "Monospace" },
     { value: "serif", text: "Serif" },
     { value: "sans-serif", text: "Sans-serif" },
     { value: "Palatino", text: "Palatino" },
@@ -27,7 +24,6 @@ const SettingsPanel: React.FC = () => {
     { value: "Bookman", text: "Bookman" },
     { value: "Comic Sans MS", text: "Comic Sans MS" },
     { value: "Trebuchet MS", text: "Trebuchet MS" },
-    { value: "Arial Black", text: "Arial Black" },
     { value: "cursive", text: "cursive" },
   ];
 

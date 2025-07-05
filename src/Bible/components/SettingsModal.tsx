@@ -93,17 +93,24 @@ const SettingsModal: React.FC = () => {
     { value: "medium", text: "Medium" },
     { value: "semibold", text: "Semi Bold" },
     { value: "bold", text: "Bold" },
+    { value: "bolder", text: "Extra Bold" },
+    
   ];
 
   const fontFamilies = [
-    { value: "'Times New Roman', Times, serif", text: "Times New Roman" },
-    { value: "'Arial', sans-serif", text: "Arial" },
-    { value: "Helvetica", text: "Helvetica" },
-    { value: "Georgia", text: "Georgia" },
-    { value: "Impact", text: "Impact" },
+       { value: "'Helvetica', sans-serif", text: "Helvetica" },
+    { value: "'Courier New', Courier, monospace", text: "Courier New" },
+    { value: "'Verdana', sans-serif", text: "Verdana" },
+    { value: "'Impact', Charcoal, sans-serif", text: "Impact" },
+    { value: "'Georgia', serif", text: "Georgia" },
+    { value: "serif", text: "Serif" },
+    { value: "sans-serif", text: "Sans-serif" },
     { value: "Palatino", text: "Palatino" },
     { value: "garamond", text: "Garamond" },
     { value: "Bookman", text: "Bookman" },
+    { value: "Comic Sans MS", text: "Comic Sans MS" },
+    { value: "Trebuchet MS", text: "Trebuchet MS" },
+    { value: "cursive", text: "cursive" },
   ];
 
   const colors = [
@@ -229,7 +236,7 @@ const SettingsModal: React.FC = () => {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">
                     Text Color
                   </label>
@@ -239,7 +246,7 @@ const SettingsModal: React.FC = () => {
                     options={colors}
                     className="bg-white/20 dark:bg-black/30 border-white/30 dark:border-white/20 text-gray-900 dark:text-white text-sm backdrop-blur-sm"
                   />
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

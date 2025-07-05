@@ -1,0 +1,723 @@
+<!-- STATIC HTML PROJECTION DISABLED - USING REACT-BASED PROJECTION INSTEAD -->
+<!--
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+    <title>Song Presentation</title>
+    <link rel="stylesheet" href="./presentation.css" />
+  </head>
+  <body>
+    <div class="presentation-container" id="presentation-container">
+      <!-- Background with gradient overlay -->
+      <div id="backgroundImage" class="background-image"></div>
+      <div class="gradient-overlay"></div>
+
+      <!-- Content Container -->
+      <div class="content-container">
+        <!-- Main Content -->
+        <div class="content-wrapper no-scrollbar">
+          <div id="contentContainer" class="content no-scrollbar">
+            Blessed Music
+          </div>
+        </div>
+
+        <!-- Section Indicator -->
+        <div id="sectionIndicator" class="section-indicator">Section</div>
+
+        <!-- Font Size Controls -->
+        <div id="fontControls" class="font-controls">
+          <button
+            id="fontToggle"
+            class="font-toggle-btn"
+            aria-label="Toggle font controls"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path
+                d="M9 4v3h5v12h3V7h5V4H9zM3 7c0 2.08.25 3.92.75 5.5S5.41 15.5 6.5 16.5c1.08 1 2.33 1.5 3.75 1.5H12v-3h-1.75c-.83 0-1.58-.25-2.25-.75S6.83 13.33 6.5 12.5 6.33 10.67 6.5 9.5 7 7.33 7.75 6.5 9.08 5.5 9.92 5.5H12V2.5h-1.75C8.83 2.5 7.58 3 6.5 4S4.75 6.42 4.25 8C3.75 9.58 3.5 11.42 3.5 13.5"
+              />
+              <circle cx="9" cy="12" r="1" />
+            </svg>
+          </button>
+          <div id="fontControlsPanel" class="font-controls-panel">
+            <button
+              id="fontDecrease"
+              class="font-btn"
+              aria-label="Decrease font size"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path d="M19 13H5v-2h14v2z" fill="currentColor" />
+              </svg>
+            </button>
+            <span id="fontSizeDisplay" class="font-size-display">100%</span>
+            <button
+              id="fontIncrease"
+              class="font-btn"
+              aria-label="Increase font size"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path
+                  d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="navigation-controls">
+          <!-- Progress Indicators -->
+          <div id="progressIndicators" class="progress-indicators"></div>
+
+          <!-- Navigation Buttons -->
+          <div class="navigation-buttons">
+            <button
+              id="prevButton"
+              class="nav-button"
+              aria-label="Previous section"
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12">
+                <path
+                  d="M15 18l-6-6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  fill="none"
+                />
+              </svg>
+            </button>
+            <button
+              id="nextButton"
+              class="nav-button"
+              aria-label="Next section"
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12">
+                <path
+                  d="M9 18l6-6-6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  fill="none"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // State management
+      let songSections = [];
+      let currentIndex = 0;
+      let songTitle = "";
+      let fontSizeMultiplier = 0.05;
+      let baseFontSize = 30; // Much larger base font size for visibility
+      let isExternalDisplay = false;
+
+      // Helper function to safely access localStorage
+      const getLocalStorageItem = (key, defaultValue = null) => {
+        try {
+          const item = localStorage.getItem(key);
+          return item !== null ? item : defaultValue;
+        } catch (error) {
+          console.error(`Error accessing localStorage for key ${key}:`, error);
+          return defaultValue;
+        }
+      };
+
+      // Helper function to safely set localStorage
+      const setLocalStorageItem = (key, value) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.error(`Error setting localStorage for key ${key}:`, error);
+        }
+      };
+
+      // Helper function to safely parse JSON
+      const safeJsonParse = (jsonString, defaultValue = null) => {
+        try {
+          return jsonString ? JSON.parse(jsonString) : defaultValue;
+        } catch (error) {
+          console.error("Error parsing JSON:", error);
+          return defaultValue;
+        }
+      };
+
+      // Load font size multiplier from localStorage
+      const loadFontSettings = () => {
+        const savedMultiplier = getLocalStorageItem(
+          "bmusicFontMultiplier",
+          "1.0"
+        );
+        fontSizeMultiplier = parseFloat(savedMultiplier) || 1.0;
+        updateFontSizeDisplay();
+      };
+
+      // Save font size multiplier to localStorage
+      const saveFontSettings = () => {
+        setLocalStorageItem(
+          "bmusicFontMultiplier",
+          fontSizeMultiplier.toString()
+        );
+      };
+
+      // Update font size display
+      const updateFontSizeDisplay = () => {
+        const display = document.getElementById("fontSizeDisplay");
+        if (display) {
+          display.textContent = Math.round(fontSizeMultiplier * 100) + "%";
+        }
+      };
+
+      // Function to parse song content into complete sections
+      const parseSongContent = (content) => {
+        if (!content) {
+          console.error("No song content provided");
+          return [
+            {
+              type: "Error",
+              content: ["No song content available"],
+              number: null,
+            },
+          ];
+        }
+
+        const sections = [];
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(content, "text/html");
+          const paragraphs = Array.from(doc.getElementsByTagName("p"));
+          console.log("Total paragraphs found:", paragraphs.length);
+
+          let currentType = null;
+          let currentNumber = null;
+          let currentContent = [];
+
+          if (paragraphs.length === 0) {
+            return [
+              { type: "Song", content: ["No lyrics found"], number: null },
+            ];
+          }
+
+          paragraphs.forEach((p, index) => {
+            const text = p.textContent?.trim() || "";
+            const verseMatch = text.match(/^Verse (\d+)$/);
+            const isChorus = text === "Chorus";
+
+            if (verseMatch) {
+              if (currentType && currentContent.length > 0) {
+                sections.push({
+                  type: currentType,
+                  content: [...currentContent],
+                  number: currentNumber,
+                });
+              }
+              currentType = "Verse";
+              currentNumber = parseInt(verseMatch[1]);
+              currentContent = [];
+            } else if (isChorus) {
+              if (currentType && currentContent.length > 0) {
+                sections.push({
+                  type: currentType,
+                  content: [...currentContent],
+                  number: currentNumber,
+                });
+              }
+              currentType = "Chorus";
+              currentNumber = null;
+              currentContent = [];
+            } else if (text && !verseMatch && !isChorus) {
+              currentContent.push(text);
+            }
+
+            if (index === paragraphs.length - 1 && currentContent.length > 0) {
+              sections.push({
+                type: currentType,
+                content: [...currentContent],
+                number: currentNumber,
+              });
+            }
+          });
+
+          if (sections.length === 0) {
+            return [
+              {
+                type: "Song",
+                content: ["No structured lyrics found"],
+                number: null,
+              },
+            ];
+          }
+
+          return sections;
+        } catch (error) {
+          console.error("Error parsing song content:", error);
+          return [
+            {
+              type: "Error",
+              content: ["Error parsing song content"],
+              number: null,
+            },
+          ];
+        }
+      };
+
+      // Function to create display sequence with chorus after each verse
+      const createDisplaySequence = (sections) => {
+        const sequence = [];
+        const firstChorus = sections.find(
+          (section) => section.type === "Chorus"
+        );
+
+        if (!firstChorus) {
+          return [...sections];
+        }
+
+        sections.forEach((section, index) => {
+          sequence.push(section);
+
+          if (section.type === "Verse" && firstChorus) {
+            const nextSectionIsChorus =
+              index + 1 < sections.length &&
+              sections[index + 1].type === "Chorus";
+
+            if (!nextSectionIsChorus) {
+              const chorusRepeat = {
+                ...firstChorus,
+                isRepeating: true,
+              };
+              sequence.push(chorusRepeat);
+            }
+          }
+        });
+
+        return sequence;
+      };
+
+      // Enhanced dynamic font sizing function
+      const calculateOptimalFontSize = (container, lines) => {
+        const containerHeight = container.clientHeight;
+        const containerWidth = container.clientWidth;
+
+        // Get font family from localStorage or use default
+        const fontFamily = getLocalStorageItem(
+          "bmusicfontFamily",
+          "Georgia, serif"
+        );
+
+        // Create temporary element for measurements
+        const temp = document.createElement("div");
+        temp.style.position = "absolute";
+        temp.style.visibility = "hidden";
+        temp.style.fontFamily = fontFamily;
+        temp.style.fontWeight = "bold";
+        temp.style.lineHeight = "0";
+        temp.style.textAlign = "center";
+        temp.style.width = containerWidth * 0.95 + "px"; // Use 95% of width
+        temp.style.padding = "0";
+        temp.style.margin = "0";
+        document.body.appendChild(temp);
+
+        // Start with a much larger base font size for visibility
+        let maxFontSize = Math.min(containerHeight / (lines.length * 1.2), 120);
+        let minFontSize = Math.max(baseFontSize, 24); // Ensure minimum visibility
+
+        // Ensure we start with a reasonable size
+        if (maxFontSize < minFontSize) {
+          maxFontSize = minFontSize;
+        }
+
+        let optimalSize = maxFontSize;
+        let iterations = 0;
+        const maxIterations = 15;
+
+        // Binary search for optimal font size
+        while (maxFontSize - minFontSize > 2 && iterations < maxIterations) {
+          const testSize = (maxFontSize + minFontSize) / 2;
+          temp.style.fontSize = testSize + "px";
+          temp.innerHTML = "";
+
+          // Add all lines to temp element
+          lines.forEach((line, index) => {
+            const p = document.createElement("p");
+            p.textContent = line;
+            p.style.margin = "0";
+            if (index < lines.length - 1) {
+              p.style.marginBottom = "1rem";
+            }
+            temp.appendChild(p);
+          });
+
+          const tempHeight = temp.scrollHeight;
+          const availableHeight = containerHeight * 0.9; // Use 85% of height
+
+          if (tempHeight <= availableHeight) {
+            minFontSize = testSize;
+            optimalSize = testSize;
+          } else {
+            maxFontSize = testSize;
+          }
+
+          iterations++;
+        }
+
+        document.body.removeChild(temp);
+
+        // Apply user font size multiplier
+        const finalSize = Math.max(24, optimalSize * fontSizeMultiplier);
+
+        console.log(
+          `Calculated font size: ${Math.floor(finalSize)}px for ${
+            lines.length
+          } lines`
+        );
+        return Math.floor(finalSize);
+      };
+
+      // Function to update page display with complete sections
+      const updatePage = (index) => {
+        if (!songSections || songSections.length === 0) {
+          console.error("No song sections available");
+          return;
+        }
+
+        if (index < 0 || index >= songSections.length) {
+          console.error(`Invalid section index: ${index}`);
+          return;
+        }
+
+        const section = songSections[index];
+        const container = document.getElementById("contentContainer");
+        const sectionIndicator = document.getElementById("sectionIndicator");
+
+        if (!container || !sectionIndicator) {
+          console.error("Required DOM elements not found");
+          return;
+        }
+
+        // Update section indicator
+        let sectionTitle = `${section.type}${
+          section.number ? ` ${section.number}` : ""
+        }`;
+        if (section.isRepeating) {
+          sectionTitle += " (Repeat)";
+        }
+        sectionIndicator.textContent = sectionTitle;
+
+        // Clear previous content
+        container.innerHTML = "";
+
+        // Get font family from localStorage
+        const fontFamily = getLocalStorageItem(
+          "bmusicfontFamily",
+          "Georgia, serif"
+        );
+
+        // Calculate optimal font size for this section
+        const optimalFontSize = calculateOptimalFontSize(
+          container,
+          section.content
+        );
+
+        // Add each line of content
+        section.content.forEach((line, i) => {
+          if (!line.trim()) return;
+
+          const p = document.createElement("p");
+          p.textContent = line;
+          p.style.animation = `fadeInUp ${i * 0.1 + 0.3}s ease forwards`;
+          p.style.fontSize = `${optimalFontSize}px`;
+          p.style.fontFamily = fontFamily;
+          p.style.marginBottom = "0.5rem";
+       
+
+          container.appendChild(p);
+        });
+
+        // Update navigation buttons
+        const prevButton = document.getElementById("prevButton");
+        const nextButton = document.getElementById("nextButton");
+
+        if (prevButton) prevButton.disabled = index === 0;
+        if (nextButton) nextButton.disabled = index === songSections.length - 1;
+
+        // Update progress indicators
+        updateProgressIndicators(index);
+      };
+
+      // Function to update progress indicators
+      const updateProgressIndicators = (currentIndex) => {
+        const container = document.getElementById("progressIndicators");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        songSections.forEach((section, index) => {
+          const indicator = document.createElement("button");
+
+          if (section.isRepeating) {
+            indicator.className = `progress-dot chorus-repeat ${
+              index === currentIndex ? "active" : ""
+            }`;
+          } else {
+            indicator.className = `progress-dot ${
+              index === currentIndex ? "active" : ""
+            }`;
+          }
+
+          indicator.setAttribute("aria-label", `Go to section ${index + 1}`);
+          indicator.onclick = () => {
+            currentIndex = index;
+            updatePage(index);
+          };
+          container.appendChild(indicator);
+        });
+      };
+
+      // Load background image
+      const loadBackgroundImage = () => {
+        const main = document.getElementById("backgroundImage");
+        if (!main) return;
+
+        const mainImg = getLocalStorageItem("bmusicpresentationbg");
+        if (mainImg) {
+          main.style.backgroundImage = `url(${mainImg})`;
+        } else {
+          main.style.backgroundImage = "url(./wood7.png)";
+        }
+      };
+
+      // Function to handle receiving song data
+      const handleSongData = (songData) => {
+        loadBackgroundImage();
+        if (!songData || !songData.content) {
+          console.error("Invalid song data received");
+          return;
+        }
+
+        try {
+          songTitle = songData.title || "Untitled Song";
+
+          // Parse song into complete sections
+          const sections = parseSongContent(songData.content);
+
+          // Create display sequence with chorus repetitions
+          songSections = createDisplaySequence(sections);
+
+          currentIndex = 0;
+          updatePage(0);
+        } catch (error) {
+          console.error("Error handling song data:", error);
+          document.getElementById("contentContainer").innerHTML =
+            "<p>Error loading song</p>";
+        }
+      };
+
+      // Font control functions
+      const increaseFontSize = () => {
+        if (fontSizeMultiplier < 2.0) {
+          fontSizeMultiplier += 0.05;
+          updateFontSizeDisplay();
+          saveFontSettings();
+          if (songSections.length > 0) {
+            updatePage(currentIndex);
+          }
+        }
+      };
+
+      const decreaseFontSize = () => {
+        if (fontSizeMultiplier > 0.2) {
+          fontSizeMultiplier -= 0.05;
+          updateFontSizeDisplay();
+          saveFontSettings();
+          if (songSections.length > 0) {
+            updatePage(currentIndex);
+          }
+        }
+      };
+
+      const toggleFontControls = () => {
+        const panel = document.getElementById("fontControlsPanel");
+        const toggle = document.getElementById("fontToggle");
+
+        if (panel && toggle) {
+          const isVisible = panel.classList.contains("visible");
+          if (isVisible) {
+            panel.classList.remove("visible");
+            toggle.classList.remove("active");
+          } else {
+            panel.classList.add("visible");
+            toggle.classList.add("active");
+          }
+        }
+      };
+
+      // Set up event listeners
+      const setupEventListeners = () => {
+        const prevButton = document.getElementById("prevButton");
+        if (prevButton) {
+          prevButton.onclick = () => {
+            if (currentIndex > 0) {
+              currentIndex--;
+              updatePage(currentIndex);
+            }
+          };
+        }
+
+        const nextButton = document.getElementById("nextButton");
+        if (nextButton) {
+          nextButton.onclick = () => {
+            if (currentIndex < songSections.length - 1) {
+              currentIndex++;
+              updatePage(currentIndex);
+            }
+          };
+        }
+
+        // Font control event listeners
+        const fontToggle = document.getElementById("fontToggle");
+        if (fontToggle) {
+          fontToggle.onclick = toggleFontControls;
+        }
+
+        const fontIncrease = document.getElementById("fontIncrease");
+        if (fontIncrease) {
+          fontIncrease.onclick = increaseFontSize;
+        }
+
+        const fontDecrease = document.getElementById("fontDecrease");
+        if (fontDecrease) {
+          fontDecrease.onclick = decreaseFontSize;
+        }
+
+        // Keyboard navigation
+        document.addEventListener("keydown", (event) => {
+          if (
+            event.key === "ArrowRight" &&
+            currentIndex < songSections.length - 1
+          ) {
+            currentIndex++;
+            updatePage(currentIndex);
+          } else if (event.key === "ArrowLeft" && currentIndex > 0) {
+            currentIndex--;
+            updatePage(currentIndex);
+          } else if (event.key === "Escape") {
+            if (window.api && window.api.minimizeProjection) {
+              window.api.minimizeProjection();
+            }
+          } else if (event.key === "+" || event.key === "=") {
+            increaseFontSize();
+          } else if (event.key === "-") {
+            decreaseFontSize();
+          } else if (event.key === "f" || event.key === "F") {
+            toggleFontControls();
+          }
+        });
+
+        // Handle window resize to recalculate font sizes
+        window.addEventListener("resize", () => {
+          if (songSections.length > 0) {
+            setTimeout(() => updatePage(currentIndex), 100);
+          }
+        });
+
+        // Hide font controls when clicking outside
+        document.addEventListener("click", (event) => {
+          const fontControls = document.getElementById("fontControls");
+          const panel = document.getElementById("fontControlsPanel");
+
+          if (fontControls && panel && !fontControls.contains(event.target)) {
+            panel.classList.remove("visible");
+            document.getElementById("fontToggle").classList.remove("active");
+          }
+        });
+      };
+
+      // Initialize on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        loadBackgroundImage();
+        loadFontSettings();
+        setupEventListeners();
+
+        const contentContainer = document.getElementById("contentContainer");
+        if (
+          contentContainer &&
+          contentContainer.innerText.includes("Blessed Music")
+        ) {
+          const selectedSong = safeJsonParse(
+            getLocalStorageItem("selectedSong")
+          );
+
+          if (selectedSong) {
+            if (window.api && window.api.projectSong) {
+              window.api.projectSong(selectedSong);
+            } else {
+              handleSongData(selectedSong);
+            }
+          }
+        }
+      });
+
+      // Register API event handler if available
+      if (window.api && window.api.onDisplaySong) {
+        loadBackgroundImage();
+        window.api.onDisplaySong(handleSongData);
+      }
+
+      // Add display info listener
+      window.api.onDisplayInfo((info) => {
+        isExternalDisplay = info.isExternalDisplay;
+        const container = document.getElementById('contentContainer');
+        
+        // if (!isExternalDisplay) {
+        //   // Show warning if not using external display
+        //   container.innerHTML = `
+        //     <div class="display-warning">
+        //       <h2>Test Mode - No External Display</h2>
+        //       <p>Currently running in test mode on the main display.</p>
+        //       <p>Connect an external display (projector/screen) for full projection mode.</p>
+        //       <p>This window will automatically use the external display when connected.</p>
+        //     </div>
+        //   `;
+        // }
+      });
+
+      // Update the display-song handler to show display status
+      window.api.onDisplaySong((songData) => {
+        if (!songData) {
+          console.error("No song data received");
+          return;
+        }
+
+        try {
+          songTitle = songData.title || "Untitled";
+          const content = songData.content;
+          
+          // Parse and display the song content
+          songSections = parseSongContent(content);
+          displayCurrentSection();
+          
+          // Show display mode indicator briefly
+          const container = document.getElementById('contentContainer');
+          const modeIndicator = document.createElement('div');
+          modeIndicator.className = 'mode-indicator';
+          modeIndicator.textContent = isExternalDisplay ? 'External Display Mode' : 'Test Mode';
+          container.appendChild(modeIndicator);
+          
+          setTimeout(() => {
+            modeIndicator.remove();
+          }, 2000);
+        } catch (error) {
+          console.error("Error processing song data:", error);
+        }
+      });
+    </script>
+  </body>
+</html>
+-->
