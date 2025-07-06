@@ -53,6 +53,16 @@ contextBridge.exposeInMainWorld("api", {
   getPresentationImages: (directory: string) =>
     ipcRenderer.invoke("get-presentation-images", directory),
   projectSong: (song: Song) => ipcRenderer.invoke("project-song", song),
+  isProjectionActive: () => ipcRenderer.invoke("is-projection-active"),
+  closeProjectionWindow: () => ipcRenderer.invoke("close-projection-window"),
+  onProjectionStateChanged: (callback: (isActive: boolean) => void) => {
+    ipcRenderer.on("projection-state-changed", (event, isActive) =>
+      callback(isActive)
+    );
+    return () => {
+      ipcRenderer.removeAllListeners("projection-state-changed");
+    };
+  },
   onDisplaySong: (callback: (songData: any) => void) => {
     ipcRenderer.on("display-song", (event, songData) => callback(songData));
     return () => {
@@ -159,7 +169,7 @@ function useLoading() {
   oStyle.id = "app-loading-style";
   oStyle.innerHTML = styleContent;
   oDiv.className = "app-loading-wrap";
-  oDiv.innerHTML = `<div class="${className}"><img src="./music1.png" alt="Loading..." /></div>`;
+  oDiv.innerHTML = `<div class="${className}"><img src="./evv.png" alt="Loading..." /></div>`;
 
   return {
     appendLoading() {

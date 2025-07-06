@@ -202,14 +202,25 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
 
                         {/* Dropdown menu - only show for the active verse */}
                         {activeDropdownVerse === verse.verse && (
-                          <div className="absolute top-6 left-0 bg-transparent shadow-md rounded-md p-1 z-10 w-auto">
-                            <div className="flex flex-row -space-x-2 overflow-x-auto py-1 px-1 max-w-40">
-                              {bibleBgs.length === 0 &&
-                                "No backgrounds available"}
+                          <div
+                            className="fixed top-auto right-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-xl rounded-lg p-2 w-auto border border-gray-200 dark:border-gray-600"
+                            style={{
+                              zIndex: 9999,
+                              transform: "translate(-50%, 8px)",
+                              left: "50%",
+                              top: "100%",
+                            }}
+                          >
+                            <div className="flex flex-row gap-1 overflow-x-auto py-1 px-1 max-w-48">
+                              {bibleBgs.length === 0 && (
+                                <div className="text-sm text-gray-500 p-2">
+                                  No backgrounds available
+                                </div>
+                              )}
                               {bibleBgs.map((bg, index) => (
                                 <div
                                   key={index}
-                                  className="relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                                  className="relative w-14 h-14 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform shadow-md ring-1 ring-gray-200 dark:ring-gray-600"
                                   onClick={() =>
                                     handlePresentVerse(
                                       verse.text,

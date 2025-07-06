@@ -25,6 +25,11 @@ interface Window {
     onSongsLoaded: (callback: (songs: Song[]) => void) => void;
     getPresentationImages: (directory: string) => Promise<string[]>;
     projectSong: (songs: any) => void;
+    isProjectionActive: () => Promise<boolean>;
+    closeProjectionWindow: () => Promise<boolean>;
+    onProjectionStateChanged: (
+      callback: (isActive: boolean) => void
+    ) => () => void;
     onDisplaySong: (callback: (songData: Song) => void) => void;
     onDisplayInfo: (callback: (info: any) => void) => void;
     getImages: (dirPath: string) => Promise<string[]>;

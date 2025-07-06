@@ -27,16 +27,25 @@ const App = () => {
       setCurrentRoute(window.location.hash);
     };
 
+    // Set initial route on mount (important for production)
+    setCurrentRoute(window.location.hash);
+
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  // Handle special routes
-  if (currentRoute === "#/bible-presentation-display") {
+  // Handle special routes - support both hash formats
+  if (
+    currentRoute === "#/bible-presentation-display" ||
+    currentRoute === "#bible-presentation-display"
+  ) {
     return <BiblePresentationDisplay />;
   }
 
-  if (currentRoute === "#/song-presentation-display") {
+  if (
+    currentRoute === "#/song-presentation-display" ||
+    currentRoute === "#song-presentation-display"
+  ) {
     return <SongPresentationDisplay />;
   }
 
@@ -72,6 +81,21 @@ const App = () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [dispatch]);
+
+  // Additional safety check - parse URL parameters if hash routing fails
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const routeParam = urlParams.get("route");
+
+    if (routeParam === "bible-presentation") {
+      console.log("Detected route via URL parameter: bible-presentation");
+      setCurrentRoute("#bible-presentation-display");
+    } else if (routeParam === "song-presentation") {
+      console.log("Detected route via URL parameter: song-presentation");
+      setCurrentRoute("#song-presentation-display");
+    }
+  }, []);
+
   return (
     <div
       className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-white dark:bg-ltgray `}

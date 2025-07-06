@@ -21,6 +21,13 @@ interface SongPresentationDisplayProps {
 const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
   initialSong,
 }) => {
+  // Debug logging to confirm component is loaded
+  useEffect(() => {
+    console.log("SongPresentationDisplay component mounted");
+    console.log("Window location:", window.location.href);
+    console.log("Hash:", window.location.hash);
+  }, []);
+
   // State management
   const [songSections, setSongSections] = useState<SongSection[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);

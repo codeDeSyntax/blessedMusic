@@ -16,6 +16,11 @@ interface ElectronAPI {
   selectDirectory: () => Promise<string>;
   saveSong: (directory: string, title: string, content: string) => void;
   projectSong: (song: any) => void;
+  isProjectionActive: () => Promise<boolean>;
+  closeProjectionWindow: () => Promise<boolean>;
+  onProjectionStateChanged: (
+    callback: (isActive: boolean) => void
+  ) => () => void;
   onDisplaySong: (callback: (songData: any) => void) => () => void;
   onDisplayInfo: (callback: (info: DisplayInfo) => void) => () => void;
   getImages: (dirPath: string) => Promise<string[]>;

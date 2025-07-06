@@ -32,6 +32,13 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
   const dispatch = useAppDispatch();
   const { getCurrentChapterVerses, initializeBibleData } = useBibleOperations();
 
+  // Debug logging to confirm component is loaded
+  useEffect(() => {
+    console.log("BiblePresentationDisplay component mounted");
+    console.log("Window location:", window.location.href);
+    console.log("Hash:", window.location.hash);
+  }, []);
+
   // Connect to Redux store for font settings and Bible data
   const fontSize = useAppSelector((state) => state.bible.fontSize);
   const fontFamily = useAppSelector((state) => state.bible.fontFamily);
@@ -641,7 +648,6 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     getCurrentChapterVerses,
     currentVerseIndex,
   ]);
-
   if (!verses.length) {
     return (
       <div className="w-full h-screen relative overflow-hidden">
@@ -712,7 +718,6 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
       </div>
     );
   }
-
   return (
     <div className="w-full h-screen relative overflow-hidden flex items-center justify-center">
       {/* Enhanced Background */}

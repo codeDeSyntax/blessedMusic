@@ -56,6 +56,7 @@ let biblePresentationWin: BrowserWindow | null = null;
 let songPresentationWin: BrowserWindow | null = null;
 let isProjectionMinimized = false;
 let isSongPresentationMinimized = false;
+let isProjectionActive = false; // Track projection state separately
 const preload = path.join(__dirname, "../preload/index.mjs");
 const indexHtml = path.join(RENDERER_DIST, "index.html");
 const projectionHtml = path.join(RENDERER_DIST, "projection.html");
@@ -326,15 +327,29 @@ async function createSongPresentationWindow() {
   songPresentationWin.on("closed", () => {
     songPresentationWin = null;
     isSongPresentationMinimized = false;
+    isProjectionActive = false; // Set projection as inactive when window is closed
+    // Notify main window that projection is no longer active
+    console.log("Sending projection state change: false (closed)");
+    mainWin?.webContents.send("projection-state-changed", false);
   });
 
-  // Track minimization state
+  // Track minimization state - but don't affect projection active state for external displays
   songPresentationWin.on("minimize", () => {
     isSongPresentationMinimized = true;
+    // Only consider projection inactive if user explicitly minimized (not auto-minimize to external display)
+    // We'll keep projection active even when minimized to external display
+    console.log(
+      "Window minimized - keeping projection active for external display"
+    );
   });
 
   songPresentationWin.on("restore", () => {
     isSongPresentationMinimized = false;
+    // Ensure projection is marked as active when restored
+    if (isProjectionActive) {
+      console.log("Sending projection state change: true (restored)");
+      mainWin?.webContents.send("projection-state-changed", true);
+    }
   });
 
   return songPresentationWin;
@@ -355,6 +370,9 @@ app.on("window-all-closed", () => {
 ipcMain.handle("project-song", async (event, songData) => {
   console.log("Using React-based song projection:", songData);
 
+  // Set projection as active
+  isProjectionActive = true;
+
   // Check if window exists but is minimized
   if (
     songPresentationWin &&
@@ -368,6 +386,9 @@ ipcMain.handle("project-song", async (event, songData) => {
       songPresentationWin?.focus();
       songPresentationWin?.moveTop();
     }, 300); // Short delay to ensure window is restored before sending data
+    // Notify main window about projection state change
+    console.log("Sending projection state change: true (restored)");
+    mainWin?.webContents.send("projection-state-changed", true);
     return;
   }
 
@@ -381,6 +402,9 @@ ipcMain.handle("project-song", async (event, songData) => {
       songPresentationWin?.show();
       songPresentationWin?.focus();
       songPresentationWin?.moveTop();
+      // Notify main window about projection state change
+      console.log("Sending projection state change: true (new window)");
+      mainWin?.webContents.send("projection-state-changed", true);
     });
   } else {
     // Window exists and is not minimized, just send the data and ensure it's visible
@@ -388,7 +412,30 @@ ipcMain.handle("project-song", async (event, songData) => {
     songPresentationWin.show();
     songPresentationWin.focus();
     songPresentationWin.moveTop();
+    // Notify main window about projection state change
+    console.log("Sending projection state change: true (existing window)");
+    mainWin?.webContents.send("projection-state-changed", true);
   }
+});
+
+// Add handler to check if projection window is open
+ipcMain.handle("is-projection-active", async () => {
+  const isActive =
+    isProjectionActive &&
+    songPresentationWin &&
+    !songPresentationWin.isDestroyed();
+  console.log("Checking projection state:", isActive);
+  return isActive;
+});
+
+// Add handler to close projection window
+ipcMain.handle("close-projection-window", async () => {
+  if (songPresentationWin && !songPresentationWin.isDestroyed()) {
+    isProjectionActive = false; // Set projection as inactive before closing
+    songPresentationWin.close();
+    return true;
+  }
+  return false;
 });
 
 // Handle selecting a directory via the file dialog
@@ -1182,10 +1229,12 @@ async function createSongProjectionWindow() {
   });
 
   if (VITE_DEV_SERVER_URL) {
-    songPresentationWin.loadURL(`${VITE_DEV_SERVER_URL}/song-projection`);
+    songPresentationWin.loadURL(
+      `${VITE_DEV_SERVER_URL}/#/song-presentation-display`
+    );
   } else {
     songPresentationWin.loadFile(indexHtml, {
-      hash: "song-projection",
+      hash: "song-presentation-display",
     });
   }
 

@@ -99,7 +99,222 @@ const ScriptureContent: React.FC = () => {
   const [presentationBg, setPresentationBg] = useState("");
 
   // New state for view mode
-  const [viewMode, setViewMode] = useState<ViewMode>("block");
+  const [viewMode, setViewMode] = useState<ViewMode>("block"); // Auto-scroll state and functionality
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState(25); // pixels per second for comfortable reading speed
+  const [autoScrollStatus, setAutoScrollStatus] = useState<string | null>(null); // Status message for auto-scroll
+  const autoScrollAnimationRef = useRef<number | null>(null);
+  const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUserScrollRef = useRef<number>(0);
+  const isNavigatingRef = useRef(false);
+  const lastTimeRef = useRef<number>(0);
+  const accumulatedScrollRef = useRef<number>(0); // Auto-scroll functions - truly smooth continuous flow using requestAnimationFrame
+  const startAutoScroll = useCallback(() => {
+    if (autoScrollAnimationRef.current) {
+      cancelAnimationFrame(autoScrollAnimationRef.current);
+    }
+
+    // Start from current verse position if available and not currently navigating
+    if (
+      currentVerse &&
+      verseRefs.current[currentVerse] &&
+      !isNavigatingRef.current
+    ) {
+      verseRefs.current[currentVerse]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+
+    // Reset timing and accumulation
+    lastTimeRef.current = 0;
+    accumulatedScrollRef.current = 0;
+
+    const animateScroll = (currentTime: number) => {
+      if (!isAutoScrolling) return;
+
+      // Initialize timing on first frame
+      if (lastTimeRef.current === 0) {
+        lastTimeRef.current = currentTime;
+        autoScrollAnimationRef.current = requestAnimationFrame(animateScroll);
+        return;
+      }
+
+      // Calculate time delta for smooth, frame-rate independent scrolling
+      const deltaTime = currentTime - lastTimeRef.current;
+      lastTimeRef.current = currentTime;
+
+      // Only scroll if user hasn't interacted recently
+      const now = Date.now();
+      if (now - lastUserScrollRef.current > 1000 && contentRef.current) {
+        const container = contentRef.current;
+        const scrollHeight = container.scrollHeight - container.clientHeight;
+
+        // Calculate smooth scroll distance based on speed and time delta
+        // This creates truly continuous, flowing movement
+        const scrollDistance = (autoScrollSpeed * deltaTime) / 1000; // pixels per frame
+        accumulatedScrollRef.current += scrollDistance;
+
+        // Apply the accumulated scroll in small, smooth increments
+        const currentScroll = container.scrollTop;
+        if (currentScroll < scrollHeight) {
+          // Smooth continuous scrolling - no discrete jumps
+          container.scrollTop = Math.min(
+            currentScroll + scrollDistance,
+            scrollHeight
+          );
+        } else {
+          // Reached the bottom - pause and restart
+          cancelAnimationFrame(autoScrollAnimationRef.current!);
+          setAutoScrollStatus("Pausing...");
+          setTimeout(() => {
+            if (isAutoScrolling && contentRef.current) {
+              setAutoScrollStatus("Restarting...");
+              contentRef.current.scrollTop = 0;
+              accumulatedScrollRef.current = 0;
+              setTimeout(() => {
+                setAutoScrollStatus(null);
+                if (isAutoScrolling) {
+                  startAutoScroll();
+                }
+              }, 500);
+            }
+          }, 3000);
+          return;
+        }
+      }
+
+      // Continue the animation loop
+      autoScrollAnimationRef.current = requestAnimationFrame(animateScroll);
+    };
+
+    // Start the smooth animation loop
+    autoScrollAnimationRef.current = requestAnimationFrame(animateScroll);
+  }, [autoScrollSpeed, currentVerse, isAutoScrolling]);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollAnimationRef.current) {
+      cancelAnimationFrame(autoScrollAnimationRef.current);
+      autoScrollAnimationRef.current = null;
+    }
+    setAutoScrollStatus(null);
+    accumulatedScrollRef.current = 0;
+  }, []);
+
+  const pauseAutoScrollTemporarily = useCallback(() => {
+    if (isAutoScrolling && !isNavigatingRef.current) {
+      lastUserScrollRef.current = Date.now();
+
+      // Clear existing timeout
+      if (userInteractionTimeoutRef.current) {
+        clearTimeout(userInteractionTimeoutRef.current);
+      }
+
+      // Resume auto-scroll after 4 seconds of no user interaction
+      userInteractionTimeoutRef.current = setTimeout(() => {
+        if (isAutoScrolling) {
+          lastUserScrollRef.current = 0; // Reset to allow auto-scroll to resume
+        }
+      }, 4000);
+    }
+  }, [isAutoScrolling]);
+
+  const toggleAutoScroll = useCallback(() => {
+    if (isAutoScrolling) {
+      setIsAutoScrolling(false);
+      stopAutoScroll();
+      // Clear user interaction timeout when manually stopping
+      if (userInteractionTimeoutRef.current) {
+        clearTimeout(userInteractionTimeoutRef.current);
+      }
+    } else {
+      setIsAutoScrolling(true);
+      lastUserScrollRef.current = 0; // Reset user interaction tracking
+      startAutoScroll();
+    }
+  }, [isAutoScrolling, startAutoScroll, stopAutoScroll]);
+
+  // Handle user scroll interaction
+  useEffect(() => {
+    const handleUserScroll = (e: Event) => {
+      // Don't interfere if this is navigation-triggered scroll
+      if (isNavigatingRef.current) return;
+
+      pauseAutoScrollTemporarily();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(
+          e.key
+        )
+      ) {
+        pauseAutoScrollTemporarily();
+      }
+    };
+
+    if (isAutoScrolling && contentRef.current) {
+      // Listen for scroll events on the main content container
+      contentRef.current.addEventListener("scroll", handleUserScroll, {
+        passive: true,
+      });
+      contentRef.current.addEventListener("wheel", handleUserScroll, {
+        passive: true,
+      });
+      contentRef.current.addEventListener("touchmove", handleUserScroll, {
+        passive: true,
+      });
+      // Listen for keyboard events on the window
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      if (contentRef.current) {
+        contentRef.current.removeEventListener("scroll", handleUserScroll);
+        contentRef.current.removeEventListener("wheel", handleUserScroll);
+        contentRef.current.removeEventListener("touchmove", handleUserScroll);
+      }
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAutoScrolling, pauseAutoScrollTemporarily]);
+
+  // Handle navigation changes - temporarily pause auto-scroll during navigation
+  useEffect(() => {
+    isNavigatingRef.current = true;
+    const timeoutId = setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 1000); // Allow 1 second for navigation to complete
+
+    return () => clearTimeout(timeoutId);
+  }, [currentBook, currentChapter, currentVerse]);
+
+  // Start/stop auto-scroll when state changes
+  useEffect(() => {
+    if (isAutoScrolling) {
+      startAutoScroll();
+    } else {
+      stopAutoScroll();
+    }
+
+    return () => {
+      stopAutoScroll();
+      if (userInteractionTimeoutRef.current) {
+        clearTimeout(userInteractionTimeoutRef.current);
+      }
+    };
+  }, [isAutoScrolling, startAutoScroll, stopAutoScroll]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoScrollAnimationRef.current) {
+        cancelAnimationFrame(autoScrollAnimationRef.current);
+      }
+      if (userInteractionTimeoutRef.current) {
+        clearTimeout(userInteractionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Function to open Bible presentation window directly
   const handleOpenBiblePresentation = () => {
@@ -492,6 +707,8 @@ const ScriptureContent: React.FC = () => {
   const handleVerseSelect = (verse: number) => {
     setSelectedVerse(verse);
     setIsVerseDropdownOpen(false);
+    // Also update currentVerse for external projection sync
+    dispatch(setCurrentVerse(verse));
     if (verseRefs.current[verse]) {
       verseRefs.current[verse]?.scrollIntoView({
         behavior: "smooth",
@@ -504,6 +721,8 @@ const ScriptureContent: React.FC = () => {
 
   // Handler for verse clicks to set current verse
   const handleVerseClick = (verse: number) => {
+    // Update both selectedVerse and currentVerse for consistency
+    setSelectedVerse(verse);
     dispatch(setCurrentVerse(verse));
   };
 
@@ -659,6 +878,15 @@ const ScriptureContent: React.FC = () => {
         backgroundRepeat: "no-repeat",
       }}
     >
+      {/* Auto-scroll status indicator */}
+      {autoScrollStatus && (
+        <div className="fixed bottom-20 right-6 z-50">
+          <div className="bg-green-500/90 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg backdrop-blur-sm animate-pulse">
+            {autoScrollStatus}
+          </div>
+        </div>
+      )}
+
       {/* Language Toggler - Fixed Position */}
       <div className="fixed bottom-6 right-6 z-50">
         <LanguageToggler />
@@ -691,6 +919,10 @@ const ScriptureContent: React.FC = () => {
               handlePreviousChapter={handlePreviousChapter}
               handleNextChapter={handleNextChapter}
               onOpenPresentation={handleOpenBiblePresentation}
+              isAutoScrolling={isAutoScrolling}
+              onToggleAutoScroll={toggleAutoScroll}
+              autoScrollSpeed={autoScrollSpeed}
+              onSpeedChange={setAutoScrollSpeed}
             />
           </div>
 

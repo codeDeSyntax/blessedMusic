@@ -15,7 +15,11 @@ import {
   ChevronRight,
   Keyboard,
   Monitor,
+  Play,
+  Pause,
+  RotateCcw,
 } from "lucide-react";
+import { Tooltip } from "antd";
 import { ViewMode } from "../ScriptureContent";
 import { useTheme } from "@/Provider/Theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,6 +52,11 @@ interface FloatingActionBarProps {
   isVerseByVerseView?: boolean;
   hasBackgroundImage?: boolean;
   onOpenPresentation?: () => void;
+  // Auto-scroll props
+  isAutoScrolling?: boolean;
+  onToggleAutoScroll?: () => void;
+  autoScrollSpeed?: number;
+  onSpeedChange?: (speed: number) => void;
 }
 
 const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
@@ -77,6 +86,10 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   isVerseByVerseView = false,
   hasBackgroundImage = false,
   onOpenPresentation,
+  isAutoScrolling = false,
+  onToggleAutoScroll,
+  autoScrollSpeed = 25,
+  onSpeedChange,
 }) => {
   const { toggleActiveFeature } = useTheme();
   const dispatch = useAppDispatch();
@@ -589,26 +602,87 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
             {/* Layout Controls - Only show if not hidden */}
             {!hideLayoutButtons && (
               <div className="flex items-center gap-2 ml-2">
-                <button
-                  onClick={() => setViewMode("block")}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    viewMode === "block"
-                      ? "bg-primary text-white"
-                      : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
-                  }`}
-                >
-                  <Grid3X3 size={16} />
-                </button>
-                <button
-                  onClick={() => setViewMode("paragraph")}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    viewMode === "paragraph"
-                      ? "bg-primary text-white"
-                      : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
-                  }`}
-                >
-                  <AlignLeft size={16} />
-                </button>
+                <Tooltip title="Block View" placement="bottom">
+                  <button
+                    onClick={() => setViewMode("block")}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      viewMode === "block"
+                        ? "bg-primary text-white"
+                        : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
+                    }`}
+                  >
+                    <Grid3X3 size={16} />
+                  </button>
+                </Tooltip>
+                <Tooltip title="Paragraph View" placement="bottom">
+                  <button
+                    onClick={() => setViewMode("paragraph")}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      viewMode === "paragraph"
+                        ? "bg-primary text-white"
+                        : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
+                    }`}
+                  >
+                    <AlignLeft size={16} />
+                  </button>
+                </Tooltip>
+
+                {/* Auto-scroll button - only for block and paragraph views */}
+                {(viewMode === "block" || viewMode === "paragraph") &&
+                  onToggleAutoScroll && (
+                    <div className="relative">
+                      <Tooltip
+                        title={
+                          isAutoScrolling
+                            ? "Stop Auto-Scroll"
+                            : "Start Auto-Scroll"
+                        }
+                        placement="bottom"
+                      >
+                        <button
+                          onClick={onToggleAutoScroll}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${
+                            isAutoScrolling
+                              ? "bg-green-500 text-white shadow-lg"
+                              : "text-stone-400 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:text-stone-500 dark:hover:text-stone-300"
+                          }`}
+                        >
+                          {isAutoScrolling ? (
+                            <Pause size={16} />
+                          ) : (
+                            <Play size={16} />
+                          )}
+                        </button>
+                      </Tooltip>
+
+                      {/* Speed selector - absolutely positioned under the play button */}
+                      {onSpeedChange && (
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 z-50">
+                          <div className="bg-white/80 dark:bg-black/60 backdrop-blur-md rounded-full px-1.5 py-0.5 shadow-lg border border-white/20 dark:border-white/10">
+                            <div
+                              className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide"
+                              style={{ maxWidth: "90px" }}
+                            >
+                              {[400,600,800,1000,1500,2000,3000,4000,5000,6000].map((speed) => (
+                                <button
+                                  key={speed}
+                                  onClick={() => onSpeedChange(speed)}
+                                  className={`px-1.5 py-0.5 text-[10px] rounded-full transition-all duration-200 whitespace-nowrap flex-shrink-0 bg-primary ${
+                                    autoScrollSpeed === speed
+                                      ? "bg-orange-500/80 text-white shadow-sm scale-105"
+                                      : "text-gray-600 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-white/20"
+                                  }`}
+                                  style={{ minWidth: "18px", fontSize: "9px" }}
+                                >
+                                  {speed}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             )}
 
@@ -617,88 +691,99 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
 
             {/* Feature Buttons */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleFeature("bookmarks")}
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  activeFeature === "bookmarks"
-                    ? isVerseByVerseView && hasBackgroundImage
-                      ? "bg-white/30 text-white shadow"
-                      : "bg-primary text-white shadow"
-                    : isVerseByVerseView && hasBackgroundImage
-                    ? "bg-white/10 text-white hover:bg-white/20"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-              >
-                <Bookmark size={16} />
-              </button>
-              <button
-                onClick={() => toggleFeature("history")}
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  activeFeature === "history"
-                    ? isVerseByVerseView && hasBackgroundImage
-                      ? "bg-white/30 text-white shadow"
-                      : "bg-primary text-white shadow"
-                    : isVerseByVerseView && hasBackgroundImage
-                    ? "bg-white/10 text-white hover:bg-white/20"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-              >
-                <History size={16} />
-              </button>
-              <button
-                onClick={() => toggleFeature("search")}
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  activeFeature === "search"
-                    ? isVerseByVerseView && hasBackgroundImage
-                      ? "bg-white/30 text-white shadow"
-                      : "bg-primary text-white shadow"
-                    : isVerseByVerseView && hasBackgroundImage
-                    ? "bg-white/10 text-white hover:bg-white/20"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-              >
-                <Search size={16} />
-              </button>
-              <button
-                onClick={() => toggleFeature("library")}
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  activeFeature === "library"
-                    ? isVerseByVerseView && hasBackgroundImage
-                      ? "bg-white/30 text-white shadow"
-                      : "bg-primary text-white shadow"
-                    : isVerseByVerseView && hasBackgroundImage
-                    ? "bg-white/10 text-white hover:bg-white/20"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-              >
-                <Library size={16} />
-              </button>
-              <button
-                onClick={() => toggleFeature("shortcuts")}
-                className={`p-2 rounded-lg transition-colors duration-200 ${
-                  activeFeature === "shortcuts"
-                    ? isVerseByVerseView && hasBackgroundImage
-                      ? "bg-white/30 text-white shadow"
-                      : "bg-primary text-white shadow"
-                    : isVerseByVerseView && hasBackgroundImage
-                    ? "bg-white/10 text-white hover:bg-white/20"
-                    : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                }`}
-              >
-                <Keyboard size={16} />
-              </button>
-              {onOpenPresentation && (
+              <Tooltip title="Bookmarks" placement="bottom">
                 <button
-                  onClick={onOpenPresentation}
+                  onClick={() => toggleFeature("bookmarks")}
                   className={`p-2 rounded-lg transition-colors duration-200 ${
-                    isVerseByVerseView && hasBackgroundImage
+                    activeFeature === "bookmarks"
+                      ? isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/30 text-white shadow"
+                        : "bg-primary text-white shadow"
+                      : isVerseByVerseView && hasBackgroundImage
                       ? "bg-white/10 text-white hover:bg-white/20"
-                    : "text-orange-500 dark:text-orange-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                      : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
                   }`}
-                  title="Open Bible Presentation"
                 >
-                  <Monitor size={16} />
+                  <Bookmark size={16} />
                 </button>
+              </Tooltip>
+              <Tooltip title="History" placement="bottom">
+                <button
+                  onClick={() => toggleFeature("history")}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    activeFeature === "history"
+                      ? isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/30 text-white shadow"
+                        : "bg-primary text-white shadow"
+                      : isVerseByVerseView && hasBackgroundImage
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                  }`}
+                >
+                  <History size={16} />
+                </button>
+              </Tooltip>
+              <Tooltip title="Search" placement="bottom">
+                <button
+                  onClick={() => toggleFeature("search")}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    activeFeature === "search"
+                      ? isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/30 text-white shadow"
+                        : "bg-primary text-white shadow"
+                      : isVerseByVerseView && hasBackgroundImage
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                  }`}
+                >
+                  <Search size={16} />
+                </button>
+              </Tooltip>
+              <Tooltip title="Library" placement="bottom">
+                <button
+                  onClick={() => toggleFeature("library")}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    activeFeature === "library"
+                      ? isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/30 text-white shadow"
+                        : "bg-primary text-white shadow"
+                      : isVerseByVerseView && hasBackgroundImage
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                  }`}
+                >
+                  <Library size={16} />
+                </button>
+              </Tooltip>
+              <Tooltip title="Keyboard Shortcuts" placement="bottom">
+                <button
+                  onClick={() => toggleFeature("shortcuts")}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    activeFeature === "shortcuts"
+                      ? isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/30 text-white shadow"
+                        : "bg-primary text-white shadow"
+                      : isVerseByVerseView && hasBackgroundImage
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                  }`}
+                >
+                  <Keyboard size={16} />
+                </button>
+              </Tooltip>
+              {onOpenPresentation && (
+                <Tooltip title="Open Bible Presentation" placement="bottom">
+                  <button
+                    onClick={onOpenPresentation}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/10 text-white hover:bg-white/20"
+                        : "text-orange-500 dark:text-orange-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                    }`}
+                  >
+                    <Monitor size={16} />
+                  </button>
+                </Tooltip>
               )}
             </div>
           </motion.div>
