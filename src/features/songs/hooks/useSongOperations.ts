@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useCallback } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
 import {
   setSongs,
   setSelectedSong,
@@ -14,11 +14,13 @@ import {
   setShowDeleteDialog,
   deleteSongFromState,
   clearSearch,
+  addToRecents,
+  removeFromRecents,
   ViewMode,
   ActiveTab,
-} from '@/store/slices/songSlice';
-import { setCurrentScreen } from '@/store/slices/appSlice';
-import { Song } from '@/types';
+} from "@/store/slices/songSlice";
+import { setCurrentScreen } from "@/store/slices/appSlice";
+import { Song } from "@/types";
 
 export const useSongOperations = () => {
   const dispatch = useAppDispatch();
@@ -33,28 +35,39 @@ export const useSongOperations = () => {
   const isLoading = useAppSelector((state) => state.songs.isLoading);
   const error = useAppSelector((state) => state.songs.error);
   const isDeleting = useAppSelector((state) => state.songs.isDeleting);
-  const showDeleteDialog = useAppSelector((state) => state.songs.showDeleteDialog);
+  const showDeleteDialog = useAppSelector(
+    (state) => state.songs.showDeleteDialog
+  );
 
   // Song selection operations
-  const selectSong = useCallback((song: Song) => {
-    dispatch(setSelectedSong(song));
-    dispatch(setActiveTab("Song"));
-  }, [dispatch]);
+  const selectSong = useCallback(
+    (song: Song) => {
+      dispatch(setSelectedSong(song));
+      dispatch(setActiveTab("Song"));
+    },
+    [dispatch]
+  );
 
   const deselectSong = useCallback(() => {
     dispatch(setSelectedSong(null));
   }, [dispatch]);
 
   // Song presentation operations
-  const presentSong = useCallback((song: Song) => {
-    if (song) {
-      localStorage.setItem("selectedSong", JSON.stringify(song));
-      window.api.projectSong(song);
-      window.api.onDisplaySong((selectedSong) => {
-        console.log(`songData: ${selectedSong.title}`);
-      });
-    }
-  }, []);
+  const presentSong = useCallback(
+    (song: Song) => {
+      if (song) {
+        localStorage.setItem("selectedSong", JSON.stringify(song));
+        window.api.projectSong(song);
+        window.api.onDisplaySong((selectedSong) => {
+          console.log(`songData: ${selectedSong.title}`);
+        });
+
+        // Add song to recents when presented
+        dispatch(addToRecents(song));
+      }
+    },
+    [dispatch]
+  );
 
   const goToPresentation = useCallback(() => {
     dispatch(setCurrentScreen("Presentation"));
@@ -92,22 +105,31 @@ export const useSongOperations = () => {
   }, [dispatch]);
 
   // Search operations
-  const updateSearchQuery = useCallback((query: string) => {
-    dispatch(setSearchQuery(query));
-  }, [dispatch]);
+  const updateSearchQuery = useCallback(
+    (query: string) => {
+      dispatch(setSearchQuery(query));
+    },
+    [dispatch]
+  );
 
   const clearSearchQuery = useCallback(() => {
     dispatch(clearSearch());
   }, [dispatch]);
 
   // View operations
-  const changeViewMode = useCallback((mode: ViewMode) => {
-    dispatch(setViewMode(mode));
-  }, [dispatch]);
+  const changeViewMode = useCallback(
+    (mode: ViewMode) => {
+      dispatch(setViewMode(mode));
+    },
+    [dispatch]
+  );
 
-  const changeActiveTab = useCallback((tab: ActiveTab) => {
-    dispatch(setActiveTab(tab));
-  }, [dispatch]);
+  const changeActiveTab = useCallback(
+    (tab: ActiveTab) => {
+      dispatch(setActiveTab(tab));
+    },
+    [dispatch]
+  );
 
   // Repository operations
   const changeDirectory = useCallback(async () => {
@@ -118,22 +140,32 @@ export const useSongOperations = () => {
   }, [dispatch]);
 
   // Favorite operations
-  const toggleSongFavorite = useCallback((song: Song) => {
-    dispatch(toggleFavorite(song));
-  }, [dispatch]);
+  const toggleSongFavorite = useCallback(
+    (song: Song) => {
+      dispatch(toggleFavorite(song));
+    },
+    [dispatch]
+  );
 
-  const isFavorite = useCallback((song: Song) => {
-    return favorites.some(fav => fav.id === song.id);
-  }, [favorites]);
+  const isFavorite = useCallback(
+    (song: Song) => {
+      return favorites.some((fav) => fav.id === song.id);
+    },
+    [favorites]
+  );
 
   // Loading operations
   const loadSongs = useCallback(async () => {
     try {
       dispatch(setLoading(true));
-      const songsData = await window.api.fetchSongs(songRepo) as Song[];
+      const songsData = (await window.api.fetchSongs(songRepo)) as Song[];
       dispatch(setSongs(songsData));
     } catch (error) {
-      dispatch(setError(error instanceof Error ? error.message : 'Failed to load songs'));
+      dispatch(
+        setError(
+          error instanceof Error ? error.message : "Failed to load songs"
+        )
+      );
     }
   }, [dispatch, songRepo]);
 
@@ -146,28 +178,43 @@ export const useSongOperations = () => {
     dispatch(setShowDeleteDialog(false));
   }, [dispatch]);
 
-  const deleteSong = useCallback(async (filePath: string) => {
-    try {
-      dispatch(setDeleting(true));
-      const response = await window.api.deleteSong(filePath);
-      console.log("Delete song response:", response);
-      dispatch(deleteSongFromState(selectedSong?.id || ''));
-      dispatch(setDeleting(false));
-      dispatch(setShowDeleteDialog(false));
-      // Reload songs after deletion
-      loadSongs();
-    } catch (error) {
-      console.error("Failed to delete song:", error);
-      dispatch(setError(error instanceof Error ? error.message : 'Failed to delete song'));
-      dispatch(setDeleting(false));
-    }
-  }, [dispatch, selectedSong, loadSongs]);
+  const deleteSong = useCallback(
+    async (filePath: string) => {
+      try {
+        dispatch(setDeleting(true));
+        const response = await window.api.deleteSong(filePath);
+        console.log("Delete song response:", response);
+        dispatch(deleteSongFromState(selectedSong?.id || ""));
+        dispatch(setDeleting(false));
+        dispatch(setShowDeleteDialog(false));
+        // Reload songs after deletion
+        loadSongs();
+      } catch (error) {
+        console.error("Failed to delete song:", error);
+        dispatch(
+          setError(
+            error instanceof Error ? error.message : "Failed to delete song"
+          )
+        );
+        dispatch(setDeleting(false));
+      }
+    },
+    [dispatch, selectedSong, loadSongs]
+  );
 
   const deleteSelectedSong = useCallback(() => {
     if (selectedSong?.path) {
       deleteSong(selectedSong.path);
     }
   }, [deleteSong, selectedSong]);
+
+  // Remove song from recents
+  const removeRecentSong = useCallback(
+    (songId: string, date: string) => {
+      dispatch(removeFromRecents({ songId, date }));
+    },
+    [dispatch]
+  );
 
   return {
     // State
@@ -208,5 +255,6 @@ export const useSongOperations = () => {
     hideDeleteConfirmation,
     deleteSong,
     deleteSelectedSong,
+    removeRecentSong,
   };
-}; 
+};

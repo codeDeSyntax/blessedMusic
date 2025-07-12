@@ -245,25 +245,37 @@ const ScriptureParagraphView: React.FC<ScriptureParagraphViewProps> = ({
                       <div className="flex flex-row items-center gap-1 bg-white dark:bg-ltgray p-1 rounded-full shadow">
                         {/* Yellow highlight */}
                         <div
-                          onClick={() => highlightVerse(verse.verse, "#FFD700")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            highlightVerse(verse.verse, "#FFD700");
+                          }}
                           className="h-3 w-3 rounded-full bg-yellow-400 hover:bg-yellow-500 shadow-sm cursor-pointer"
                           title="Highlight yellow"
                         ></div>
                         {/* Green highlight */}
                         <div
-                          onClick={() => highlightVerse(verse.verse, "#4CAF50")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            highlightVerse(verse.verse, "#4CAF50");
+                          }}
                           className="h-3 w-3 rounded-full bg-green-500 hover:bg-green-600 shadow-sm cursor-pointer"
                           title="Highlight green"
                         ></div>
                         {/* Blue highlight */}
                         <div
-                          onClick={() => highlightVerse(verse.verse, "#2196F3")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            highlightVerse(verse.verse, "#2196F3");
+                          }}
                           className="h-3 w-3 rounded-full bg-blue-500 hover:bg-blue-600 shadow-sm cursor-pointer"
                           title="Highlight blue"
                         ></div>
                         {/* Reset highlight */}
                         <div
-                          onClick={() => highlightVerse(verse.verse, "reset")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            highlightVerse(verse.verse, "reset");
+                          }}
                           className="h-3 w-3 rounded-full bg-gray-300 hover:bg-gray-400 flex items-center justify-center shadow-sm cursor-pointer"
                           title="Remove highlight"
                         >

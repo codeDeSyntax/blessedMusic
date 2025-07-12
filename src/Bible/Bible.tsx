@@ -38,7 +38,7 @@ const Biblelayout: React.FC = () => {
   // Initialize Bible backgrounds from custom directory
   useEffect(() => {
     const loadCustomImages = async () => {
-      const customImagesPath = localStorage.getItem("vmusicimages");
+      const customImagesPath = localStorage.getItem("bibleCustomImagesPath");
       if (customImagesPath) {
         try {
           const images = await window.api.getImages(customImagesPath);

@@ -99,6 +99,7 @@ const SettingsModal: React.FC = () => {
 
   const fontFamilies = [
        { value: "'Helvetica', sans-serif", text: "Helvetica" },
+       { value: "'Arial Black', sans-serif", text: "Arial" },
     { value: "'Courier New', Courier, monospace", text: "Courier New" },
     { value: "'Verdana', sans-serif", text: "Verdana" },
     { value: "'Impact', Charcoal, sans-serif", text: "Impact" },

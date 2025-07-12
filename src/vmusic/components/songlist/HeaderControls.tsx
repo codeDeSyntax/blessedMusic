@@ -186,6 +186,15 @@ const HeaderControls = React.memo(
                 </span>
               </Tooltip>
             </div>
+
+            {/* Display saved path */}
+            {songRepo && (
+              <div className="mt-1">
+                <p className="text-xs text-[#9a674a]/70 truncate max-w-xs">
+                  📂 {songRepo}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

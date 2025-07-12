@@ -13,6 +13,7 @@ import Biblelayout from "./Bible/Bible";
 import BiblePresentationDisplay from "./Bible/components/BiblePresentationDisplay";
 import SongPresentationDisplay from "./vmusic/components/SongPresentationDisplay";
 import PresentationMasterPage from "./EvPresenter/MasterPresentApp";
+import Recents from "./vmusic/Recents";
 import { useAppSelector, useAppDispatch } from "./store";
 import { setCurrentScreen } from "./store/slices/appSlice";
 
@@ -124,6 +125,8 @@ const App = () => {
         <Biblelayout />
       ) : currentScreen === "mpresenter" ? (
         <PresentationMasterPage />
+      ) : currentScreen === "recents" ? (
+        <Recents />
       ) : (
         <ArrowLeftCircle
           className="size-6 text-white"

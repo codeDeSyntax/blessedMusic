@@ -6,7 +6,9 @@ import {
   setCurrentBook,
   setCurrentChapter,
   TRANSLATIONS,
+  setSelectedBackground,
 } from "@/store/slices/bibleSlice";
+import { setBibleBgs } from "@/store/slices/appSlice";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
 interface BiblePresentationDisplayProps {
@@ -44,6 +46,10 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
   const fontFamily = useAppSelector((state) => state.bible.fontFamily);
   const fontWeight = useAppSelector((state) => state.bible.fontWeight);
   const verseTextColor = useAppSelector((state) => state.bible.verseTextColor);
+  const selectedBackground = useAppSelector(
+    (state) => state.bible.selectedBackground
+  );
+  const bibleBgs = useAppSelector((state) => state.app.bibleBgs);
   const currentTranslation = useAppSelector(
     (state) => state.bible.currentTranslation
   );
@@ -117,21 +123,30 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
   const [selectedGradient, setSelectedGradient] = useState(0);
   const [isTranslationSwitching, setIsTranslationSwitching] = useState(false);
   const [isControlPanelVisible, setIsControlPanelVisible] = useState(true);
+  const [useImageBackground, setUseImageBackground] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Available translations
   const availableTranslations = Object.keys(TRANSLATIONS);
 
-  // Background gradient options
+  // Background gradient options - expanded with more colors
   const backgroundGradients = [
     "bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900", // Current default
     "bg-gradient-to-br from-purple-900 via-pink-900 to-rose-900",
     "bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900",
     "bg-gradient-to-br from-amber-900 via-orange-900 to-red-900",
+    "bg-gradient-to-br from-gray-900 via-zinc-900 to-black",
+    "bg-gradient-to-br from-violet-900 via-purple-800 to-indigo-900",
+    "bg-gradient-to-br from-green-900 via-emerald-800 to-teal-900",
+    "bg-gradient-to-br from-red-900 via-pink-800 to-rose-900",
+    "bg-gradient-to-br from-yellow-900 via-amber-800 to-orange-900",
+    "bg-gradient-to-br from-blue-900 via-indigo-800 to-purple-900",
+    "bg-gradient-to-br from-cyan-900 via-teal-800 to-green-900",
+    "bg-gradient-to-br from-pink-900 via-rose-800 to-red-900",
   ];
 
   // Base font size calculation
-  const baseFontSize = 32;
+  const baseFontSize = 40;
 
   // Helper functions for localStorage
   const getLocalStorageItem = (
@@ -160,9 +175,75 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     const savedMultiplier = getLocalStorageItem("bibleFontMultiplier", "1.0");
     setFontSizeMultiplier(parseFloat(savedMultiplier!) || 1.0);
 
-    const savedBg = getLocalStorageItem("biblepresentationbg");
-    setBackgroundImage(savedBg || "");
-  }, []);
+    // Always use selectedBackground from Redux store (same as VerseByVerseView)
+    if (selectedBackground) {
+      setBackgroundImage(selectedBackground);
+    }
+
+    const savedUseImage = getLocalStorageItem(
+      "bibleUseImageBackground",
+      "false"
+    );
+    setUseImageBackground(savedUseImage === "true");
+  }, [selectedBackground]);
+
+  // Load background images from custom directory if not already loaded
+  useEffect(() => {
+    const loadBackgroundImages = async () => {
+      // Only load if we don't have images yet
+      if (bibleBgs.length === 0) {
+        const customImagesPath = localStorage.getItem("bibleCustomImagesPath");
+        try {
+          if (customImagesPath) {
+            console.log(
+              "BiblePresentationDisplay: Loading custom images from:",
+              customImagesPath
+            );
+            const images = await window.api.getImages(customImagesPath);
+            console.log(
+              "BiblePresentationDisplay: Loaded",
+              images.length,
+              "custom images"
+            );
+            dispatch(setBibleBgs(images));
+          } else {
+            // Load default backgrounds if no custom path
+            const defaultBackgrounds = [
+              "./wood2.jpg",
+              "./snow1.jpg",
+              "./wood6.jpg",
+              "./wood7.png",
+              "./pic2.jpg",
+              "./wood10.jpg",
+              "./wood11.jpg",
+            ];
+            console.log(
+              "BiblePresentationDisplay: Loading default backgrounds"
+            );
+            dispatch(setBibleBgs(defaultBackgrounds));
+          }
+        } catch (error) {
+          console.error(
+            "BiblePresentationDisplay: Failed to load background images:",
+            error
+          );
+          // Load default backgrounds if loading fails
+          const defaultBackgrounds = [
+            "./wood2.jpg",
+            "./snow1.jpg",
+            "./wood6.jpg",
+            "./wood7.png",
+            "./pic2.jpg",
+            "./wood10.jpg",
+            "./wood11.jpg",
+          ];
+          dispatch(setBibleBgs(defaultBackgrounds));
+        }
+      }
+    };
+
+    loadBackgroundImages();
+  }, [dispatch, bibleBgs.length]);
 
   // Base font size for the presenter - independent of main Bible font size
   const getBaseFontSize = () => "2.5rem"; // Fixed base size for presenter
@@ -266,7 +347,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
 
       // Test different font sizes
       let testSize = baseFontSize * fontSizeMultiplier;
-      const maxSize = Math.min(containerHeight * 0.15, 120);
+      const maxSize = Math.min(containerHeight * 0.25, 300);
       const minSize = 20;
 
       // Create temporary element for measurement
@@ -311,17 +392,15 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
 
   const optimalFontSize = calculateOptimalFontSize(currentVerses);
 
-  // Font size adjustment functions
+  // Font size adjustment functions - removed restrictions
   const increaseFontSize = useCallback(() => {
-    if (fontSizeMultiplier < 3.0) {
-      const newMultiplier = fontSizeMultiplier + 0.1;
-      setFontSizeMultiplier(newMultiplier);
-      setLocalStorageItem("bibleFontMultiplier", newMultiplier.toString());
-    }
+    const newMultiplier = fontSizeMultiplier + 0.1;
+    setFontSizeMultiplier(newMultiplier);
+    setLocalStorageItem("bibleFontMultiplier", newMultiplier.toString());
   }, [fontSizeMultiplier]);
 
   const decreaseFontSize = useCallback(() => {
-    if (fontSizeMultiplier > 0.3) {
+    if (fontSizeMultiplier > 0.1) {
       const newMultiplier = fontSizeMultiplier - 0.1;
       setFontSizeMultiplier(newMultiplier);
       setLocalStorageItem("bibleFontMultiplier", newMultiplier.toString());
@@ -361,7 +440,35 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
   // Gradient selection function
   const selectGradient = useCallback((gradientIndex: number) => {
     setSelectedGradient(gradientIndex);
+    setUseImageBackground(false);
+    setLocalStorageItem("bibleUseImageBackground", "false");
   }, []);
+
+  // Image background selection function
+  const selectImageBackground = useCallback(
+    (imageSrc?: string) => {
+      const imageToUse = imageSrc || selectedBackground;
+      if (imageToUse) {
+        setBackgroundImage(imageToUse);
+        setUseImageBackground(true);
+        setLocalStorageItem("bibleUseImageBackground", "true");
+
+        // Update Redux store with the selected background if it's different
+        if (imageToUse !== selectedBackground) {
+          dispatch(setSelectedBackground(imageToUse));
+        }
+      }
+    },
+    [selectedBackground, dispatch]
+  );
+
+  // Select specific background image
+  const selectSpecificBackground = useCallback(
+    (imageSrc: string) => {
+      selectImageBackground(imageSrc);
+    },
+    [selectImageBackground]
+  );
 
   // Control panel toggle function
   const toggleControlPanel = useCallback(() => {
@@ -382,22 +489,22 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     setCurrentVerseIndex(0);
   }, [currentBook, currentChapter]);
 
-  // Real-time background image and font updates - sync with localStorage changes
+  // Real-time background image and font updates - sync with localStorage changes and Redux
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "biblepresentationbg" && e.newValue) {
-        setBackgroundImage(e.newValue);
-      }
       if (e.key === "bibleFontMultiplier" && e.newValue) {
         setFontSizeMultiplier(parseFloat(e.newValue) || 1.0);
       }
+      if (e.key === "bibleUseImageBackground" && e.newValue) {
+        setUseImageBackground(e.newValue === "true");
+      }
     };
 
-    // Check for changes every second to sync with localStorage
+    // Check for changes every second to sync with localStorage and Redux
     const changeCheck = setInterval(() => {
-      const currentBg = getLocalStorageItem("biblepresentationbg", "");
-      if (currentBg !== backgroundImage) {
-        setBackgroundImage(currentBg!);
+      // Always sync selectedBackground from Redux store
+      if (selectedBackground && selectedBackground !== backgroundImage) {
+        setBackgroundImage(selectedBackground);
       }
 
       const currentMultiplier = getLocalStorageItem(
@@ -408,6 +515,14 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
       if (newMultiplier !== fontSizeMultiplier) {
         setFontSizeMultiplier(newMultiplier);
       }
+
+      const currentUseImage = getLocalStorageItem(
+        "bibleUseImageBackground",
+        "false"
+      );
+      if ((currentUseImage === "true") !== useImageBackground) {
+        setUseImageBackground(currentUseImage === "true");
+      }
     }, 1000);
 
     window.addEventListener("storage", handleStorageChange);
@@ -416,7 +531,12 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
       clearInterval(changeCheck);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [backgroundImage, fontSizeMultiplier]);
+  }, [
+    selectedBackground,
+    backgroundImage,
+    fontSizeMultiplier,
+    useImageBackground,
+  ]);
 
   // Listen for IPC messages if in Electron context
   useEffect(() => {
@@ -557,6 +677,11 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
         case "2":
         case "3":
         case "4":
+        case "5":
+        case "6":
+        case "7":
+        case "8":
+        case "9":
           e.preventDefault();
           const gradientIndex = parseInt(e.key) - 1;
           if (
@@ -564,6 +689,13 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
             gradientIndex < backgroundGradients.length
           ) {
             selectGradient(gradientIndex);
+          }
+          break;
+        case "0":
+          e.preventDefault();
+          // Key '0' selects gradient index 9 (10th gradient)
+          if (9 < backgroundGradients.length) {
+            selectGradient(9);
           }
           break;
       }
@@ -581,39 +713,10 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     getCurrentChapterVerses,
   ]);
 
-  // Auto-adjust font size on content change
+  // Auto-adjust font size on content change - removed restrictions
   useEffect(() => {
-    const checkForOverflow = () => {
-      if (!contentRef.current) return;
-
-      const container = contentRef.current;
-      const containerHeight = container.clientHeight;
-      const contentElement = container.querySelector(
-        ".verse-content"
-      ) as HTMLElement;
-
-      if (contentElement) {
-        const contentHeight = contentElement.scrollHeight;
-        const maxAllowedHeight = containerHeight * 0.95;
-
-        // If content is overflowing, automatically reduce font size
-        if (contentHeight > maxAllowedHeight) {
-          const scaleFactor = maxAllowedHeight / contentHeight;
-          const adjustedMultiplier = fontSizeMultiplier * scaleFactor * 0.98;
-
-          if (adjustedMultiplier < fontSizeMultiplier * 0.99) {
-            setFontSizeMultiplier(Math.max(0.3, adjustedMultiplier));
-            setLocalStorageItem(
-              "bibleFontMultiplier",
-              adjustedMultiplier.toString()
-            );
-          }
-        }
-      }
-    };
-
-    const timeoutId = setTimeout(checkForOverflow, 100);
-    return () => clearTimeout(timeoutId);
+    // This effect is now minimal since we allow unlimited font size
+    // and rely on scrolling for overflow content
   }, [currentVerseIndex, getCurrentChapterVerses, fontSizeMultiplier]);
 
   // Check if we have any verses to display
@@ -682,11 +785,11 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
-                  lineHeight: "1.4",
+                  // lineHeight: "1.4",
                   fontWeight: fontWeight || "bold",
                   fontFamily: fontFamily,
                 }}
-                className={`${getFontFamilyClass()} drop-shadow-2xl mb-6`}
+                className={`${getFontFamilyClass()} drop-shadow-2xl mb-6 truncate `}
               >
                 The Word
               </h1>
@@ -694,7 +797,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className={`text-white/80 font-light tracking-wide ${getFontFamilyClass()}`}
+                className={`text-white/80 font-light tracking-wide truncate ${getFontFamilyClass()}`}
                 style={{
                   fontSize: `calc(${getBaseFontSize()} * 0.8 * ${fontSizeMultiplier})`,
                   fontFamily: fontFamily,
@@ -720,24 +823,109 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
   }
   return (
     <div className="w-full h-screen relative overflow-hidden flex items-center justify-center">
-      {/* Enhanced Background */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div
-          className={`w-full h-full ${backgroundGradients[selectedGradient]}`}
-        />
-        {/* Multiple overlay effects for depth */}
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/20" />
+      {/* Live Red Border - Solid border around entire window */}
+      <div className="absolute inset-0 z-50 pointer-events-none">
+        {/* Main red border */}
+        <div className="absolute inset-0 border-1 border-opacity-45 border-dashed border-red-500 shadow-lg shadow-red-500/30"></div>
       </div>
 
-      {/* Main Content - improved centering and styling like verse-by-verse view */}
+      {/* Thin White Liquid Overlay */}
+      {/* <div className="absolute inset-0 z-40 pointer-events-none">
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `linear-gradient(90deg, 
+              transparent 0%, 
+              rgba(255, 255, 255, 0.1) 20%, 
+              rgba(255, 255, 255, 0.3) 40%, 
+              rgba(255, 255, 255, 0.4) 50%, 
+              rgba(255, 255, 255, 0.3) 60%, 
+              rgba(255, 255, 255, 0.1) 80%, 
+              transparent 100%)`,
+            backgroundSize: "100% 100%",
+            animation: "liquidFlow 4s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            background: `linear-gradient(270deg, 
+              transparent 0%, 
+              rgba(255, 255, 255, 0.05) 30%, 
+              rgba(255, 255, 255, 0.15) 50%, 
+              rgba(255, 255, 255, 0.05) 70%, 
+              transparent 100%)`,
+            backgroundSize: "200% 100%",
+            animation: "liquidFlow 3s ease-in-out infinite reverse",
+          }}
+        />
+      </div> */}
+
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {useImageBackground && backgroundImage ? (
+          <div
+            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+            }}
+          />
+        ) : (
+          <div
+            className={`w-full h-full ${backgroundGradients[selectedGradient]}`}
+          />
+        )}
+        {/* Overlay effects for depth - lighter for images, heavier for gradients */}
+        {useImageBackground && backgroundImage ? (
+          <>
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/5" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/20" />
+          </>
+        )}
+      </div>
+
+      {/* Main Content - improved layout to keep text visible at large font sizes */}
       <div
         ref={contentRef}
-        className="relative z-10 w-[98%] h-full flex items-center justify-center p-6"
+        className="relative z-10 w-[98%] h-full flex flex-col justify-start items-center pb-32 px-6 overflow-y-auto no-scrollbar"
+        style={{
+          paddingTop: `${Math.max(80, 60 * fontSizeMultiplier)}px`,
+        }}
       >
-        <div className="  mx-auto flex items-center justify-center">
+        <div className=" backdrop-blur-md bg-opacity-10 rounded-xl border-2 border-emerald-400/40 fixed px-3  left-2 pt-5 shadow-2xl">
+          <div className="flex items-center space-x-3">
+            <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50"></div>
+            <span
+              className="text-white font-bitter  font-bold tracking-wider drop-shadow-lg"
+              style={{
+                fontSize: `calc(${getBaseFontSize()} * 1 * ${fontSizeMultiplier})`,
+              }}
+            >
+              {currentVerses.length > 0 ? currentVerses[0]?.verse : "1"}
+            </span>
+          </div>
+          {/* <div className="text-emerald-200/80 text-sm font-mono mt-2 text-center">
+              {currentBook} {currentChapter}
+            </div> */}
+        </div>
+        {/* Verse Number Indicator - Fixed positioned at top left */}
+        <motion.div
+          key={`verse-indicator-${currentVerseIndex}-${currentBook}-${currentChapter}`}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="fixed top-8 left-8 z-50"
+          style={{ zIndex: 9999 }}
+        ></motion.div>
+        {/* Verse Display - same approach as VerseByVerseView */}
+        <div className="flex-1 flex items-center justify-center w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${currentVerseIndex}-${currentBook}-${currentChapter}`}
@@ -748,12 +936,16 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                 duration: 0.2,
                 ease: [0.25, 0.46, 0.45, 0.94],
               }}
-              className="verse-content text-center w-full flex flex-col items-center justify-center"
+              className="verse-content text-center w-full flex flex-col items-center justify-center py-4"
             >
-              {/* Content Background Effect */}
-              <div className="absolute inset-0 -m-12 bg-gradient-to-br from-white/5 to-transparent rounded-3xl border border-white/10 backdrop-blur-sm" />
+              {/* Content Background Effect - no blur for image backgrounds */}
+              <div
+                className={`absolute inset-0 -m-12 bg-gradient-to-br from-white/5 to-transparent rounded-3xl border border-white/10 ${
+                  useImageBackground ? "" : "backdrop-blur-0"
+                }`}
+              />
 
-              {/* Verses Container - properly centered */}
+              {/* Verses Container - properly positioned */}
               <div className="space-y-6 relative z-10 w-full flex flex-col items-center justify-center">
                 {currentVerses.map((verse, index) => (
                   <motion.div
@@ -768,15 +960,15 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                     className="w-full flex flex-col items-center justify-center"
                   >
                     {/* Verse Text - styled exactly like verse-by-verse view */}
-                    <div className="w-full max-w-5xl">
+                    <div className="w-full max-w-7xl">
                       <p
                         className={`text-white tracking-wide drop-shadow-xl text-center leading-relaxed ${getFontFamilyClass()} ${getTextSizeClass(
                           verse.text
                         )}`}
                         style={{
                           textShadow: "0 4px 8px rgba(0,0,0,0.5)",
-                          lineHeight: "1.4",
-                          fontWeight: fontWeight || "bold",
+                          lineHeight: "1.2",
+                          fontWeight: "bold",
                           fontFamily: fontFamily,
                           fontSize: `calc(${getBaseFontSize()} * ${fontSizeMultiplier})`,
                         }}
@@ -785,24 +977,8 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                       </p>
                     </div>
                   </motion.div>
-                ))}
+                ))}{" "}
               </div>
-
-              {/* Translation */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.6 }}
-                transition={{ delay: 1.2, duration: 0.8 }}
-                className="text-white/60 font-light uppercase tracking-[0.3em] relative mt-4"
-                style={{
-                  fontSize: `calc(${getBaseFontSize()} * 0.5 * ${fontSizeMultiplier})`,
-                  textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                  fontFamily: fontFamily,
-                  fontWeight: "normal",
-                }}
-              >
-                {currentTranslation}
-              </motion.p>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -823,12 +999,12 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
             }}
             className="absolute bottom-4 right-4 z-30"
           >
-            <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-white/10 p-2 shadow-lg">
+            <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-white/10 p-2 shadow-lg relative">
               <div className="flex items-center justify-center space-y-1 text-xs">
                 {/* Keyboard shortcuts hint */}
                 <div className="text-center">
                   <span className="text-white/50 text-[8px] font-mono">
-                    T=Translation • 1-4=Colors • Ctrl+H=Hide • ESC=Focus Main
+                    T=Translation • 1-9,0=Colors • Ctrl+H=Hide • ESC=Focus Main
                   </span>
                 </div>
 
@@ -867,34 +1043,6 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                   <span className="text-white font-mono text-[10px]">
                     {currentVerseIndex + 1}/{verses.length}
                   </span>
-                </div>
-
-                {/* Color Palette for Background Gradients */}
-                <div className="bg-black/50 rounded-md px-2 py-1 border border-white/10">
-                  <div className="flex items-center justify-center space-x-1">
-                    {backgroundGradients.map((gradient, index) => (
-                      <button
-                        key={index}
-                        onClick={() => selectGradient(index)}
-                        className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                          selectedGradient === index
-                            ? "ring-1 ring-white/50"
-                            : ""
-                        }`}
-                        style={{
-                          background:
-                            index === 0
-                              ? "linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #312e81 100%)"
-                              : index === 1
-                              ? "linear-gradient(135deg, #581c87 0%, #be185d 50%, #be123c 100%)"
-                              : index === 2
-                              ? "linear-gradient(135deg, #064e3b 0%, #0f766e 50%, #155e75 100%)"
-                              : "linear-gradient(135deg, #78350f 0%, #ea580c 50%, #dc2626 100%)",
-                        }}
-                        title={`Background ${index + 1}`}
-                      />
-                    ))}
-                  </div>
                 </div>
 
                 {/* Progress Dots - Mini Version */}
@@ -945,6 +1093,112 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                     >
                       +
                     </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Background Options - Absolute positioned to not affect control panel width */}
+              <div className="absolute top-0 right-full mr-2 bg-black/50 backdrop-blur-sm rounded-md px-2 py-1 border border-white/10">
+                <div className="flex flex-col space-y-1">
+                  {/* Background Images - Show first few images */}
+                  {bibleBgs.length > 0 && (
+                    <div className="flex items-center justify-center space-x-1">
+                      {bibleBgs.slice(0, 6).map((imageSrc, index) => (
+                        <button
+                          key={`bg-${index}`}
+                          onClick={() => selectSpecificBackground(imageSrc)}
+                          className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 bg-cover bg-center ${
+                            useImageBackground && backgroundImage === imageSrc
+                              ? "ring-1 ring-white/50"
+                              : ""
+                          }`}
+                          style={{
+                            backgroundImage: `url(${imageSrc})`,
+                          }}
+                          title={`Background ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Additional Background Images - Second row if more than 6 */}
+                  {bibleBgs.length > 6 && (
+                    <div className="flex items-center justify-center space-x-1">
+                      {bibleBgs.slice(6, 12).map((imageSrc, index) => (
+                        <button
+                          key={`bg-${index + 6}`}
+                          onClick={() => selectSpecificBackground(imageSrc)}
+                          className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 bg-cover bg-center ${
+                            useImageBackground && backgroundImage === imageSrc
+                              ? "ring-1 ring-white/50"
+                              : ""
+                          }`}
+                          style={{
+                            backgroundImage: `url(${imageSrc})`,
+                          }}
+                          title={`Background ${index + 7}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* First Row - Gradient Colors */}
+                  <div className="flex items-center justify-center space-x-1">
+                    {backgroundGradients.slice(0, 6).map((gradient, index) => (
+                      <button
+                        key={index}
+                        onClick={() => selectGradient(index)}
+                        className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                          selectedGradient === index && !useImageBackground
+                            ? "ring-1 ring-white/50"
+                            : ""
+                        }`}
+                        style={{
+                          background:
+                            index === 0
+                              ? "linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #312e81 100%)"
+                              : index === 1
+                              ? "linear-gradient(135deg, #581c87 0%, #be185d 50%, #be123c 100%)"
+                              : index === 2
+                              ? "linear-gradient(135deg, #064e3b 0%, #0f766e 50%, #155e75 100%)"
+                              : index === 3
+                              ? "linear-gradient(135deg, #78350f 0%, #ea580c 50%, #dc2626 100%)"
+                              : index === 4
+                              ? "linear-gradient(135deg, #374151 0%, #27272a 50%, #000000 100%)"
+                              : "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #4338ca 100%)",
+                        }}
+                        title={`Gradient ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                  {/* Second Row - More Gradient Colors */}
+                  <div className="flex items-center justify-center space-x-1">
+                    {backgroundGradients.slice(6, 12).map((gradient, index) => (
+                      <button
+                        key={index + 6}
+                        onClick={() => selectGradient(index + 6)}
+                        className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                          selectedGradient === index + 6 && !useImageBackground
+                            ? "ring-1 ring-white/50"
+                            : ""
+                        }`}
+                        style={{
+                          background:
+                            index === 0
+                              ? "linear-gradient(135deg, #14532d 0%, #059669 50%, #0d9488 100%)"
+                              : index === 1
+                              ? "linear-gradient(135deg, #7f1d1d 0%, #ec4899 50%, #f43f5e 100%)"
+                              : index === 2
+                              ? "linear-gradient(135deg, #713f12 0%, #f59e0b 50%, #ea580c 100%)"
+                              : index === 3
+                              ? "linear-gradient(135deg, #1e3a8a 0%, #4f46e5 50%, #7c3aed 100%)"
+                              : index === 4
+                              ? "linear-gradient(135deg, #155e75 0%, #0891b2 50%, #059669 100%)"
+                              : "linear-gradient(135deg, #831843 0%, #f43f5e 50%, #dc2626 100%)",
+                        }}
+                        title={`Gradient ${index + 7}`}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>

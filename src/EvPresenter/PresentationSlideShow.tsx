@@ -642,7 +642,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   // Add this effect to load custom images
   useEffect(() => {
     const loadCustomImages = async () => {
-      const customImagesPath = localStorage.getItem("vmusicimages");
+      const customImagesPath = localStorage.getItem("evpresenterimagespath");
       if (customImagesPath) {
         try {
           const images = await window.api.getImages(customImagesPath);

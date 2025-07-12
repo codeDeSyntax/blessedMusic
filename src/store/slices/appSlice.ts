@@ -11,7 +11,8 @@ export type CurrentScreen =
   | "userguide"
   | "backgrounds"
   | "bible"
-  | "mpresenter";
+  | "mpresenter"
+  | "recents";
 
 export type Theme = "dark" | "light" | "creamy";
 

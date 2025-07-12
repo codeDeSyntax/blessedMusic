@@ -24,6 +24,7 @@ const BlessedMusic = () => {
     error,
     viewMode,
     activeTab,
+    songRepo, // Get songRepo from Redux store
     isDeleting,
     showDeleteDialog,
     selectSong,
@@ -52,7 +53,7 @@ const BlessedMusic = () => {
   const [localTheme, setLocalTheme] = useState(
     localStorage.getItem("bmusictheme") || "white"
   );
-  
+
   // Use local theme for songs app instead of global theme
   const theme = localTheme;
 
@@ -64,7 +65,8 @@ const BlessedMusic = () => {
 
   // Memoized split songs calculation for multiple columns - RESTORED ORIGINAL LOGIC
   const columnSongs = useMemo(() => {
-    const songsToDisplay = activeTab === "favorites" ? favorites : filteredSongs;
+    const songsToDisplay =
+      activeTab === "favorites" ? favorites : filteredSongs;
     const songsPerColumn = Math.ceil(songsToDisplay.length / numberOfColumns);
     const columns: Song[][] = [];
 
@@ -100,8 +102,7 @@ const BlessedMusic = () => {
     }
   }, []);
 
-  // Song repository and folder color from localStorage
-  const songRepo = localStorage.getItem("bmusicsongdir") || "";
+  // Folder color from localStorage
   const folderColor = localStorage.getItem("vmusicfoldercolor") || "#1f2937";
 
   // Load saved theme and listen for localStorage changes
@@ -126,15 +127,26 @@ const BlessedMusic = () => {
     };
 
     window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+    window.addEventListener(
+      "localStorageChange",
+      handleCustomStorageChange as EventListener
+    );
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+      window.removeEventListener(
+        "localStorageChange",
+        handleCustomStorageChange as EventListener
+      );
     };
   }, []);
 
   // Keyboard shortcuts - RESTORED Enter key functionality and added new ones
+  // Available shortcuts:
+  // - Delete: Delete selected song (with confirmation)
+  // - Enter: Present selected song
+  // - E: Edit selected song (goes to edit screen)
+  // - Escape: Deselect current song
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Delete" && selectedSong) {
@@ -144,6 +156,14 @@ const BlessedMusic = () => {
       if (e.key === "Enter" && selectedSong) {
         presentSong(selectedSong);
       }
+      // Edit shortcut: 'e' key to go to edit screen
+      if (e.key === "e" || e.key === "E") {
+        if (selectedSong) {
+          goToEdit();
+        } else {
+          alert("Please select a song first to edit it.");
+        }
+      }
       // Additional shortcuts
       if (e.key === "Escape") {
         deselectSong();
@@ -151,7 +171,13 @@ const BlessedMusic = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedSong, showDeleteConfirmation, presentSong, deselectSong]);
+  }, [
+    selectedSong,
+    showDeleteConfirmation,
+    presentSong,
+    deselectSong,
+    goToEdit,
+  ]);
 
   const handleSongClick = (song: Song) => {
     selectSong(song);
@@ -179,7 +205,8 @@ const BlessedMusic = () => {
   // Navigation functions using dispatch
   const handleEditClick = () => dispatch(setCurrentScreen("edit"));
   const handleCreateClick = () => dispatch(setCurrentScreen("create"));
-  const handlePresentationClick = () => dispatch(setCurrentScreen("Presentation"));
+  const handlePresentationClick = () =>
+    dispatch(setCurrentScreen("Presentation"));
 
   return (
     <AppTour>
@@ -195,7 +222,7 @@ const BlessedMusic = () => {
           {/* Sidebar with smooth toggle animation */}
           <div
             className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
-              sidebarVisible ? 'w-72 opacity-100' : 'w-0 opacity-0'
+              sidebarVisible ? "w-72 opacity-100" : "w-0 opacity-0"
             } overflow-hidden`}
             data-tour="sidebar"
           >
@@ -206,9 +233,9 @@ const BlessedMusic = () => {
               setSavedFavorites={() => {}} // TODO: Implement favorites management
             />
           </div>
-          
+
           {/* Main Content with dynamic width adjustment */}
-          <div 
+          <div
             className={`flex-1 overflow-hidden transition-all duration-300 ease-in-out`}
           >
             <div className="h-full overflow-y-auto no-scrollbar">
@@ -238,12 +265,12 @@ const BlessedMusic = () => {
 
                 {/* Multi-Column Content with Virtual Scrolling - RESTORED ORIGINAL LAYOUT */}
                 <div className="w-full" data-tour="song-list">
-                  <LoadingError 
-                    fetching={isLoading} 
-                    fetchError={error} 
+                  <LoadingError
+                    fetching={isLoading}
+                    fetchError={error}
                     songsLength={songs.length}
                   />
-                  
+
                   {!isLoading && songs.length > 0 && (
                     <div
                       className={`flex gap-6 w-full h-[calc(100vh-12rem)] ${
@@ -286,4 +313,4 @@ const BlessedMusic = () => {
   );
 };
 
-export default BlessedMusic; 
+export default BlessedMusic;

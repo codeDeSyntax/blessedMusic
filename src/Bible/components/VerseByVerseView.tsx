@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { setCurrentChapter, setCurrentVerse } from "@/store/slices/bibleSlice";
+import {
+  setCurrentChapter,
+  setCurrentVerse,
+  addBookmark,
+  removeBookmark,
+} from "@/store/slices/bibleSlice";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 import FloatingActionBar from "./FloatingActionBar";
 
@@ -33,6 +38,7 @@ interface VerseByVerseViewProps {
   getFontSize: () => string;
   fontFamily: string;
   fontWeight: string;
+  onOpenPresentation?: () => void;
 }
 
 interface Verse {
@@ -67,15 +73,18 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
   getFontSize,
   fontFamily,
   fontWeight,
+  onOpenPresentation,
 }) => {
   const dispatch = useAppDispatch();
   const { getCurrentChapterVerses } = useBibleOperations();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   //   const fontSize = useAppSelector((state) => state.bible.fontSize);
   //   const fontWeight = useAppSelector((state) => state.bible.fontWeight);
   //   const fontFamily = useAppSelector((state) => state.bible.fontFamily);
   const verseTextColor = useAppSelector((state) => state.bible.verseTextColor);
   const bibleBgs = useAppSelector((state) => state.app.bibleBgs);
+  const bookmarks = useAppSelector((state) => state.bible.bookmarks);
 
   const [currentChapterVerses, setCurrentChapterVerses] = useState<any[]>([]);
   const selectedBackground = useAppSelector(
@@ -99,11 +108,53 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
     dispatch,
   ]);
 
+  // Scroll to top when verse changes (for navigation)
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentVerse, currentChapter, currentBook]);
+
+  // Bookmark functions
+  const isCurrentVerseBookmarked = () => {
+    if (!currentVerse) return false;
+    const reference = `${currentBook} ${currentChapter}:${currentVerse}`;
+    return bookmarks.includes(reference);
+  };
+
+  const toggleCurrentVerseBookmark = () => {
+    if (!currentVerse) return;
+
+    const reference = `${currentBook} ${currentChapter}:${currentVerse}`;
+    const isBookmarked = bookmarks.includes(reference);
+
+    if (isBookmarked) {
+      dispatch(removeBookmark(reference));
+      showNotification("Bookmark removed");
+    } else {
+      dispatch(addBookmark(reference));
+      showNotification("Bookmark added");
+    }
+  };
+
+  // Show notification function
+  const showNotification = (message: string) => {
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed top-4 right-4 bg-black/80 text-white px-4 py-2 rounded-lg z-50";
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2000);
+  };
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft") {
       handlePrevVerse();
     } else if (e.key === "ArrowRight") {
       handleNextVerse();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      toggleCurrentVerseBookmark();
     }
   };
 
@@ -185,6 +236,7 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
 
   return (
     <div
+      ref={containerRef}
       className={`relative flex flex-col items-center justify-start min-h-screen w-full overflow-x-hidden overflow-y-scroll no-scrollbar ${
         showBackground
           ? "bg-cover bg-center bg-no-repeat"
@@ -233,6 +285,9 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
           hideLayoutButtons={true}
           isVerseByVerseView={true}
           hasBackgroundImage={showBackground}
+          onOpenPresentation={onOpenPresentation}
+          isCurrentVerseBookmarked={isCurrentVerseBookmarked()}
+          onToggleCurrentVerseBookmark={toggleCurrentVerseBookmark}
         />
       </div>
 
@@ -250,12 +305,12 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className={`text-center max-w-3xl px-4 md:max-w-6xl leading-relaxed font-bold ${
-                showBackground ? "text-white" : "text-[#535353] dark:text-white"
+                showBackground ? "text-white" : "text-[#1d1d1d] dark:text-white"
               }`}
               style={{
                 fontFamily: fontFamily,
                 fontWeight: fontWeight,
-                lineHeight: "1.4",
+                lineHeight: "1.2",
                 fontSize: `${getFontSize()}`,
               }}
             >

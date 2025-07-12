@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Plus, Minus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ColorPicker } from "antd";
 
 interface SongSection {
   type: string;
@@ -37,6 +38,17 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
   const [fontFamily, setFontFamily] = useState("Georgia, serif");
   const [isExternalDisplay, setIsExternalDisplay] = useState(false);
 
+  // Color picker state
+  const [textColor, setTextColor] = useState(() => {
+    const saved = localStorage.getItem("songPresentationTextColor");
+    return saved || "#ffffff";
+  });
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [colorPickerPosition, setColorPickerPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
   // Refs
   const contentRef = useRef<HTMLDivElement>(null);
   const baseFontSize = 30;
@@ -63,6 +75,42 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
     }
   };
 
+  // Color picker handlers
+  const handleTextColorChange = (color: string) => {
+    setTextColor(color);
+    setLocalStorageItem("songPresentationTextColor", color);
+  };
+
+  const handleTextClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+    setColorPickerPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    });
+    setShowColorPicker(true);
+  };
+
+  const closeColorPicker = () => {
+    setShowColorPicker(false);
+  };
+
+  // Close color picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".color-picker-container")) {
+        closeColorPicker();
+      }
+    };
+
+    if (showColorPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showColorPicker]);
+
   // Load settings from localStorage
   useEffect(() => {
     const savedMultiplier = getLocalStorageItem("bmusicFontMultiplier", "1.0");
@@ -72,8 +120,24 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
     setFontFamily(savedFont!);
 
     const savedBg = getLocalStorageItem("bmusicpresentationbg");
+    console.log(
+      "🖼️ SongPresentationDisplay: Background loaded from localStorage:",
+      savedBg
+    );
+    console.log(
+      "🖼️ SongPresentationDisplay: Setting background to:",
+      savedBg || "./wood7.png"
+    );
     setBackgroundImage(savedBg || "./wood7.png");
   }, []);
+
+  // Debug logging for background image state changes
+  useEffect(() => {
+    console.log(
+      "🎯 SongPresentationDisplay: Background image state changed to:",
+      backgroundImage
+    );
+  }, [backgroundImage]);
 
   // Parse song content into sections
   const parseSongContent = useCallback((content: string): SongSection[] => {
@@ -177,7 +241,7 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
     []
   );
 
-  // Enhanced automatic font sizing algorithm (EasyWorship-style) - Robust 100vh enforcement
+  // Enhanced automatic font sizing algorithm - Maximum space utilization
   const calculateOptimalFontSize = useCallback(
     (container: HTMLElement, lines: string[]): number => {
       if (!lines || lines.length === 0) return baseFontSize;
@@ -185,9 +249,9 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
       const containerHeight = container.clientHeight;
       const containerWidth = container.clientWidth;
 
-      // Use 95% of available height to ensure content never overflows 100vh
-      const maxAllowedHeight = containerHeight * 0.95;
-      const lineSpacing = 0.3; // Space between lines as fraction of font size
+      // Use 96% of available height - very aggressive space usage
+      const maxAllowedHeight = containerHeight * 0.96;
+      const lineSpacing = 0.2; // Even tighter line spacing for maximum utilization
 
       // Create temporary element for precise measurements
       const temp = document.createElement("div");
@@ -195,32 +259,41 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
       temp.style.visibility = "hidden";
       temp.style.fontFamily = fontFamily;
       temp.style.fontWeight = "bold";
-      temp.style.lineHeight = "1.2";
+      temp.style.lineHeight = "1";
       temp.style.textAlign = "center";
       temp.style.width = containerWidth * 0.95 + "px";
-      temp.style.padding = "20px"; // Account for container padding
+      temp.style.padding = "20px";
       temp.style.margin = "0";
       temp.style.boxSizing = "border-box";
       document.body.appendChild(temp);
 
-      // Calculate base font size that would fit content in target area (80% of screen)
-      const targetHeight = containerHeight * 0.8;
-      let startingSize;
-      if (lines.length <= 2) {
-        startingSize = Math.min(120, targetHeight / (lines.length * 1.5));
-      } else if (lines.length <= 4) {
-        startingSize = Math.min(80, targetHeight / (lines.length * 1.3));
+      // More aggressive starting size calculation based on available space
+      const totalSpacingHeight = (lines.length - 1) * lineSpacing;
+      const availableHeightForText = maxAllowedHeight; // Account for padding
+
+      // Calculate rough estimate - be more aggressive for fewer lines
+      let estimatedSize;
+      if (lines.length === 1) {
+        estimatedSize = availableHeightForText * 0.9; // Very aggressive for single line
+      } else if (lines.length === 2) {
+        estimatedSize =
+          (availableHeightForText / (2 + totalSpacingHeight)) * 0.95;
+      } else if (lines.length <= 5) {
+        estimatedSize =
+          (availableHeightForText / (lines.length + totalSpacingHeight)) * 0.95;
       } else {
-        startingSize = Math.min(60, targetHeight / (lines.length * 1.2));
+        estimatedSize =
+          (availableHeightForText / (lines.length + totalSpacingHeight)) * 0.95;
       }
 
-      let maxFontSize = startingSize;
+      // Start with much more aggressive upper bound
+      let maxFontSize = Math.min(900, estimatedSize * 5); // Allow even larger fonts
       let minFontSize = 20; // Minimum readable size
-      let optimalSize = startingSize;
+      let optimalSize = estimatedSize;
       let iterations = 0;
-      const maxIterations = 25;
+      const maxIterations = 30; // More iterations for better precision
 
-      // Binary search for optimal font size that fits in target area
+      // Binary search for optimal font size that maximizes space usage
       while (maxFontSize - minFontSize > 0.5 && iterations < maxIterations) {
         const testSize = (maxFontSize + minFontSize) / 2;
         temp.style.fontSize = testSize + "px";
@@ -229,10 +302,10 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
         // Add all lines with proper spacing
         lines.forEach((line, index) => {
           const p = document.createElement("p");
-          p.textContent = line.trim() || " "; // Ensure empty lines have height
+          p.textContent = line.trim() || " ";
           p.style.margin = "0";
           p.style.fontWeight = "bold";
-          p.style.lineHeight = "1.2";
+          p.style.lineHeight = "1";
 
           // Add spacing between lines
           if (index < lines.length - 1) {
@@ -243,8 +316,8 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
 
         const actualHeight = temp.scrollHeight;
 
-        // Check if content fits within target height
-        if (actualHeight <= targetHeight) {
+        // Check if content fits within available space
+        if (actualHeight <= maxAllowedHeight) {
           minFontSize = testSize;
           optimalSize = testSize;
         } else {
@@ -257,8 +330,7 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
       // Apply user font size multiplier
       let finalSize = optimalSize * fontSizeMultiplier;
 
-      // CRITICAL: Ensure final size with multiplier never exceeds screen bounds
-      // Test the actual final size to guarantee no overflow
+      // Final overflow check with user multiplier
       temp.style.fontSize = finalSize + "px";
       temp.innerHTML = "";
 
@@ -267,7 +339,7 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
         p.textContent = line.trim() || " ";
         p.style.margin = "0";
         p.style.fontWeight = "bold";
-        p.style.lineHeight = "1.2";
+        p.style.lineHeight = "1";
 
         if (index < lines.length - 1) {
           p.style.marginBottom = Math.floor(finalSize * lineSpacing) + "px";
@@ -283,8 +355,8 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
         finalSize = finalSize * scaleFactor * 0.98; // 98% for safety margin
       }
 
-      // Absolute minimum and maximum bounds
-      finalSize = Math.max(18, Math.min(finalSize, 300));
+      // Absolute bounds - increased maximum for better space utilization
+      finalSize = Math.max(18, Math.min(finalSize, 800));
 
       document.body.removeChild(temp);
 
@@ -316,8 +388,8 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
 
   // Enhanced font control functions with overflow prevention
   const increaseFontSize = useCallback(() => {
-    if (fontSizeMultiplier < 2.0) {
-      const newMultiplier = Math.min(2.0, fontSizeMultiplier + 0.05);
+    if (fontSizeMultiplier < 7.0) {
+      const newMultiplier = Math.min(5.0, fontSizeMultiplier + 0.05);
 
       // Test if the new multiplier would cause overflow before applying
       const currentSection = songSections[currentIndex];
@@ -337,7 +409,7 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
         temp.style.visibility = "hidden";
         temp.style.fontFamily = fontFamily;
         temp.style.fontWeight = "bold";
-        temp.style.lineHeight = "1.2";
+        temp.style.lineHeight = "1";
         temp.style.textAlign = "center";
         temp.style.width = contentRef.current.clientWidth * 0.95 + "px";
         temp.style.padding = "20px";
@@ -349,17 +421,17 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
           p.textContent = line.trim() || " ";
           p.style.margin = "0";
           p.style.fontWeight = "bold";
-          p.style.lineHeight = "1.2";
+          p.style.lineHeight = "1";
           p.style.fontSize = testSize + "px";
 
           if (index < currentSection.content.length - 1) {
-            p.style.marginBottom = Math.floor(testSize * 0.3) + "px";
+            p.style.marginBottom = Math.floor(testSize * 0.2) + "px"; // Match algorithm spacing
           }
           temp.appendChild(p);
         });
 
         const testHeight = temp.scrollHeight;
-        const maxAllowedHeight = contentRef.current.clientHeight * 0.95;
+        const maxAllowedHeight = contentRef.current.clientHeight * 0.96; // Match algorithm
         document.body.removeChild(temp);
 
         // Only apply the increase if it won't cause overflow
@@ -434,8 +506,27 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
         case "F":
           // Font controls are now always visible in compact mode
           break;
+        case "c":
+        case "C":
+          // Toggle color picker
+          if (showColorPicker) {
+            closeColorPicker();
+          } else {
+            // Position color picker in center of screen if opened via keyboard
+            setColorPickerPosition({
+              x: window.innerWidth / 2,
+              y: window.innerHeight / 2,
+            });
+            setShowColorPicker(true);
+          }
+          break;
         case "Escape":
-          if (typeof window !== "undefined" && window.api?.minimizeProjection) {
+          if (showColorPicker) {
+            closeColorPicker();
+          } else if (
+            typeof window !== "undefined" &&
+            window.api?.minimizeProjection
+          ) {
             window.api.minimizeProjection();
           }
           break;
@@ -444,7 +535,13 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goToNext, goToPrevious, increaseFontSize, decreaseFontSize]);
+  }, [
+    goToNext,
+    goToPrevious,
+    increaseFontSize,
+    decreaseFontSize,
+    showColorPicker,
+  ]);
 
   // Listen for song data from Electron
   useEffect(() => {
@@ -494,12 +591,12 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
 
       const containerHeight = container.clientHeight;
       const contentElement = container.querySelector(
-        ".space-y-4"
+        ".content-container"
       ) as HTMLElement;
 
       if (contentElement) {
         const contentHeight = contentElement.scrollHeight;
-        const maxAllowedHeight = containerHeight * 0.95;
+        const maxAllowedHeight = containerHeight * 0.96; // Match algorithm
 
         // If content is overflowing, automatically reduce font size
         if (contentHeight > maxAllowedHeight) {
@@ -552,12 +649,12 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
 
         const containerHeight = container.clientHeight;
         const contentElement = container.querySelector(
-          ".space-y-4"
+          ".content-container"
         ) as HTMLElement;
 
         if (contentElement) {
           const contentHeight = contentElement.scrollHeight;
-          const maxAllowedHeight = containerHeight * 0.95;
+          const maxAllowedHeight = containerHeight * 0.96; // Match algorithm
 
           // If content overflows after resize, adjust font size
           if (contentHeight > maxAllowedHeight) {
@@ -582,16 +679,26 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [currentIndex, songSections, fontSizeMultiplier]);
-
-  // Real-time localStorage updates
+  }, [currentIndex, songSections, fontSizeMultiplier]); // Real-time localStorage updates
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "bmusicfontFamily" && e.newValue) {
         setFontFamily(e.newValue);
       }
       if (e.key === "bmusicpresentationbg") {
+        console.log(
+          "🔄 SongPresentationDisplay: Background changed via storage event:",
+          e.newValue
+        );
+        console.log(
+          "🔄 SongPresentationDisplay: Old background:",
+          backgroundImage
+        );
         const newBg = e.newValue || "./wood7.png";
+        console.log(
+          "🔄 SongPresentationDisplay: Setting new background:",
+          newBg
+        );
         setBackgroundImage(newBg);
       }
     };
@@ -609,6 +716,18 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
       const currentBg = getLocalStorageItem("bmusicpresentationbg");
       const expectedBg = currentBg || "./wood7.png";
       if (expectedBg !== backgroundImage) {
+        console.log(
+          "⚡ SongPresentationDisplay: Background updated via interval check"
+        );
+        console.log(
+          "⚡ SongPresentationDisplay: Current localStorage value:",
+          currentBg
+        );
+        console.log(
+          "⚡ SongPresentationDisplay: Current state:",
+          backgroundImage
+        );
+        console.log("⚡ SongPresentationDisplay: Expected:", expectedBg);
         setBackgroundImage(expectedBg);
       }
     }, 1000);
@@ -622,7 +741,45 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
   }, [fontFamily, backgroundImage]);
 
   return (
-    <div className="w-full h-screen relative overflow-hidden bg-black">
+    <div className="w-full h-screen relative overflow-x-hidden overflow-y-scroll no-scrollbar bg-black">
+      {/* Live Red Border - Solid border around entire window */}
+      <div className="absolute inset-0 z-50 pointer-events-none">
+        {/* Main red border */}
+        <div className="absolute inset-0 border-1 border-opacity-45 border-dashed border-red-500 shadow-lg shadow-red-500/30"></div>
+      </div>
+
+      {/* Thin White Liquid Overlay */}
+      <div className="absolute inset-0 z-40 pointer-events-none">
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `linear-gradient(90deg, 
+              transparent 0%, 
+              rgba(255, 255, 255, 0.1) 20%, 
+              rgba(255, 255, 255, 0.3) 40%, 
+              rgba(255, 255, 255, 0.4) 50%, 
+              rgba(255, 255, 255, 0.3) 60%, 
+              rgba(255, 255, 255, 0.1) 80%, 
+              transparent 100%)`,
+            backgroundSize: "100% 100%",
+            animation: "liquidFlow 4s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            background: `linear-gradient(270deg, 
+              transparent 0%, 
+              rgba(255, 255, 255, 0.05) 30%, 
+              rgba(255, 255, 255, 0.15) 50%, 
+              rgba(255, 255, 255, 0.05) 70%, 
+              transparent 100%)`,
+            backgroundSize: "200% 100%",
+            animation: "liquidFlow 3s ease-in-out infinite reverse",
+          }}
+        />
+      </div>
+
       {/* Enhanced Background with Multiple Layers */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-out"
@@ -630,6 +787,50 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
           backgroundImage: `url(${backgroundImage})`,
           filter: "brightness(0.7) contrast(1.1)",
         }}
+        onLoad={() =>
+          console.log(
+            "🎨 SongPresentationDisplay: Background image loaded successfully:",
+            backgroundImage
+          )
+        }
+        onError={() => {
+          console.error(
+            "❌ SongPresentationDisplay: Background image failed to load:",
+            backgroundImage
+          );
+          console.error(
+            "❌ SongPresentationDisplay: Attempting to load with file:// prefix"
+          );
+          console.error(
+            "❌ SongPresentationDisplay: Full URL attempted:",
+            `url(${backgroundImage})`
+          );
+        }}
+      />
+
+      {/* Test image to check if path is accessible */}
+      <img
+        src={backgroundImage}
+        style={{
+          position: "absolute",
+          top: "-100px",
+          left: "-100px",
+          width: "1px",
+          height: "1px",
+        }}
+        onLoad={() =>
+          console.log(
+            "✅ SongPresentationDisplay: Test img element loaded successfully:",
+            backgroundImage
+          )
+        }
+        onError={() =>
+          console.error(
+            "❌ SongPresentationDisplay: Test img element failed to load:",
+            backgroundImage
+          )
+        }
+        alt=""
       />
 
       {/* Sophisticated Gradient Overlays */}
@@ -651,12 +852,12 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
       </div>
 
       {/* Main Content Container */}
-      <div className="relative z-20 h-full flex flex-col">
+      <div className="relative z-20 h-full flex flex-col ">
         {/* Enhanced Main Content Area */}
         <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
           <div
             ref={contentRef}
-            className="w-full h-full max-h-screen flex flex-col items-center justify-center text-center text-white font-bold overflow-hidden relative"
+            className="w-full h-full max-h-screen flex flex-col items-center justify-center text-center text-white font-bold overflow-hidden relative "
             style={{ fontFamily }}
           >
             {/* Content with Enhanced Animations */}
@@ -672,7 +873,12 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
                     ease: [0.25, 0.46, 0.45, 0.94],
                     staggerChildren: 0.1,
                   }}
-                  className="space-y-6 relative"
+                  className="content-container relative"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: `${Math.floor(optimalFontSize * 0.2)}px`, // Dynamic spacing based on font size
+                  }}
                 >
                   {/* Content Background Blur Effect */}
                   <div className="absolute inset-0 -m-8  rounded-3xl border border-white/10" />
@@ -687,15 +893,18 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
                         duration: 0.6,
                         ease: [0.25, 0.46, 0.45, 0.94],
                       }}
+                      onClick={handleTextClick}
                       style={{
                         fontSize: `${optimalFontSize}px`,
                         fontFamily: fontFamily,
-                        lineHeight: 1.3,
+                        lineHeight: 1,
+                        color: textColor,
                         textShadow:
                           "0 4px 20px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6)",
                         filter: "drop-shadow(0 0 20px rgba(255,255,255,0.1))",
+                        cursor: "pointer",
                       }}
-                      className="m-0 relative z-10 transition-all duration-300"
+                      className="m-0 relative z-10 transition-all duration-300 hover:scale-105"
                     >
                       {line}
                     </motion.p>
@@ -855,6 +1064,96 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
           </div>
         </div>
       </motion.div>
+
+      {/* Keyboard Hints - Bottom Left */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1 }}
+        className="absolute bottom-4 left-4 z-30"
+      >
+        <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-white/10 p-2">
+          <div className="text-white text-xs font-mono space-y-1">
+            <div>C = Color Picker</div>
+            <div>Click Text = Color</div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Floating Color Picker */}
+      <AnimatePresence>
+        {showColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="fixed z-50 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border color-picker-container"
+            style={{
+              left: colorPickerPosition.x - 120,
+              top: colorPickerPosition.y - 80,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)",
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              boxShadow:
+                "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-3">
+              <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
+                Song Text Color
+              </h4>
+            </div>
+
+            {/* Color Picker */}
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-2">
+                Text Color
+              </label>
+              <ColorPicker
+                value={textColor}
+                onChange={(color) => {
+                  handleTextColorChange(color.toHexString());
+                }}
+                size="large"
+                showText
+                format="hex"
+                placement="bottom"
+                presets={[
+                  {
+                    label: "Common",
+                    colors: [
+                      "#ffffff",
+                      "#000000",
+                      "#ff4d4f",
+                      "#52c41a",
+                      "#1890ff",
+                      "#faad14",
+                      "#722ed1",
+                      "#eb2f96",
+                      "#ffd700",
+                      "#ff6b35",
+                      "#4ecdc4",
+                      "#95e1d3",
+                    ],
+                  },
+                ]}
+              />
+            </div>
+
+            {/* Close Button */}
+            <div className="text-center">
+              <button
+                onClick={closeColorPicker}
+                className="px-3 py-1 text-xs bg-gray-600/50 text-white rounded-md hover:bg-gray-500/50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Ambient Light Effects */}
       <div className="absolute inset-0 pointer-events-none z-10">

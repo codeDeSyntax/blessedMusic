@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, AudioLines } from "lucide-react";
 import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setCurrentScreen } from "@/store/slices/appSlice";
+import InteractiveBackground from "./components/InteractiveBackground";
 
 interface SongSection {
   type: "Verse" | "Chorus";
@@ -200,8 +201,14 @@ const SongPresentation = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-blue-900/40" />
 
+      {/* Interactive Background Effect */}
+      <InteractiveBackground />
+
       {/* Content Container */}
-      <div className="relative h-screen flex flex-col text-white">
+      <div
+        className="relative h-screen flex flex-col text-white"
+        style={{ zIndex: 20 }}
+      >
         {/* Title Section */}
         <div className="py-2 text-center">
           <motion.h2
@@ -253,7 +260,10 @@ const SongPresentation = () => {
         </div>
 
         {/* Navigation Controls */}
-        <div className="absolute bottom-6 right-6 flex flex-col items-end gap-4">
+        <div
+          className="absolute bottom-6 right-6 flex flex-col items-end gap-4"
+          style={{ zIndex: 30 }}
+        >
           {/* Progress Indicators */}
           <div className="flex gap-1">
             {songPages.map((_, index) => (
@@ -280,10 +290,10 @@ const SongPresentation = () => {
               whileTap={{ scale: 0.9 }}
               onClick={handlePrev}
               disabled={currentIndex === 0}
-              className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg ${
                 currentIndex === 0
-                  ? "bg-white/10 cursor-not-allowed"
-                  : "bg-white/20 hover:bg-white/30 active:bg-white/40"
+                  ? "bg-white/15 cursor-not-allowed"
+                  : "bg-white/25 hover:bg-white/35 active:bg-white/45"
               }`}
               aria-label="Previous page"
             >
@@ -295,10 +305,10 @@ const SongPresentation = () => {
               whileTap={{ scale: 0.9 }}
               onClick={handleNext}
               disabled={currentIndex === songPages.length - 1}
-              className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-lg ${
                 currentIndex === songPages.length - 1
-                  ? "bg-white/10 cursor-not-allowed"
-                  : "bg-white/20 hover:bg-white/30 active:bg-white/40"
+                  ? "bg-white/15 cursor-not-allowed"
+                  : "bg-white/25 hover:bg-white/35 active:bg-white/45"
               }`}
               aria-label="Next page"
             >

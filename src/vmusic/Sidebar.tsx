@@ -235,6 +235,7 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
 
   const fontFamilyOptions = [
     { value: "'Bitter Thin', serif", label: "Bitter Thin" },
+    { value: "'Arial Black', serif", label: "Arial" },
     { value: "'Oswald ExtraLight', serif", label: "Oswald ExtraLight" },
     { value: "'Haettenschweiler', sans-serif", label: "Haettenschweiler" },
     { value: "'Impact', sans-serif", label: "Impact" },

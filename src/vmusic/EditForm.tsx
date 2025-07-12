@@ -17,6 +17,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setCurrentScreen } from "@/store/slices/appSlice";
+import {
+  setSongRepo,
+  setSelectedSong,
+  updateSong,
+} from "@/store/slices/songSlice";
 import { Song } from "@/types";
 
 const Notification = ({
@@ -54,19 +59,11 @@ const Notification = ({
 };
 
 export default function EditSong() {
-  const { selectedSong } = useSongOperations();
+  const { selectedSong, loadSongs, changeDirectory } = useSongOperations();
   const dispatch = useAppDispatch();
   const theme = useAppSelector((state) => state.app.theme);
+  const songRepo = useAppSelector((state) => state.songs.songRepo); // Use Redux state instead of localStorage
 
-  // Local functions for missing operations
-  const setSongRepo = (path: string) =>
-    localStorage.setItem("songRepoDirectory", path);
-  const setTheme = (theme: string) =>
-    localStorage.setItem("bmusictheme", theme);
-  const setSongs = (songs: Song[]) =>
-    console.log("TODO: Update songs in Redux store");
-  const refetch = () => console.log("TODO: Implement refetch functionality");
-  const songRepo = localStorage.getItem("songRepoDirectory") || "";
   const [formData, setFormData] = useState({
     title: selectedSong?.title || "",
     message: selectedSong?.content || "",
@@ -80,24 +77,41 @@ export default function EditSong() {
 
   // Helper function to project song - now always uses React-based projection
   const projectSong = (songData: any) => {
+    // Create updated song data with current form values
+    const updatedSongData = {
+      ...songData,
+      title: formData.title,
+      content: formData.message,
+      // Ensure we have all necessary fields
+      id: selectedSong?.id || "",
+      path: songData.path || selectedSong?.path || "",
+      dateModified: new Date().toISOString(),
+      categories: selectedSong?.categories || [],
+    };
+
+    // Update localStorage to ensure the latest content is used
+    localStorage.setItem("selectedSong", JSON.stringify(updatedSongData));
+
+    // Update Redux store
+    dispatch(setSelectedSong(updatedSongData));
+
     // Always use React-based projection (routed through project-song handler)
-    window.api.projectSong(songData);
+    window.api.projectSong(updatedSongData);
 
     window.api.onDisplaySong((songData) => {
       console.log(`Displaying song: ${songData.title}`);
     });
   };
 
+  // Update form data when selected song changes or when returning to edit
   useEffect(() => {
-    const savedDirectory = localStorage.getItem("songRepoDirectory");
-    const savedTheme = localStorage.getItem("bmusictheme");
-    if (savedTheme) {
-      setTheme(savedTheme);
+    if (selectedSong) {
+      setFormData({
+        title: selectedSong.title,
+        message: selectedSong.content,
+      });
     }
-    if (savedDirectory) {
-      setSongRepo(savedDirectory);
-    }
-  }, []);
+  }, [selectedSong]);
 
   useEffect(() => {
     if (notification.show) {
@@ -141,11 +155,7 @@ export default function EditSong() {
   };
 
   const selectDirectory = async () => {
-    const path = await window.api.selectDirectory();
-    if (typeof path === "string") {
-      setSongRepo(path);
-      localStorage.setItem("songRepoDirectory", path);
-    }
+    await changeDirectory();
   };
 
   const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -157,23 +167,53 @@ export default function EditSong() {
 
     try {
       setIsSaving(true);
-      const filePath = await window.api.saveSong(
+
+      // If title has changed, we need to handle file renaming/updating
+      const titleChanged = formData.title !== selectedSong?.title;
+      const oldFilePath = selectedSong?.path;
+
+      // Save the song with the new content and title
+      const saveResult = (await window.api.saveSong(
         songRepo,
         formData.title,
         formData.message
-      );
-      showNotification("Song updated successfully! 🎵", "success");
-      // TODO: Add song to Redux store instead of local array
-      console.log("Song saved successfully:", {
-        id: selectedSong?.id || "",
+      )) as any;
+
+      // If title changed, delete the old file
+      if (titleChanged && oldFilePath) {
+        try {
+          await window.api.deleteSong(oldFilePath);
+          console.log(`Deleted old file: ${oldFilePath}`);
+        } catch (deleteError) {
+          console.warn(
+            `Could not delete old file: ${oldFilePath}`,
+            deleteError
+          );
+          // Don't fail the entire operation if we can't delete the old file
+        }
+      }
+
+      // Create updated song object with new path
+      const newFilePath =
+        saveResult?.filePath || `${songRepo}\\${formData.title.trim()}.txt`;
+      const updatedSong: Song = {
+        ...selectedSong!,
         title: formData.title,
-        path: selectedSong?.path || "",
         content: formData.message,
-        dateModified: selectedSong?.dateModified || "",
-        categories: selectedSong?.categories || [],
-      });
-      refetch();
-      setFormData({ title: "", message: "" });
+        dateModified: new Date().toISOString(),
+        path: newFilePath,
+      };
+
+      // Update the song in Redux store (this will update it everywhere it appears)
+      dispatch(updateSong(updatedSong));
+
+      // Refresh the song list to ensure file system changes are reflected
+      await loadSongs();
+
+      // Automatically present the updated song to show the new title
+      projectSong(updatedSong);
+
+      showNotification("Song updated successfully! 🎵", "success");
     } catch (error) {
       console.error("Error saving song:", error);
       showNotification("Failed to save song. Please try again.", "error");
@@ -211,7 +251,14 @@ export default function EditSong() {
                   <Monitor
                     className="w-6 h-6 text-[#9a674a] hover:scale-105 hover:cursor-pointer"
                     onClick={() => {
-                      projectSong(formData);
+                      // Create updated song data with current form values for projection
+                      const updatedSongForProjection = {
+                        ...selectedSong,
+                        title: formData.title,
+                        content: formData.message,
+                        path: selectedSong?.path || "",
+                      };
+                      projectSong(updatedSongForProjection);
                     }}
                   />
                 </div>

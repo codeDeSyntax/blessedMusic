@@ -6,6 +6,7 @@ import {
   dialog,
   nativeImage,
   screen,
+  protocol,
 } from "electron";
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -56,6 +57,7 @@ let biblePresentationWin: BrowserWindow | null = null;
 let songPresentationWin: BrowserWindow | null = null;
 let isProjectionMinimized = false;
 let isSongPresentationMinimized = false;
+let isBiblePresentationMinimized = false;
 let isProjectionActive = false; // Track projection state separately
 const preload = path.join(__dirname, "../preload/index.mjs");
 const indexHtml = path.join(RENDERER_DIST, "index.html");
@@ -229,6 +231,7 @@ ipcMain.on("minimizeProjection", () => {
 async function createBiblePresentationWindow() {
   const displays = screen.getAllDisplays();
   let presentationDisplay = displays[0]; // Default to primary display
+  let isExternalDisplay = false;
 
   // Find external display (projector) if available
   if (displays.length > 1) {
@@ -237,21 +240,22 @@ async function createBiblePresentationWindow() {
     );
     if (externalDisplay) {
       presentationDisplay = externalDisplay;
+      isExternalDisplay = true;
     }
   }
 
   // Create Bible presentation window
   biblePresentationWin = new BrowserWindow({
     title: "Bible Presentation",
-    x: presentationDisplay.bounds.x,
-    y: presentationDisplay.bounds.y,
-    width: presentationDisplay.bounds.width,
-    height: presentationDisplay.bounds.height,
+    x: isExternalDisplay ? presentationDisplay.bounds.x : undefined,
+    y: isExternalDisplay ? presentationDisplay.bounds.y : undefined,
+    width: isExternalDisplay ? presentationDisplay.bounds.width : undefined,
+    height: isExternalDisplay ? presentationDisplay.bounds.height : undefined,
     frame: false,
     show: true,
-    fullscreen: true,
+    fullscreen: !isExternalDisplay, // Use fullscreen for primary display
     alwaysOnTop: false,
-    skipTaskbar: false,
+    skipTaskbar: true,
     icon: path.join(process.env.VITE_PUBLIC || "", "evv.png"),
     webPreferences: {
       preload,
@@ -259,6 +263,16 @@ async function createBiblePresentationWindow() {
       contextIsolation: true,
     },
   });
+
+  // For external displays, manually set bounds after creation to ensure proper coverage
+  if (isExternalDisplay) {
+    biblePresentationWin.setBounds({
+      x: presentationDisplay.bounds.x,
+      y: presentationDisplay.bounds.y,
+      width: presentationDisplay.bounds.width,
+      height: presentationDisplay.bounds.height,
+    });
+  }
 
   // Load the presentation display page
   if (VITE_DEV_SERVER_URL) {
@@ -274,6 +288,30 @@ async function createBiblePresentationWindow() {
 
   biblePresentationWin.on("closed", () => {
     biblePresentationWin = null;
+    isBiblePresentationMinimized = false;
+    isProjectionActive = false; // Set projection as inactive when window is closed
+    // Notify main window that projection is no longer active
+    console.log("Sending Bible projection state change: false (closed)");
+    mainWin?.webContents.send("projection-state-changed", false);
+  });
+
+  // Track minimization state - but don't affect projection active state for external displays
+  biblePresentationWin.on("minimize", () => {
+    isBiblePresentationMinimized = true;
+    // Only consider projection inactive if user explicitly minimized (not auto-minimize to external display)
+    // We'll keep projection active even when minimized to external display
+    console.log(
+      "Bible window minimized - keeping projection active for external display"
+    );
+  });
+
+  biblePresentationWin.on("restore", () => {
+    isBiblePresentationMinimized = false;
+    // Ensure projection is marked as active when restored
+    if (isProjectionActive) {
+      console.log("Sending Bible projection state change: true (restored)");
+      mainWin?.webContents.send("projection-state-changed", true);
+    }
   });
 
   return biblePresentationWin;
@@ -282,6 +320,7 @@ async function createBiblePresentationWindow() {
 async function createSongPresentationWindow() {
   const displays = screen.getAllDisplays();
   let presentationDisplay = displays[0]; // Default to primary display
+  let isExternalDisplay = false;
 
   // Find external display (projector) if available
   if (displays.length > 1) {
@@ -290,21 +329,22 @@ async function createSongPresentationWindow() {
     );
     if (externalDisplay) {
       presentationDisplay = externalDisplay;
+      isExternalDisplay = true;
     }
   }
 
   // Create Song presentation window
   songPresentationWin = new BrowserWindow({
     title: "Song Presentation",
-    x: presentationDisplay.bounds.x,
-    y: presentationDisplay.bounds.y,
-    width: presentationDisplay.bounds.width,
-    height: presentationDisplay.bounds.height,
+    x: isExternalDisplay ? presentationDisplay.bounds.x : undefined,
+    y: isExternalDisplay ? presentationDisplay.bounds.y : undefined,
+    width: isExternalDisplay ? presentationDisplay.bounds.width : undefined,
+    height: isExternalDisplay ? presentationDisplay.bounds.height : undefined,
     frame: false,
     show: true,
-    fullscreen: true,
+    fullscreen: !isExternalDisplay, // Use fullscreen for primary display
     alwaysOnTop: false,
-    skipTaskbar: false,
+    skipTaskbar: true,
     icon: path.join(process.env.VITE_PUBLIC || "", "evv.png"),
     webPreferences: {
       preload,
@@ -312,6 +352,16 @@ async function createSongPresentationWindow() {
       contextIsolation: true,
     },
   });
+
+  // For external displays, manually set bounds after creation to ensure proper coverage
+  if (isExternalDisplay) {
+    songPresentationWin.setBounds({
+      x: presentationDisplay.bounds.x,
+      y: presentationDisplay.bounds.y,
+      width: presentationDisplay.bounds.width,
+      height: presentationDisplay.bounds.height,
+    });
+  }
 
   // Load the React-based song presentation display page
   if (VITE_DEV_SERVER_URL) {
@@ -420,22 +470,44 @@ ipcMain.handle("project-song", async (event, songData) => {
 
 // Add handler to check if projection window is open
 ipcMain.handle("is-projection-active", async () => {
-  const isActive =
+  const isSongActive =
     isProjectionActive &&
     songPresentationWin &&
     !songPresentationWin.isDestroyed();
-  console.log("Checking projection state:", isActive);
+
+  const isBibleActive =
+    isProjectionActive &&
+    biblePresentationWin &&
+    !biblePresentationWin.isDestroyed();
+
+  const isActive = isSongActive || isBibleActive;
+  console.log("Checking projection state:", {
+    isActive,
+    isSongActive,
+    isBibleActive,
+  });
   return isActive;
 });
 
 // Add handler to close projection window
 ipcMain.handle("close-projection-window", async () => {
+  let closed = false;
+
+  // Close song presentation window if it exists
   if (songPresentationWin && !songPresentationWin.isDestroyed()) {
     isProjectionActive = false; // Set projection as inactive before closing
     songPresentationWin.close();
-    return true;
+    closed = true;
   }
-  return false;
+
+  // Close Bible presentation window if it exists
+  if (biblePresentationWin && !biblePresentationWin.isDestroyed()) {
+    isProjectionActive = false; // Set projection as inactive before closing
+    biblePresentationWin.close();
+    closed = true;
+  }
+
+  return closed;
 });
 
 // Handle selecting a directory via the file dialog
@@ -595,7 +667,7 @@ ipcMain.handle("delete-song", async (event, filePath) => {
 });
 
 async function loadImagesFromDirectory(dirPath: string) {
-  const allowedExtensions = [".png", ".jpg", ".jpeg"];
+  const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"];
 
   try {
     const files = await new Promise<string[]>((resolve, reject) => {
@@ -604,22 +676,27 @@ async function loadImagesFromDirectory(dirPath: string) {
         else resolve(files);
       });
     });
+
     const imageFiles = files
       .filter((file) =>
         allowedExtensions.includes(path.extname(file).toLowerCase())
       )
-      .slice(0, 5); // Limit to the first 4 images
-    // Load images in parallel using Promise.all
-    const images = await Promise.all(
-      imageFiles.map(async (file) => {
-        const imagePath = path.join(dirPath, file);
-        const imageBuffer = await fs.promises.readFile(imagePath); // Read file as buffer
-        const image = nativeImage.createFromBuffer(imageBuffer); // Create nativeImage from buffer
-        return image.toDataURL(); // Convert to base64 DataURL
-      })
-    );
+      .slice(0, 5); // Increase limit to 7 images for better selection
 
-    return images;
+    // Return custom protocol URLs instead of file:// URLs for security
+    const imagePaths = imageFiles.map((file) => {
+      const fullPath = path.join(dirPath, file);
+      // Use our custom protocol to serve local images
+      const customUrl = `local-image://${encodeURIComponent(fullPath)}`;
+      return customUrl;
+    });
+
+    console.log(
+      "📁 loadImagesFromDirectory: Returning custom protocol URLs:",
+      imagePaths.slice(0, 3),
+      "..."
+    );
+    return imagePaths;
   } catch (error) {
     console.error("Error loading images:", error);
     return [];
@@ -627,12 +704,48 @@ async function loadImagesFromDirectory(dirPath: string) {
 }
 
 ipcMain.handle("get-images", async (event, dirPath) => {
-  return loadImagesFromDirectory(dirPath); // Return the list of base64-encoded images
+  return loadImagesFromDirectory(dirPath); // Return the list of file:// URLs
 });
 
 // Bible Presentation Window handlers
 ipcMain.handle("create-bible-presentation-window", async (event, data) => {
   try {
+    console.log("Creating Bible presentation window:", data);
+
+    // Set projection as active
+    isProjectionActive = true;
+
+    // Check if window exists but is minimized
+    if (
+      biblePresentationWin &&
+      !biblePresentationWin.isDestroyed() &&
+      isBiblePresentationMinimized
+    ) {
+      biblePresentationWin.restore();
+      isBiblePresentationMinimized = false;
+      setTimeout(() => {
+        if (data.presentationData) {
+          biblePresentationWin?.webContents.send("bible-presentation-update", {
+            type: "update-data",
+            data: data.presentationData,
+          });
+        }
+        if (data.settings) {
+          biblePresentationWin?.webContents.send("bible-presentation-update", {
+            type: "update-settings",
+            data: data.settings,
+          });
+        }
+        biblePresentationWin?.focus();
+        biblePresentationWin?.moveTop();
+      }, 300); // Short delay to ensure window is restored before sending data
+      // Notify main window about projection state change
+      console.log("Sending Bible projection state change: true (restored)");
+      mainWin?.webContents.send("projection-state-changed", true);
+      return;
+    }
+
+    // If window doesn't exist or was destroyed, create a new one
     if (!biblePresentationWin || biblePresentationWin.isDestroyed()) {
       await createBiblePresentationWindow();
 
@@ -650,7 +763,13 @@ ipcMain.handle("create-bible-presentation-window", async (event, data) => {
             data: data.settings,
           });
         }
+        // Ensure window is properly focused and visible
+        biblePresentationWin?.show();
         biblePresentationWin?.focus();
+        biblePresentationWin?.moveTop();
+        // Notify main window about projection state change
+        console.log("Sending Bible projection state change: true (new window)");
+        mainWin?.webContents.send("projection-state-changed", true);
       });
     } else {
       // Window exists, just focus it and update data
@@ -667,6 +786,11 @@ ipcMain.handle("create-bible-presentation-window", async (event, data) => {
         });
       }
       biblePresentationWin.focus();
+      // Notify main window about projection state change
+      console.log(
+        "Sending Bible projection state change: true (existing window)"
+      );
+      mainWin?.webContents.send("projection-state-changed", true);
     }
 
     return { success: true };
@@ -1284,4 +1408,44 @@ ipcMain.handle("create-song-projection-window", async (event, data) => {
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
+});
+
+// Register custom protocol for local images
+app.whenReady().then(() => {
+  // Register custom protocol to serve local images
+  protocol.registerFileProtocol("local-image", (request, callback) => {
+    try {
+      // Extract the file path from the URL
+      const url = request.url.substring("local-image://".length);
+      const filePath = decodeURIComponent(url);
+
+      console.log("🖼️ Custom protocol serving image:", filePath);
+
+      // Security check - ensure the file exists and is an image
+      if (fs.existsSync(filePath)) {
+        const ext = path.extname(filePath).toLowerCase();
+        const allowedExtensions = [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".gif",
+          ".bmp",
+          ".webp",
+        ];
+
+        if (allowedExtensions.includes(ext)) {
+          callback({ path: filePath });
+        } else {
+          console.error("❌ File is not an allowed image type:", ext);
+          callback({ error: -6 }); // INVALID_URL
+        }
+      } else {
+        console.error("❌ Image file not found:", filePath);
+        callback({ error: -6 }); // INVALID_URL
+      }
+    } catch (error) {
+      console.error("❌ Error in custom protocol handler:", error);
+      callback({ error: -6 }); // INVALID_URL
+    }
+  });
 });

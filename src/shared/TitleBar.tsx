@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ArrowLeftFromLine,
+  Clock,
   GalleryHorizontal,
   GalleryThumbnails,
   Group,
@@ -18,13 +19,19 @@ import { HomeFilled } from "@ant-design/icons";
 import { Switch } from "antd";
 import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/store";
-import { setCurrentScreen, setTheme, minimizeApp, maximizeApp, closeApp } from "@/store/slices/appSlice";
+import {
+  setCurrentScreen,
+  setTheme,
+  minimizeApp,
+  maximizeApp,
+  closeApp,
+} from "@/store/slices/appSlice";
 import { ThemeToggle } from "./ThemeToggler";
 
 const TitleBar = () => {
   const [isHovered, setIsHovered] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
-  
+
   const dispatch = useAppDispatch();
   const currentScreen = useAppSelector((state) => state.app.currentScreen);
   const theme = useAppSelector((state) => state.app.theme);
@@ -40,14 +47,16 @@ const TitleBar = () => {
   const setThemeChoice = () => {
     const currentSongTheme = localStorage.getItem("bmusictheme") || "white";
     const newTheme = currentSongTheme === "creamy" ? "white" : "creamy";
-    
+
     // Update localStorage
     localStorage.setItem("bmusictheme", newTheme);
-    
+
     // Dispatch custom event to notify other components of the change
-    window.dispatchEvent(new CustomEvent("localStorageChange", {
-      detail: { key: "bmusictheme", newValue: newTheme }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("localStorageChange", {
+        detail: { key: "bmusictheme", newValue: newTheme },
+      })
+    );
   };
 
   const randombgs = `rgba(${Math.floor(Math.random() * 255)},${Math.floor(
@@ -155,9 +164,7 @@ const TitleBar = () => {
           <div
             onClick={() => dispatch(setCurrentScreen("backgrounds"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer items-center justify-center flex 
-               ${
-                 currentScreen === "bible" && "hidden"
-               }
+               ${currentScreen === "bible" && "hidden"}
               `}
             title="Presentation backgrounds"
           >
@@ -186,13 +193,23 @@ const TitleBar = () => {
           <div
             onClick={() => dispatch(setCurrentScreen("categorize"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer items-center justify-center flex 
-              ${
-                currentScreen === "bible" && "hidden"
-              }
+              ${currentScreen === "bible" && "hidden"}
               `}
             title="Music categories"
           >
             <Group className="text-white z-20 size-3" />
+          </div>
+          <div
+            onClick={() => dispatch(setCurrentScreen("recents"))}
+            className={`w-4 h-4 rounded-full bg-amber-600 hover:bg-amber-700 hover:cursor-pointer
+              items-center justify-center flex ${
+                currentScreen !== "Songs" &&
+                currentScreen !== "recents" &&
+                "hidden"
+              }`}
+            title="Recent Songs"
+          >
+            <Clock className="text-white z-20 size-3" />
           </div>
           <div
             onClick={() => dispatch(setCurrentScreen("userguide"))}
@@ -232,8 +249,14 @@ const TitleBar = () => {
                     setShowDropdown(false);
                   }}
                 >
-                  <img src="./music2.png" className="h-4 w-4" alt="Music icon" />
-                  <span className="text-xs text-stone-500 dark:text-gray-600">Bmusic</span>
+                  <img
+                    src="./music2.png"
+                    className="h-4 w-4"
+                    alt="Music icon"
+                  />
+                  <span className="text-xs text-stone-500 dark:text-gray-600">
+                    Bmusic
+                  </span>
                 </div>
                 <div
                   className="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded cursor-pointer"
@@ -242,8 +265,14 @@ const TitleBar = () => {
                     setShowDropdown(false);
                   }}
                 >
-                  <img src="./music3.png" className="h-4 w-4" alt="Bible icon" />
-                  <span className="text-xs text-stone-500 dark:text-gray-600">Bible</span>
+                  <img
+                    src="./music3.png"
+                    className="h-4 w-4"
+                    alt="Bible icon"
+                  />
+                  <span className="text-xs text-stone-500 dark:text-gray-600">
+                    Bible
+                  </span>
                 </div>
               </div>
             )}

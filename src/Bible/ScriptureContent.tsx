@@ -474,12 +474,8 @@ const ScriptureContent: React.FC = () => {
 
   // Send live updates to presentation window when navigation changes
   useEffect(() => {
-    // Add a small delay to avoid sending too many updates during rapid navigation
-    const timeoutId = setTimeout(() => {
-      sendLiveUpdateToPresentation();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
+    // Send updates immediately for real-time synchronization
+    sendLiveUpdateToPresentation();
   }, [
     sendLiveUpdateToPresentation,
     currentBook,
@@ -674,6 +670,11 @@ const ScriptureContent: React.FC = () => {
     setSelectedVerse(1);
     setIsBookDropdownOpen(false);
 
+    // Send immediate update to presentation
+    setTimeout(() => {
+      sendLiveUpdateToPresentation();
+    }, 50);
+
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
@@ -695,6 +696,11 @@ const ScriptureContent: React.FC = () => {
     setSelectedVerse(1);
     setIsChapterDropdownOpen(false);
 
+    // Send immediate update to presentation
+    setTimeout(() => {
+      sendLiveUpdateToPresentation();
+    }, 50);
+
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
@@ -709,6 +715,12 @@ const ScriptureContent: React.FC = () => {
     setIsVerseDropdownOpen(false);
     // Also update currentVerse for external projection sync
     dispatch(setCurrentVerse(verse));
+
+    // Send immediate update to presentation
+    setTimeout(() => {
+      sendLiveUpdateToPresentation();
+    }, 50);
+
     if (verseRefs.current[verse]) {
       verseRefs.current[verse]?.scrollIntoView({
         behavior: "smooth",
@@ -1012,6 +1024,7 @@ const ScriptureContent: React.FC = () => {
           getFontSize={() => `${fontSize}rem`}
           fontFamily={fontFamily}
           fontWeight={fontWeight}
+          onOpenPresentation={handleOpenBiblePresentation}
         />
       )}
 

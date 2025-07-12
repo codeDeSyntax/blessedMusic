@@ -11,6 +11,7 @@ import {
   FileText,
   Calendar,
   Hash,
+  Monitor,
 } from "lucide-react";
 import TitleBar from "../shared/TitleBar";
 import CustomEditor from "./SongCreator";
@@ -67,9 +68,11 @@ export default function CreateSong() {
   const [isSaving, setIsSaving] = useState(false);
   const { songs, selectedSong } = useSongOperations();
   const dispatch = useAppDispatch();
-  
+
   // Local state for song repo
-  const [songRepo, setSongRepo] = useState(localStorage.getItem("songRepoDirectory") || "");
+  const [songRepo, setSongRepo] = useState(
+    localStorage.getItem("songRepoDirectory") || ""
+  );
   const [notification, setNotification] = useState<{
     show: boolean;
     message: string;
@@ -97,6 +100,28 @@ export default function CreateSong() {
     type: "success" | "error" | "warning"
   ) => {
     setNotification({ show: true, message, type });
+  };
+
+  // Helper function to project song - now always uses React-based projection
+  const projectSong = (songData: any) => {
+    // Create song data with current form values
+    const updatedSongData = {
+      ...songData,
+      title: formData.title,
+      content: formData.message,
+      // Generate temporary ID for new song
+      id: `temp-${Date.now()}`,
+      path: `${songRepo}/${formData.title}.txt`,
+      dateModified: new Date().toISOString(),
+      categories: [],
+    };
+
+    // Always use React-based projection (routed through project-song handler)
+    window.api.projectSong(updatedSongData);
+
+    window.api.onDisplaySong((songData) => {
+      console.log(`Displaying song: ${songData.title}`);
+    });
   };
 
   const validateSongData = (): boolean => {
@@ -132,7 +157,7 @@ export default function CreateSong() {
     }
   };
 
- const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveSong = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateSongData()) {
@@ -204,10 +229,25 @@ export default function CreateSong() {
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-4">
-                    <ArrowLeftCircle
-                      className="w-6 h-6 text-[#9a674a] hover:scale-110 hover:cursor-pointer transition-transform duration-200"
-                      onClick={() => dispatch(setCurrentScreen("Songs"))}
-                    />
+                    <div className="flex items-center gap-2">
+                      <ArrowLeftCircle
+                        className="w-6 h-6 text-[#9a674a] hover:scale-110 hover:cursor-pointer transition-transform duration-200"
+                        onClick={() => dispatch(setCurrentScreen("Songs"))}
+                      />
+                      <Monitor
+                        className="w-6 h-6 text-[#9a674a] hover:scale-105 hover:cursor-pointer"
+                        onClick={() => {
+                          if (formData.title && formData.message) {
+                            projectSong(formData);
+                          } else {
+                            showNotification(
+                              "Please enter title and content before presenting!",
+                              "warning"
+                            );
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* Receipt Header */}

@@ -18,12 +18,15 @@ import {
   Play,
   Pause,
   RotateCcw,
+  Radio,
+  XCircle,
 } from "lucide-react";
 import { Tooltip } from "antd";
 import { ViewMode } from "../ScriptureContent";
 import { useTheme } from "@/Provider/Theme";
 import { motion, AnimatePresence } from "framer-motion";
 import ShortcutsModal from "./ShortcutsModal";
+import { useBibleProjectionState } from "@/features/bible/hooks/useBibleProjectionState";
 
 interface FloatingActionBarProps {
   currentBook: string;
@@ -57,6 +60,9 @@ interface FloatingActionBarProps {
   onToggleAutoScroll?: () => void;
   autoScrollSpeed?: number;
   onSpeedChange?: (speed: number) => void;
+  // Bookmark props for verse-by-verse view
+  isCurrentVerseBookmarked?: boolean;
+  onToggleCurrentVerseBookmark?: () => void;
 }
 
 const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
@@ -90,12 +96,21 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   onToggleAutoScroll,
   autoScrollSpeed = 25,
   onSpeedChange,
+  isCurrentVerseBookmarked = false,
+  onToggleCurrentVerseBookmark,
 }) => {
   const { toggleActiveFeature } = useTheme();
   const dispatch = useAppDispatch();
   const activeFeature = useAppSelector((state) => state.bible.activeFeature);
+  const bookmarks = useAppSelector((state) => state.bible.bookmarks);
+
+  // Projection state management
+  const { isProjectionActive, closeProjection } = useBibleProjectionState();
+
   const [isVisible, setIsVisible] = useState(false);
   const [bookSearchQuery, setBookSearchQuery] = useState("");
+  const [chapterSearchQuery, setChapterSearchQuery] = useState("");
+  const [verseSearchQuery, setVerseSearchQuery] = useState("");
   const [filteredOldTestament, setFilteredOldTestament] = useState(
     bookList?.filter((book) => book.testament === "old") || []
   );
@@ -108,6 +123,8 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
   const verseDropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const chapterSearchInputRef = useRef<HTMLInputElement>(null);
+  const verseSearchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -197,6 +214,50 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
     }
   }, [isBookDropdownOpen]);
 
+  // Focus search input when chapter dropdown opens
+  useEffect(() => {
+    if (isChapterDropdownOpen && chapterSearchInputRef.current) {
+      setTimeout(() => {
+        chapterSearchInputRef.current?.focus();
+      }, 100);
+    }
+
+    if (!isChapterDropdownOpen) {
+      setChapterSearchQuery("");
+    }
+  }, [isChapterDropdownOpen]);
+
+  // Focus search input when verse dropdown opens
+  useEffect(() => {
+    if (isVerseDropdownOpen && verseSearchInputRef.current) {
+      setTimeout(() => {
+        verseSearchInputRef.current?.focus();
+      }, 100);
+    }
+
+    if (!isVerseDropdownOpen) {
+      setVerseSearchQuery("");
+    }
+  }, [isVerseDropdownOpen]);
+
+  // Filter chapters based on search query
+  const getFilteredChapters = () => {
+    const chapters = getChapters();
+    if (!chapterSearchQuery) return chapters;
+    return chapters.filter((chapter) =>
+      chapter.toString().includes(chapterSearchQuery)
+    );
+  };
+
+  // Filter verses based on search query
+  const getFilteredVerses = () => {
+    const verses = getVerses();
+    if (!verseSearchQuery) return verses;
+    return verses.filter((verse) =>
+      verse.toString().includes(verseSearchQuery)
+    );
+  };
+
   // Handle keyboard navigation
   const handleKeyDown = (e: KeyboardEvent) => {
     if (isBookDropdownOpen) {
@@ -205,7 +266,6 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
         setBookSearchQuery("");
       } else if (e.key === "Tab") {
         e.preventDefault();
-        // Focus the search input if not already focused
         if (
           searchInputRef.current &&
           document.activeElement !== searchInputRef.current
@@ -214,12 +274,42 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
         }
       }
     }
+
+    if (isChapterDropdownOpen) {
+      if (e.key === "Escape") {
+        setIsChapterDropdownOpen(false);
+        setChapterSearchQuery("");
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        if (
+          chapterSearchInputRef.current &&
+          document.activeElement !== chapterSearchInputRef.current
+        ) {
+          chapterSearchInputRef.current.focus();
+        }
+      }
+    }
+
+    if (isVerseDropdownOpen) {
+      if (e.key === "Escape") {
+        setIsVerseDropdownOpen(false);
+        setVerseSearchQuery("");
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        if (
+          verseSearchInputRef.current &&
+          document.activeElement !== verseSearchInputRef.current
+        ) {
+          verseSearchInputRef.current.focus();
+        }
+      }
+    }
   };
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isBookDropdownOpen]);
+  }, [isBookDropdownOpen, isChapterDropdownOpen, isVerseDropdownOpen]);
 
   const oldTestamentBooks =
     bookList?.filter((book) => book.testament === "old") || [];
@@ -235,6 +325,20 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
     handleBookSelect(bookName);
     setIsBookDropdownOpen(false);
     setBookSearchQuery("");
+  };
+
+  // Wrapper function for chapter selection that closes dropdown
+  const handleChapterSelectAndClose = (chapter: number) => {
+    handleChapterSelect(chapter);
+    setIsChapterDropdownOpen(false);
+    setChapterSearchQuery("");
+  };
+
+  // Wrapper function for verse selection that closes dropdown
+  const handleVerseSelectAndClose = (verse: number) => {
+    handleVerseSelect(verse);
+    setIsVerseDropdownOpen(false);
+    setVerseSearchQuery("");
   };
 
   const barVariants = {
@@ -493,8 +597,52 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                         : "bg-white dark:bg-[#30261d]"
                     } rounded-3xl shadow-lg z-[60] max-h-60 overflow-y-auto no-scrollbar p-4`}
                   >
+                    {/* Chapter Search Input */}
+                    <div className="p-2 mb-3">
+                      <div
+                        className={`relative group border-none ${
+                          isVerseByVerseView && hasBackgroundImage
+                            ? ""
+                            : "border border-gray-200 dark:border-gray-700"
+                        } rounded-xl overflow-hidden`}
+                      >
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                          <Search
+                            size={14}
+                            className={
+                              isVerseByVerseView && hasBackgroundImage
+                                ? "text-white/50"
+                                : "text-gray-400 dark:text-gray-500"
+                            }
+                          />
+                        </div>
+                        <input
+                          ref={chapterSearchInputRef}
+                          type="text"
+                          value={chapterSearchQuery}
+                          onChange={(e) =>
+                            setChapterSearchQuery(e.target.value)
+                          }
+                          placeholder="Search chapters..."
+                          className={`w-full py-2 pl-9 pr-3 border-none ${
+                            isVerseByVerseView && hasBackgroundImage
+                              ? "bg-white/5 hover:bg-white/10 focus:bg-white/10 text-white placeholder-white/50"
+                              : "bg-gray-50/50 dark:bg-gray-800/20 hover:bg-gray-100/50 dark:hover:bg-gray-800/30 focus:bg-gray-100/50 dark:focus:bg-gray-800/30 text-stone-600 dark:text-stone-300 placeholder-stone-400 dark:placeholder-stone-500"
+                          } outline-none text-xs transition-colors duration-200`}
+                          onFocus={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                              setIsChapterDropdownOpen(false);
+                              setChapterSearchQuery("");
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
                     <div className="p-2 grid grid-cols-5 gap-1">
-                      {getChapters().map((chapter) => (
+                      {getFilteredChapters().map((chapter) => (
                         <div
                           key={chapter}
                           className={`p-2 text-[12px] flex items-center justify-center shadow rounded-full transition-colors duration-150 ${
@@ -506,7 +654,7 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                               ? "bg-white/10 text-white hover:bg-white/20"
                               : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] cursor-pointer hover:text-stone-700 dark:hover:text-stone-200"
                           }`}
-                          onClick={() => handleChapterSelect(chapter)}
+                          onClick={() => handleChapterSelectAndClose(chapter)}
                         >
                           {chapter}
                         </div>
@@ -558,8 +706,50 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                         : "bg-white dark:bg-[#30261d]"
                     } rounded-3xl shadow-lg z-[60] max-h-60 overflow-y-auto no-scrollbar p-4`}
                   >
+                    {/* Verse Search Input */}
+                    <div className="p-2 mb-3">
+                      <div
+                        className={`relative group border-none ${
+                          isVerseByVerseView && hasBackgroundImage
+                            ? ""
+                            : "border border-gray-200 dark:border-gray-700"
+                        } rounded-xl overflow-hidden`}
+                      >
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                          <Search
+                            size={14}
+                            className={
+                              isVerseByVerseView && hasBackgroundImage
+                                ? "text-white/50"
+                                : "text-gray-400 dark:text-gray-500"
+                            }
+                          />
+                        </div>
+                        <input
+                          ref={verseSearchInputRef}
+                          type="text"
+                          value={verseSearchQuery}
+                          onChange={(e) => setVerseSearchQuery(e.target.value)}
+                          placeholder="Search verses..."
+                          className={`w-full py-2 pl-9 pr-3 border-none ${
+                            isVerseByVerseView && hasBackgroundImage
+                              ? "bg-white/5 hover:bg-white/10 focus:bg-white/10 text-white placeholder-white/50"
+                              : "bg-gray-50/50 dark:bg-gray-800/20 hover:bg-gray-100/50 dark:hover:bg-gray-800/30 focus:bg-gray-100/50 dark:focus:bg-gray-800/30 text-stone-600 dark:text-stone-300 placeholder-stone-400 dark:placeholder-stone-500"
+                          } outline-none text-xs transition-colors duration-200`}
+                          onFocus={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                              setIsVerseDropdownOpen(false);
+                              setVerseSearchQuery("");
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
                     <div className="p-2 grid grid-cols-5 gap-1">
-                      {getVerses().map((verse) => (
+                      {getFilteredVerses().map((verse) => (
                         <div
                           key={verse}
                           className={`p-2 text-[12px] flex items-center justify-center shadow rounded-full transition-colors duration-150 ${
@@ -571,7 +761,7 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                               ? "bg-white/10 text-white hover:bg-white/20"
                               : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] cursor-pointer hover:text-stone-700 dark:hover:text-stone-200"
                           }`}
-                          onClick={() => handleVerseSelect(verse)}
+                          onClick={() => handleVerseSelectAndClose(verse)}
                         >
                           {verse}
                         </div>
@@ -663,7 +853,10 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                               className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide"
                               style={{ maxWidth: "90px" }}
                             >
-                              {[400,600,800,1000,1500,2000,3000,4000,5000,6000].map((speed) => (
+                              {[
+                                400, 600, 800, 1000, 1500, 2000, 3000, 4000,
+                                5000, 6000,
+                              ].map((speed) => (
                                 <button
                                   key={speed}
                                   onClick={() => onSpeedChange(speed)}
@@ -691,21 +884,65 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
 
             {/* Feature Buttons */}
             <div className="flex items-center gap-2">
-              <Tooltip title="Bookmarks" placement="bottom">
-                <button
-                  onClick={() => toggleFeature("bookmarks")}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    activeFeature === "bookmarks"
-                      ? isVerseByVerseView && hasBackgroundImage
-                        ? "bg-white/30 text-white shadow"
-                        : "bg-primary text-white shadow"
-                      : isVerseByVerseView && hasBackgroundImage
-                      ? "bg-white/10 text-white hover:bg-white/20"
-                      : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                  }`}
+              {/* Bookmark current verse button - only for verse-by-verse view */}
+              {isVerseByVerseView && onToggleCurrentVerseBookmark && (
+                <Tooltip
+                  title={
+                    isCurrentVerseBookmarked
+                      ? "Remove current verse bookmark"
+                      : "Bookmark current verse"
+                  }
+                  placement="bottom"
                 >
-                  <Bookmark size={16} />
-                </button>
+                  <button
+                    onClick={onToggleCurrentVerseBookmark}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      isCurrentVerseBookmarked
+                        ? isVerseByVerseView && hasBackgroundImage
+                          ? "bg-orange-500/30 text-orange-200 shadow"
+                          : "bg-orange-500 text-white shadow"
+                        : isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/10 text-white hover:bg-white/20"
+                        : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-orange-500/10 dark:hover:bg-orange-500/10 hover:text-orange-500 dark:hover:text-orange-400"
+                    }`}
+                  >
+                    <Bookmark
+                      size={16}
+                      fill={isCurrentVerseBookmarked ? "currentColor" : "none"}
+                    />
+                  </button>
+                </Tooltip>
+              )}
+
+              <Tooltip title="View All Bookmarks" placement="bottom">
+                <div className="relative">
+                  <button
+                    onClick={() => toggleFeature("bookmarks")}
+                    className={`p-2 rounded-lg transition-colors duration-200 ${
+                      activeFeature === "bookmarks"
+                        ? isVerseByVerseView && hasBackgroundImage
+                          ? "bg-white/30 text-white shadow"
+                          : "bg-primary text-white shadow"
+                        : isVerseByVerseView && hasBackgroundImage
+                        ? "bg-white/10 text-white hover:bg-white/20"
+                        : "text-stone-500 dark:text-stone-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                    }`}
+                  >
+                    <Bookmark size={16} />
+                  </button>
+                  {/* Badge showing number of bookmarks */}
+                  {bookmarks.length > 0 && (
+                    <div
+                      className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-medium ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? "bg-orange-500 text-white"
+                          : "bg-red-500 text-white"
+                      } shadow-sm`}
+                    >
+                      {bookmarks.length > 99 ? "99+" : bookmarks.length}
+                    </div>
+                  )}
+                </div>
               </Tooltip>
               <Tooltip title="History" placement="bottom">
                 <button
@@ -772,18 +1009,39 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 </button>
               </Tooltip>
               {onOpenPresentation && (
-                <Tooltip title="Open Bible Presentation" placement="bottom">
-                  <button
-                    onClick={onOpenPresentation}
-                    className={`p-2 rounded-lg transition-colors duration-200 ${
-                      isVerseByVerseView && hasBackgroundImage
-                        ? "bg-white/10 text-white hover:bg-white/20"
-                        : "text-orange-500 dark:text-orange-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
-                    }`}
-                  >
-                    <Monitor size={16} />
-                  </button>
-                </Tooltip>
+                <div className="flex items-center gap-2">
+                  <Tooltip title="Open Bible Presentation" placement="bottom">
+                    <button
+                      onClick={onOpenPresentation}
+                      className={`p-2 rounded-lg transition-colors duration-200 ${
+                        isVerseByVerseView && hasBackgroundImage
+                          ? "bg-white/10 text-white hover:bg-white/20"
+                          : "text-orange-500 dark:text-orange-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                      }`}
+                    >
+                      <Monitor size={16} />
+                    </button>
+                  </Tooltip>
+
+                  {/* Live Indicator - only show when projection is active */}
+                  {isProjectionActive && (
+                    <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-red-500 bg-opacity-10 border border-red-300">
+                      <Radio className="w-3 h-3 text-red-500 animate-pulse" />
+                      <span className="text-red-600 text-xs font-medium">
+                        LIVE
+                      </span>
+                      <Tooltip
+                        title="Close Bible projection"
+                        placement="bottom"
+                      >
+                        <XCircle
+                          className="w-3 h-3 text-red-500 hover:text-red-700 cursor-pointer ml-1"
+                          onClick={closeProjection}
+                        />
+                      </Tooltip>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </motion.div>
