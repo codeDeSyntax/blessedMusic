@@ -267,10 +267,15 @@ const PresentationBackgroundSelector: React.FC = () => {
       const demoSong = {
         title: "Background Preview",
         content: `
-          Verse 1
-          This is a preview of the selected background.
-          Chorus
-          Enjoy the beauty of this background in your presentation.
+        <p>Verse 1</p>
+<p>Adom bi wo Jesus</p>
+<p>ne mu na mensa aka</p>
+<p>Adom bi wo Jesus</p>
+<p>ne mu na mensa aka</p>
+<p>Adom nti na mete ase</p>
+<p>Emu na mekeka meho</p>
+<p>Emu na, meye m'ade nyinaa</p>
+
 
         `,
         id: `background-preview-${Date.now()}`,

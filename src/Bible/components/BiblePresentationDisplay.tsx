@@ -999,13 +999,134 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
             }}
             className="absolute bottom-4 right-4 z-30"
           >
-            <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-white/10 p-2 shadow-lg relative">
-              <div className="flex items-center justify-center space-y-1 text-xs">
+            <div className="bg-black/30 backdrop-blur-sm rounded-lg border border-white/10 px-2 py-1 shadow-lg relative">
+              <div className="flex items-center justify-center s text-xs">
                 {/* Keyboard shortcuts hint */}
                 <div className="text-center">
                   <span className="text-white/50 text-[8px] font-mono">
-                    T=Translation • 1-9,0=Colors • Ctrl+H=Hide • ESC=Focus Main
+                     T=Translation  • 1-9,0=Colors  • Ctrl+H=Hide  • ESC=Focus Main
                   </span>
+                </div>
+
+                {/* Background Options - Absolute positioned to not affect control panel width */}
+                <div className=" flex  top-0 right-full mr-2 bg-black/20 backdrop-blur-sm rounded-md px-2 py-1 border border-white/10">
+                  <div className="flex items-center space-y-1">
+                    <div className="flex flex-col ">
+                      {/* Background Images - Show first few images */}
+                      {bibleBgs.length > 0 && (
+                        <div className="flex items-center justify-center space-x-1">
+                          {bibleBgs.slice(0, 6).map((imageSrc, index) => (
+                            <button
+                              key={`bg-${index}`}
+                              onClick={() => selectSpecificBackground(imageSrc)}
+                              className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 bg-cover bg-center ${
+                                useImageBackground &&
+                                backgroundImage === imageSrc
+                                  ? "ring-1 ring-white/50"
+                                  : ""
+                              }`}
+                              style={{
+                                backgroundImage: `url(${imageSrc})`,
+                              }}
+                              title={`Background ${index + 1}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Additional Background Images - Second row if more than 6 */}
+                      {bibleBgs.length > 6 && (
+                        <div className="flex items-center justify-center space-x-1">
+                          {bibleBgs.slice(6, 12).map((imageSrc, index) => (
+                            <button
+                              key={`bg-${index + 6}`}
+                              onClick={() => selectSpecificBackground(imageSrc)}
+                              className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 bg-cover bg-center ${
+                                useImageBackground &&
+                                backgroundImage === imageSrc
+                                  ? "ring-1 ring-white/50"
+                                  : ""
+                              }`}
+                              style={{
+                                backgroundImage: `url(${imageSrc})`,
+                              }}
+                              title={`Background ${index + 7}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* vertical bar in between */}
+                    <div className="w-px h-6 bg-white mx-2" />
+                    {/* Gradient Colors - Show first 12 gradients */}
+
+                    <div className="mt-2 flex flex-col space-y-1 ">
+                      {/* First Row - Gradient Colors */}
+                      <div className="flex items-center justify-center space-x-1">
+                        {backgroundGradients
+                          .slice(0, 6)
+                          .map((gradient, index) => (
+                            <button
+                              key={index}
+                              onClick={() => selectGradient(index)}
+                              className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                                selectedGradient === index &&
+                                !useImageBackground
+                                  ? "ring-1 ring-white/50"
+                                  : ""
+                              }`}
+                              style={{
+                                background:
+                                  index === 0
+                                    ? "linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #312e81 100%)"
+                                    : index === 1
+                                    ? "linear-gradient(135deg, #581c87 0%, #be185d 50%, #be123c 100%)"
+                                    : index === 2
+                                    ? "linear-gradient(135deg, #064e3b 0%, #0f766e 50%, #155e75 100%)"
+                                    : index === 3
+                                    ? "linear-gradient(135deg, #78350f 0%, #ea580c 50%, #dc2626 100%)"
+                                    : index === 4
+                                    ? "linear-gradient(135deg, #374151 0%, #27272a 50%, #000000 100%)"
+                                    : "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #4338ca 100%)",
+                              }}
+                              title={`Gradient ${index + 1}`}
+                            />
+                          ))}
+                      </div>
+                      {/* Second Row - More Gradient Colors */}
+                      <div className="flex items-center justify-center space-x-1">
+                        {backgroundGradients
+                          .slice(6, 12)
+                          .map((gradient, index) => (
+                            <button
+                              key={index + 6}
+                              onClick={() => selectGradient(index + 6)}
+                              className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
+                                selectedGradient === index + 6 &&
+                                !useImageBackground
+                                  ? "ring-1 ring-white/50"
+                                  : ""
+                              }`}
+                              style={{
+                                background:
+                                  index === 0
+                                    ? "linear-gradient(135deg, #14532d 0%, #059669 50%, #0d9488 100%)"
+                                    : index === 1
+                                    ? "linear-gradient(135deg, #7f1d1d 0%, #ec4899 50%, #f43f5e 100%)"
+                                    : index === 2
+                                    ? "linear-gradient(135deg, #713f12 0%, #f59e0b 50%, #ea580c 100%)"
+                                    : index === 3
+                                    ? "linear-gradient(135deg, #1e3a8a 0%, #4f46e5 50%, #7c3aed 100%)"
+                                    : index === 4
+                                    ? "linear-gradient(135deg, #155e75 0%, #0891b2 50%, #059669 100%)"
+                                    : "linear-gradient(135deg, #831843 0%, #f43f5e 50%, #dc2626 100%)",
+                              }}
+                              title={`Gradient ${index + 7}`}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Scripture Reference */}
@@ -1093,112 +1214,6 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                     >
                       +
                     </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Background Options - Absolute positioned to not affect control panel width */}
-              <div className="absolute top-0 right-full mr-2 bg-black/50 backdrop-blur-sm rounded-md px-2 py-1 border border-white/10">
-                <div className="flex flex-col space-y-1">
-                  {/* Background Images - Show first few images */}
-                  {bibleBgs.length > 0 && (
-                    <div className="flex items-center justify-center space-x-1">
-                      {bibleBgs.slice(0, 6).map((imageSrc, index) => (
-                        <button
-                          key={`bg-${index}`}
-                          onClick={() => selectSpecificBackground(imageSrc)}
-                          className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 bg-cover bg-center ${
-                            useImageBackground && backgroundImage === imageSrc
-                              ? "ring-1 ring-white/50"
-                              : ""
-                          }`}
-                          style={{
-                            backgroundImage: `url(${imageSrc})`,
-                          }}
-                          title={`Background ${index + 1}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Additional Background Images - Second row if more than 6 */}
-                  {bibleBgs.length > 6 && (
-                    <div className="flex items-center justify-center space-x-1">
-                      {bibleBgs.slice(6, 12).map((imageSrc, index) => (
-                        <button
-                          key={`bg-${index + 6}`}
-                          onClick={() => selectSpecificBackground(imageSrc)}
-                          className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 bg-cover bg-center ${
-                            useImageBackground && backgroundImage === imageSrc
-                              ? "ring-1 ring-white/50"
-                              : ""
-                          }`}
-                          style={{
-                            backgroundImage: `url(${imageSrc})`,
-                          }}
-                          title={`Background ${index + 7}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* First Row - Gradient Colors */}
-                  <div className="flex items-center justify-center space-x-1">
-                    {backgroundGradients.slice(0, 6).map((gradient, index) => (
-                      <button
-                        key={index}
-                        onClick={() => selectGradient(index)}
-                        className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                          selectedGradient === index && !useImageBackground
-                            ? "ring-1 ring-white/50"
-                            : ""
-                        }`}
-                        style={{
-                          background:
-                            index === 0
-                              ? "linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #312e81 100%)"
-                              : index === 1
-                              ? "linear-gradient(135deg, #581c87 0%, #be185d 50%, #be123c 100%)"
-                              : index === 2
-                              ? "linear-gradient(135deg, #064e3b 0%, #0f766e 50%, #155e75 100%)"
-                              : index === 3
-                              ? "linear-gradient(135deg, #78350f 0%, #ea580c 50%, #dc2626 100%)"
-                              : index === 4
-                              ? "linear-gradient(135deg, #374151 0%, #27272a 50%, #000000 100%)"
-                              : "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #4338ca 100%)",
-                        }}
-                        title={`Gradient ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                  {/* Second Row - More Gradient Colors */}
-                  <div className="flex items-center justify-center space-x-1">
-                    {backgroundGradients.slice(6, 12).map((gradient, index) => (
-                      <button
-                        key={index + 6}
-                        onClick={() => selectGradient(index + 6)}
-                        className={`w-3 h-3 rounded-full transition-all duration-200 hover:scale-110 ${
-                          selectedGradient === index + 6 && !useImageBackground
-                            ? "ring-1 ring-white/50"
-                            : ""
-                        }`}
-                        style={{
-                          background:
-                            index === 0
-                              ? "linear-gradient(135deg, #14532d 0%, #059669 50%, #0d9488 100%)"
-                              : index === 1
-                              ? "linear-gradient(135deg, #7f1d1d 0%, #ec4899 50%, #f43f5e 100%)"
-                              : index === 2
-                              ? "linear-gradient(135deg, #713f12 0%, #f59e0b 50%, #ea580c 100%)"
-                              : index === 3
-                              ? "linear-gradient(135deg, #1e3a8a 0%, #4f46e5 50%, #7c3aed 100%)"
-                              : index === 4
-                              ? "linear-gradient(135deg, #155e75 0%, #0891b2 50%, #059669 100%)"
-                              : "linear-gradient(135deg, #831843 0%, #f43f5e 50%, #dc2626 100%)",
-                        }}
-                        title={`Gradient ${index + 7}`}
-                      />
-                    ))}
                   </div>
                 </div>
               </div>
