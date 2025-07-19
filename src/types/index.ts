@@ -8,6 +8,12 @@ export interface Song {
   dateModified: string;
 }
 
+export interface Quote {
+  reference?: string;
+  text: string;
+  prophetInitials?: string;
+}
+
 export interface EditSong {
   currentScreen: string;
   setCurrentScreen: (screen: string) => void;
@@ -83,6 +89,7 @@ export type EvSermon = {
   mainMessagePoints?: MessagePoint[];
   preacher: string;
   quote?: string;
+  quotes?: Quote[];
   date: string;
   slides: Slide[];
   createdAt: string;

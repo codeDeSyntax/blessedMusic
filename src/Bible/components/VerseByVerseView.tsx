@@ -293,6 +293,22 @@ const VerseByVerseView: React.FC<VerseByVerseViewProps> = ({
 
       {/* Verse Display */}
       <div className="flex-1 flex items-center justify-center w-full px-8 md:px-8 lg:px-8">
+        {/* Large Verse Number for Audience - Top Left */}
+        <div
+          className={`absolute top-20 left-8 z-30 font-bold ${
+            showBackground
+              ? "text-white/90"
+              : "text-[#1d1d1d]/70 dark:text-white/70"
+          }`}
+          style={{
+            fontFamily: fontFamily,
+            fontWeight: fontWeight,
+            fontSize: `${getFontSize()}`,
+          }}
+        >
+          {displayVerse}
+        </div>
+
         <AnimatePresence>
           {!(
             isBookDropdownOpen ||

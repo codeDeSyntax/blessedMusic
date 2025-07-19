@@ -915,6 +915,35 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
               {currentBook} {currentChapter}
             </div> */}
         </div>
+
+        {/* Large Audience Verse Number - Top Left */}
+        <motion.div
+          key={`audience-verse-${currentVerseIndex}-${currentBook}-${currentChapter}`}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="fixed top-8 left-8 z-40"
+        >
+          <div className="relative">
+            {/* Subtle background for visibility */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm rounded-lg -m-2" />
+
+            {/* Verse Number */}
+            <span
+              className={`relative text-white font-bold tracking-wide drop-shadow-2xl ${getFontFamilyClass()}`}
+              style={{
+                fontSize: `calc(${getBaseFontSize()} * ${fontSizeMultiplier})`,
+                fontFamily: fontFamily,
+                textShadow:
+                  "0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)",
+                lineHeight: "1",
+              }}
+            >
+              {currentVerses.length > 0 ? currentVerses[0]?.verse : "1"}
+            </span>
+          </div>
+        </motion.div>
         {/* Verse Number Indicator - Fixed positioned at top left */}
         <motion.div
           key={`verse-indicator-${currentVerseIndex}-${currentBook}-${currentChapter}`}
@@ -1004,7 +1033,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                 {/* Keyboard shortcuts hint */}
                 <div className="text-center">
                   <span className="text-white/50 text-[8px] font-mono">
-                     T=Translation  • 1-9,0=Colors  • Ctrl+H=Hide  • ESC=Focus Main
+                    T=Translation • 1-9,0=Colors • Ctrl+H=Hide • ESC=Focus Main
                   </span>
                 </div>
 

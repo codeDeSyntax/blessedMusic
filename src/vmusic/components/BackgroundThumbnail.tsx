@@ -130,16 +130,16 @@ const BackgroundThumbnail: React.FC<BackgroundThumbnailProps> = React.memo(
         <div
           className={`
           relative w-full h-full 
-          bg-white dark:bg-gray-800 
+          bg-white 
           shadow-lg rounded-sm 
           overflow-hidden
           transition-shadow duration-200
           ${isSelected ? "ring-2 ring-purple-500 shadow-purple-500/20" : ""}
-          ${isDarkMode ? "shadow-gray-900/50" : "shadow-gray-300/50"}
+          shadow-gray-300/50
         `}
         >
           {/* Image container */}
-          <div className="w-full h-[140px] relative overflow-hidden bg-gray-100 dark:bg-gray-700">
+          <div className="w-full h-[140px] relative overflow-hidden bg-gray-100">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
@@ -183,10 +183,10 @@ const BackgroundThumbnail: React.FC<BackgroundThumbnailProps> = React.memo(
 
           {/* Caption */}
           <div className="p-3 text-center">
-            <h3 className="text-sm font-medium text-gray-800 dark:text-white truncate">
+            <h3 className="text-sm font-medium text-gray-800 truncate">
               {background.name}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 mt-0.5">
               {background.category}
               {background.isCustom && " • Custom"}
             </p>

@@ -18,7 +18,7 @@ import {
   FolderUp,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
-import { Presentation, Scripture, MessagePoint } from "@/types";
+import { Presentation, Scripture, MessagePoint, Quote } from "@/types";
 import { useTheme } from "@/Provider/Theme";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
@@ -61,11 +61,17 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   const [mainMessagePoints, setMainMessagePoints] = useState<MessagePoint[]>(
     (initialData as any)?.mainMessagePoints || []
   );
-  const [quote, setQuote] = useState((initialData as any)?.quote || "");
+  const [quotes, setQuotes] = useState<Quote[]>(
+    (initialData as any)?.quotes || []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [newScripture, setNewScripture] = useState("");
   const [newMessagePoint, setNewMessagePoint] = useState("");
+  const [newQuoteReference, setNewQuoteReference] = useState("");
+  const [newQuoteText, setNewQuoteText] = useState("");
+  const [newQuoteProphetInitials, setNewQuoteProphetInitials] = useState("");
+  const [newQuotePreacherImage, setNewQuotePreacherImage] = useState("");
   const [backgroundImage, setBackgroundImage] = useState(
     initialData?.backgroundImage || ""
   );
@@ -133,9 +139,31 @@ export const SermonForm: React.FC<SermonFormProps> = ({
     setMainMessagePoints(updatedPoints);
   };
 
+  const addQuote = () => {
+    if (newQuoteText.trim()) {
+      const newQuote: Quote = {
+        text: newQuoteText.trim(),
+        reference: newQuoteReference.trim() || undefined,
+        prophetInitials: newQuoteProphetInitials.trim() || undefined,
+        preacherImage: newQuotePreacherImage.trim() || undefined,
+      };
+      setQuotes([...quotes, newQuote]);
+      setNewQuoteReference("");
+      setNewQuoteText("");
+      setNewQuoteProphetInitials("");
+      setNewQuotePreacherImage("");
+    }
+  };
+
+  const removeQuote = (index: number) => {
+    const updatedQuotes = [...quotes];
+    updatedQuotes.splice(index, 1);
+    setQuotes(updatedQuotes);
+  };
+
   const handleKeyDown = (
     e: React.KeyboardEvent,
-    type: "scripture" | "messagePoint"
+    type: "scripture" | "messagePoint" | "quote"
   ) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -143,6 +171,8 @@ export const SermonForm: React.FC<SermonFormProps> = ({
         addScripture();
       } else if (type === "messagePoint" && newMessagePoint.trim()) {
         addMessagePoint();
+      } else if (type === "quote" && newQuoteText.trim()) {
+        addQuote();
       }
     }
   };
@@ -161,7 +191,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
         mainMessage: mainMessage || undefined,
         mainMessagePoints:
           mainMessagePoints.length > 0 ? mainMessagePoints : undefined,
-        quote: quote || undefined,
+        quotes: quotes.length > 0 ? quotes : undefined,
         slides: initialData?.slides || [],
         backgroundImage,
       };
@@ -347,11 +377,10 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                   <div className="flex space-x-[-20px]">
                     {availableImages.length > 0 ? (
                       availableImages.map((img, index) => (
-                        <button
+                        <div
                           key={index}
-                          type="button"
                           onClick={() => setBackgroundImage(img)}
-                          className={`relative w-24 h-16 rounded-lg overflow-hidden hover:translate-y-[-4px] transform transition-all duration-200 ${
+                          className={`relative w-16 h-16 rounded-full overflow-hidden hover:translate-y-[-4px] transform transition-all duration-200 cursor-pointer ${
                             backgroundImage === img
                               ? "ring-2 ring-[#9a674a] translate-y-[-4px] z-10"
                               : "hover:z-10"
@@ -371,7 +400,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                           {backgroundImage === img && (
                             <div className="absolute inset-0 bg-[#9a674a]/10 border-2 border-[#9a674a]" />
                           )}
-                        </button>
+                        </div>
                       ))
                     ) : (
                       <div className="text-center py-4 text-sm text-[#9a674a]/70 w-full">
@@ -388,7 +417,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                   <img
                     src={backgroundImage}
                     alt="Selected background"
-                    className="w-24 h-16 object-cover rounded-lg shadow-md"
+                    className="w-16 h-16 object-cover rounded-full shadow-md"
                   />
                   <button
                     type="button"
@@ -466,21 +495,99 @@ export const SermonForm: React.FC<SermonFormProps> = ({
               </div>
             </div>
 
-            {/* Quote Input */}
-            <div className="space-y-2">
+            {/* Quotes Input - New Tag-Based System */}
+            <div className="space-y-4">
               <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
                 <div className="flex items-center">
                   <QuoteIcon size={16} className="mr-1" />
-                  <span>Quote (Optional)</span>
+                  <span>Quotes (Optional)</span>
                 </div>
               </label>
-              <textarea
-                value={quote}
-                onChange={(e) => setQuote(e.target.value)}
-                placeholder="Enter a memorable quote"
-                rows={2}
-                className="w-[90%] px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-gray-700 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-purple-500 transition-all shadow-sm resize-none"
-              />
+
+              {/* Quote input fields */}
+              <div className="space-y-3 p-4 bg-[#fdf4d0]/50 dark:bg-bgray/50 rounded-lg border border-[#9a674a]/20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    value={newQuoteReference}
+                    onChange={(e) => setNewQuoteReference(e.target.value)}
+                    placeholder="Quote reference (e.g., Isaiah 1:18)"
+                    className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={newQuoteProphetInitials}
+                    onChange={(e) => setNewQuoteProphetInitials(e.target.value)}
+                    placeholder="Prophet's initials (e.g., EGW)"
+                    className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <textarea
+                    value={newQuoteText}
+                    onChange={(e) => setNewQuoteText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && e.ctrlKey) {
+                        e.preventDefault();
+                        addQuote();
+                      }
+                    }}
+                    placeholder="Enter the quote text"
+                    rows={2}
+                    className="flex-1 px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm resize-none text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={addQuote}
+                    disabled={!newQuoteText.trim()}
+                    className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add
+                  </button>
+                </div>
+                <p className="text-xs text-[#9a674a]/70 dark:text-gray-400">
+                  Press Ctrl+Enter in the text area or click Add to add the
+                  quote
+                </p>
+              </div>
+
+              {/* Quote tags display */}
+              <div className="flex flex-wrap gap-2">
+                {quotes.map((quoteItem, index) => (
+                  <div
+                    key={index}
+                    className="inline-flex flex-col gap-1 p-3 rounded-xl bg-[#fdf4d0] dark:bg-gray-800/30 border border-[#9a674a]/20 dark:border-gray-700 shadow-sm max-w-xs"
+                  >
+                    {/* Quote header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {quoteItem.reference && (
+                          <span className="text-xs font-medium text-[#9a674a] dark:text-gray-400">
+                            {quoteItem.reference}
+                          </span>
+                        )}
+                        {quoteItem.prophetInitials && (
+                          <span className="text-xs px-2 py-0.5 bg-[#9a674a]/10 text-[#9a674a] dark:bg-gray-700 dark:text-gray-300 rounded-full font-bold">
+                            {quoteItem.prophetInitials}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeQuote(index)}
+                        className="p-1 rounded-full hover:bg-[#9a674a]/10 dark:hover:bg-gray-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                    {/* Quote text */}
+                    <p className="text-sm text-[#9a674a] dark:text-gray-300 line-clamp-3">
+                      "{quoteItem.text}"
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

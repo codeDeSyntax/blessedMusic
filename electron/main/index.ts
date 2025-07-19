@@ -1086,6 +1086,20 @@ ${
 }
 ${EvSermon.quote ? `QUOTE: ${EvSermon.quote}` : ""}
 
+#QUOTES
+${
+  EvSermon.quotes && EvSermon.quotes.length > 0
+    ? EvSermon.quotes
+        .map(
+          (quote, index) =>
+            `QUOTE_${index + 1}_REFERENCE: ${quote.reference || ""}\n` +
+            `QUOTE_${index + 1}_TEXT: ${quote.text}\n` +
+            `QUOTE_${index + 1}_INITIALS: ${quote.prophetInitials || ""}`
+        )
+        .join("\n")
+    : ""
+}
+
 #IMAGE_DATA
 ${EvSermon.backgroundImage || ""}`;
 }
@@ -1142,9 +1156,12 @@ function parseSermonFile(content: string, id: string): EvSermon {
     type: "sermon",
     scriptures: [],
     mainMessagePoints: [], // Initialize message points array
+    quotes: [], // Initialize quotes array
   };
 
   let section = "";
+  const quotesData: { [key: string]: any } = {};
+
   for (const line of lines) {
     if (line.startsWith("#")) {
       section = line.slice(1).trim(); // Add trim() here to remove whitespace
@@ -1198,7 +1215,41 @@ function parseSermonFile(content: string, id: string): EvSermon {
           sermon.mainMessagePoints?.push({ text: value });
         }
         break;
+      case "QUOTES":
+        // Handle new structured quotes
+        if (key.trim().startsWith("QUOTE_")) {
+          const quoteMatch = key
+            .trim()
+            .match(/^QUOTE_(\d+)_(REFERENCE|TEXT|INITIALS)$/);
+          if (quoteMatch) {
+            const quoteIndex = parseInt(quoteMatch[1]) - 1;
+            const field = quoteMatch[2];
+
+            if (!quotesData[quoteIndex]) {
+              quotesData[quoteIndex] = {};
+            }
+
+            if (field === "REFERENCE") {
+              quotesData[quoteIndex].reference = value || undefined;
+            } else if (field === "TEXT") {
+              quotesData[quoteIndex].text = value;
+            } else if (field === "INITIALS") {
+              quotesData[quoteIndex].prophetInitials = value || undefined;
+            }
+          }
+        }
+        break;
     }
+  }
+
+  // Convert quotesData object to array
+  const quotesArray = Object.keys(quotesData)
+    .sort((a, b) => parseInt(a) - parseInt(b))
+    .map((key) => quotesData[key])
+    .filter((quote) => quote.text); // Only include quotes with text
+
+  if (quotesArray.length > 0) {
+    sermon.quotes = quotesArray;
   }
 
   return sermon as EvSermon;

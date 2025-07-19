@@ -43,7 +43,7 @@ const SongCollectionManager: React.FC = () => {
   const setSelectedSong = (song: Song) => selectSong(song);
   const setAndSaveCurrentScreen = (screen: CurrentScreen) =>
     dispatch(setCurrentScreen(screen));
-  const [allMusic, setAllMusic] = useState<Song[]>(songs);
+  const [allMusic, setAllMusic] = useState<Song[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
@@ -55,6 +55,13 @@ const SongCollectionManager: React.FC = () => {
   const [showSongList, setShowSongList] = useState(true);
   const [showCollectionPanel, setShowCollectionPanel] = useState(true);
   const [isHovered, setIsHovered] = useState<string | null>(null);
+
+  // Sync songs from useSongOperations with local state
+  useEffect(() => {
+    if (songs && songs.length > 0) {
+      setAllMusic(songs);
+    }
+  }, [songs]);
 
   // Check for mobile view
   useEffect(() => {
@@ -89,42 +96,7 @@ const SongCollectionManager: React.FC = () => {
 
   // Load data from localStorage on component mount
   useEffect(() => {
-    const savedSongs = localStorage.getItem("songs");
     const savedCollections = localStorage.getItem("collections");
-
-    if (savedSongs) {
-      setAllMusic(JSON.parse(savedSongs));
-    } else {
-      // Sample data if no saved songs exist
-      const sampleSongs: Song[] = [
-        {
-          id: "1",
-          title: "Amazing Grace",
-          path: "/songs/amazing-grace.txt",
-          content: "Amazing grace, how sweet the sound...",
-          dateModified: new Date().toISOString(),
-          categories: [],
-        },
-        {
-          id: "2",
-          title: "How Great Thou Art",
-          path: "/songs/how-great-thou-art.txt",
-          content: "O Lord my God, when I in awesome wonder...",
-          dateModified: new Date().toISOString(),
-          categories: [],
-        },
-        {
-          id: "3",
-          title: "It Is Well With My Soul",
-          path: "/songs/it-is-well.txt",
-          content: "When peace like a river attendeth my way...",
-          dateModified: new Date().toISOString(),
-          categories: [],
-        },
-      ];
-      setAllMusic(sampleSongs);
-      localStorage.setItem("songs", JSON.stringify(sampleSongs));
-    }
 
     if (savedCollections) {
       setCollections(JSON.parse(savedCollections));
@@ -161,13 +133,6 @@ const SongCollectionManager: React.FC = () => {
       localStorage.setItem("collections", JSON.stringify(collections));
     }
   }, [collections]);
-
-  // Save songs to localStorage whenever they change
-  useEffect(() => {
-    if (songs.length > 0) {
-      localStorage.setItem("songs", JSON.stringify(songs));
-    }
-  }, [songs]);
 
   // Create a new collection
   const createCollection = () => {
@@ -287,11 +252,11 @@ const SongCollectionManager: React.FC = () => {
     const collection = collections.find((c) => c.id === selectedCollection);
     if (!collection) return [];
 
-    return songs.filter((song) => collection.songIds.includes(song.id));
+    return allMusic.filter((song) => collection.songIds.includes(song.id));
   };
 
   // Filtered songs based on search term
-  const filteredSongs = songs.filter((song) =>
+  const filteredSongs = allMusic.filter((song) =>
     song.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

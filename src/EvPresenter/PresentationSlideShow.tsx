@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ColorPicker } from "antd";
 import {
@@ -20,6 +26,66 @@ import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterO
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setCurrentScreen, CurrentScreen } from "@/store/slices/appSlice";
 import { useTheme } from "@/Provider/Theme";
+
+// Memoized background image component for performance
+const BackgroundImage = React.memo(
+  ({
+    bg,
+    index,
+    isSelected,
+    onClick,
+  }: {
+    bg: string;
+    index: number;
+    isSelected: boolean;
+    onClick: () => void;
+  }) => {
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
+
+    return (
+      <div
+        onClick={onClick}
+        className={`relative flex-shrink-0 w-10 h-10 rounded-full overflow-hidden border-2 transition-all duration-300 transform hover:scale-105 hover:z-10 hover:shadow-lg cursor-pointer ${
+          isSelected
+            ? "border-[#9a674a] shadow-lg ring-1 ring-[#9a674a]/50 z-20 scale-105"
+            : "border-white/20 hover:border-[#9a674a]/60"
+        }`}
+        style={{
+          marginLeft: index === 0 ? "0" : "-8px",
+          zIndex: isSelected ? 20 : 10 - index,
+        }}
+      >
+        {!imageError ? (
+          <img
+            src={bg}
+            alt={`BG ${index + 1}`}
+            className="w-full h-full object-cover rounded-full"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
+            <span className="text-xs text-gray-500">❌</span>
+          </div>
+        )}
+        <div
+          className={`absolute inset-0 bg-gradient-to-t from-black/20 to-transparent transition-opacity duration-300 ${
+            isSelected ? "opacity-100" : "opacity-0 hover:opacity-60"
+          }`}
+        />
+        {isSelected && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-[#9a674a] shadow-lg border border-white animate-pulse" />
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+BackgroundImage.displayName = "BackgroundImage";
 
 interface SlideProps {
   content: React.ReactNode;
@@ -294,7 +360,8 @@ const Slide: React.FC<SlideProps> = ({
 export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   onBack,
 }) => {
-  const { currentPresentation, stopPresentation } = usePresenterOperations();
+  const { currentPresentation, stopPresentation, savePresentation } =
+    usePresenterOperations();
   const dispatch = useAppDispatch();
   const [presentationbgs, setPresentationbgs] = useState<string[]>([]);
   const changeScreen = (screen: CurrentScreen) =>
@@ -317,6 +384,12 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     null
   );
   const settingsRef = useRef<HTMLDivElement>(null);
+  const previousPresentationRef = useRef<any>(null);
+
+  // Auto-scroll refs and state
+  const scriptureScrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
 
   // Font size states with persistence
   const [titleFontSize, setTitleFontSize] = useState(() => {
@@ -410,18 +483,18 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
 
   // Load background image from presentation or localStorage
   useEffect(() => {
-    if (currentPresentation?.backgroundImage) {
-      // Use presentation's background image as default
+    // First check if there's a saved background from settings
+    const savedBg = localStorage.getItem("selectedBg");
+
+    if (savedBg) {
+      // Use the saved background (this persists user selections)
+      setBackgroundImage(savedBg);
+    } else if (currentPresentation?.backgroundImage) {
+      // Use presentation's background image as fallback
       setBackgroundImage(currentPresentation.backgroundImage);
     } else {
-      // If no presentation background, try localStorage
-      const savedBg = localStorage.getItem("selectedBg");
-      if (savedBg) {
-        setBackgroundImage(savedBg);
-      } else {
-        // Set default background if none saved
-        setBackgroundImage(presentationbgs[0] || "");
-      }
+      // Set default background if none saved
+      setBackgroundImage(presentationbgs[0] || "");
     }
   }, [currentPresentation, presentationbgs]);
 
@@ -429,22 +502,20 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
   useEffect(() => {
     if (temporaryBackground !== null) {
       setBackgroundImage(temporaryBackground);
-    } else if (currentPresentation?.backgroundImage) {
-      setBackgroundImage(currentPresentation.backgroundImage);
     }
-  }, [temporaryBackground, currentPresentation]);
+  }, [temporaryBackground]);
 
-  // Save temporary background to localStorage
+  // Save temporary background to localStorage and make it permanent
   useEffect(() => {
     if (temporaryBackground) {
       localStorage.setItem("selectedBg", temporaryBackground);
     }
   }, [temporaryBackground]);
 
-  // Reset temporary background when presentation changes
-  useEffect(() => {
-    setTemporaryBackground(null);
-  }, [currentPresentation]);
+  // Don't reset background when presentation changes - keep user selection
+  // useEffect(() => {
+  //   setTemporaryBackground(null);
+  // }, [currentPresentation]);
 
   // Font size handlers with persistence
   const handleTitleFontSizeChange = (size: number) => {
@@ -522,6 +593,41 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     setShowMainMessageColorPicker(false);
   };
 
+  // Create a simple debounce function
+  function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    delay: number
+  ): T {
+    let timeoutId: NodeJS.Timeout;
+    return ((...args: Parameters<T>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    }) as T;
+  }
+
+  // Memoized handleIntervalChange to prevent unnecessary re-renders
+  const handleIntervalChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newInterval = parseInt(e.target.value) * 1000;
+      setAutoPlayInterval(newInterval);
+    },
+    []
+  );
+
+  // Debounced background save to prevent excessive API calls
+  const debouncedSaveBackground = useCallback(
+    debounce(async (presentationId: string, newBackground: string) => {
+      try {
+        await savePresentation(presentationId, {
+          backgroundImage: newBackground,
+        });
+      } catch (error) {
+        console.error("Failed to save background change:", error);
+      }
+    }, 500),
+    [savePresentation]
+  );
+
   // Click outside to close settings
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -577,12 +683,171 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     showQuoteColorPicker,
   ]);
 
-  // Background change handler
-  const handleBackgroundChange = (newBackground: string) => {
-    setTemporaryBackground(newBackground);
-  };
+  // Background change handler - now saves to presentation with debouncing
+  const handleBackgroundChange = useCallback(
+    async (newBackground: string) => {
+      setTemporaryBackground(newBackground);
 
-  // Helper functions to get font size classes
+      // Save to presentation if we have a current presentation (debounced)
+      if (currentPresentation?.id) {
+        debouncedSaveBackground(currentPresentation.id, newBackground);
+      }
+    },
+    [currentPresentation, debouncedSaveBackground]
+  );
+
+  // Memoized background images to prevent unnecessary re-renders
+  const backgroundImages = useMemo(() => {
+    return presentationbgs.map((bg, index) => (
+      <BackgroundImage
+        key={`${bg}-${index}`}
+        bg={bg}
+        index={index}
+        isSelected={backgroundImage === bg}
+        onClick={() => handleBackgroundChange(bg)}
+      />
+    ));
+  }, [presentationbgs, backgroundImage, handleBackgroundChange]);
+
+  // Memoized settings panel content
+  const settingsContent = useMemo(
+    () => (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#9a674a] to-[#7a5236] flex items-center justify-center shadow-lg">
+            <Settings size={12} className="text-white" />
+          </div>
+          <h3 className="text-base font-semibold text-[#9a674a] dark:text-white">
+            Presentation Settings
+          </h3>
+        </div>
+
+        {/* Settings Grid */}
+        <div className="grid grid-cols-1 gap-4">
+          {/* Auto-play & Animation Column */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
+              ⚡ Playback & Animation
+            </h4>
+
+            {/* Auto-play Interval */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
+                  Auto-play Interval
+                </label>
+                <div className="px-2 py-1 rounded text-xs font-medium bg-[#9a674a]/10 text-[#9a674a] dark:bg-white/10 dark:text-white border border-[#9a674a]/20">
+                  {autoPlayInterval / 1000}s
+                </div>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={autoPlayInterval / 1000}
+                onChange={handleIntervalChange}
+                className="w-full h-1.5 bg-gray-200/30 dark:bg-gray-700/30 rounded-lg appearance-none cursor-pointer slider-thumb backdrop-blur-sm"
+                style={{
+                  background: `linear-gradient(90deg, #9a674a 0%, #7a5236 ${
+                    ((autoPlayInterval / 1000 - 1) / (10 - 1)) * 100
+                  }%, rgba(156, 163, 175, 0.3) ${
+                    ((autoPlayInterval / 1000 - 1) / (10 - 1)) * 100
+                  }%, rgba(156, 163, 175, 0.3) 100%)`,
+                }}
+              />
+            </div>
+
+            {/* Animation Settings */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
+                Power Animation
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedAnimation}
+                  onChange={(e) => {
+                    setSelectedAnimation(e.target.value);
+                    localStorage.setItem(
+                      "presentationAnimation",
+                      e.target.value
+                    );
+                  }}
+                  className="w-full px-3 py-2 text-xs bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-lg text-[#9a674a] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9a674a]/50 focus:border-[#9a674a] transition-all duration-200 backdrop-blur-sm appearance-none cursor-pointer"
+                >
+                  {powerAnimations.map((animation) => (
+                    <option
+                      key={animation.value}
+                      value={animation.value}
+                      className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      {animation.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg
+                    className="w-3 h-3 text-[#9a674a] dark:text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {powerAnimations.find((a) => a.value === selectedAnimation)
+                  ?.description || "Choose a powerful animation effect"}
+              </div>
+              <div className="text-xs text-blue-400 dark:text-blue-300 mt-2">
+                💡 Tip: Click on text elements to change colors & font sizes!
+              </div>
+            </div>
+
+            {/* Background Images Column */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
+                🖼️ Backgrounds
+              </h4>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
+                  Background Images
+                </label>
+                <div className="relative overflow-hidden">
+                  <div
+                    className="flex space-x-[-12px] overflow-x-auto scrollbar-hide pb-2"
+                    style={{
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    }}
+                  >
+                    {backgroundImages}
+                  </div>
+                  {/* Scroll hint indicator */}
+                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white/20 to-transparent pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    [
+      autoPlayInterval,
+      handleIntervalChange,
+      selectedAnimation,
+      powerAnimations,
+      backgroundImages,
+    ]
+  );
   const getTitleFontClass = () => {
     const sizeMap: { [key: number]: string } = {
       1: "text-xl",
@@ -592,7 +857,8 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       5: "text-5xl",
       6: "text-6xl",
       7: "text-7xl",
-      8: "text-8xl",
+      // 8: "text-8xl",
+      // 9: "text-9xl",
     };
     return sizeMap[titleFontSize] || "text-4xl";
   };
@@ -605,8 +871,8 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       4: "text-4xl",
       5: "text-5xl",
       6: "text-6xl",
-      7: "text-7xl",
-      8: "text-8xl",
+      // 7: "text-7xl",
+      // 8: "text-8xl",
     };
     return sizeMap[scriptureFontSize] || "text-6xl";
   };
@@ -619,8 +885,9 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       4: "text-4xl",
       5: "text-5xl",
       6: "text-6xl",
-      7: "text-7xl",
-      8: "text-8xl",
+      // 7: "text-7xl",
+      // 8: "text-8xl",
+      // 9: "text-9xl",
     };
     return sizeMap[quoteFontSize] || "text-5xl";
   };
@@ -633,13 +900,18 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       4: "text-4xl",
       5: "text-5xl",
       6: "text-6xl",
-      7: "text-7xl",
-      8: "text-8xl",
+      // 7: "text-7xl",
+      // 8: "text-8xl",
+      // 9: "text-9xl",
     };
     return sizeMap[mainMessageFontSize] || "text-4xl";
   };
 
-  // Add this effect to load custom images
+  // Optimized settings toggle handler
+  const toggleSettings = useCallback(() => {
+    setShowSettings((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     const loadCustomImages = async () => {
       const customImagesPath = localStorage.getItem("evpresenterimagespath");
@@ -677,6 +949,60 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     loadCustomImages();
   }, []);
 
+  // Auto-scroll effect for scripture slides
+  useEffect(() => {
+    const startAutoScroll = () => {
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+      }
+
+      if (scriptureScrollRef.current && !isAutoScrollPaused) {
+        const scrollContainer = scriptureScrollRef.current;
+        let scrollDirection = 1; // 1 for down, -1 for up
+
+        autoScrollTimerRef.current = setInterval(() => {
+          const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+          const maxScroll = scrollHeight - clientHeight;
+
+          if (maxScroll > 0) {
+            // Check if we've reached the bottom
+            if (scrollTop >= maxScroll - 10) {
+              scrollDirection = -1; // Start scrolling up
+            }
+            // Check if we've reached the top
+            else if (scrollTop <= 10) {
+              scrollDirection = 1; // Start scrolling down
+            }
+
+            // Scroll by small increment
+            scrollContainer.scrollTop += scrollDirection * 2;
+          }
+        }, 100); // Slow, smooth scrolling
+      }
+    };
+
+    // Start auto-scroll for scripture slides when there are many scriptures
+    if (
+      currentPresentation?.type === "sermon" &&
+      (currentPresentation as any).scriptures?.length > 3
+    ) {
+      const timer = setTimeout(startAutoScroll, 2000); // Start after 2 seconds
+
+      return () => {
+        clearTimeout(timer);
+        if (autoScrollTimerRef.current) {
+          clearInterval(autoScrollTimerRef.current);
+        }
+      };
+    }
+
+    return () => {
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+      }
+    };
+  }, [currentSlide, isAutoScrollPaused, currentPresentation]);
+
   // Function to break text into slides if too long
   const createContentSlides = (text: string, title?: string) => {
     const wordLimit = 100; // Adjust based on your visual preference
@@ -684,7 +1010,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
 
     if (words.length <= wordLimit) {
       return [
-        <div className="space-y-3 overflow-y-auto max-h-[80vh] no-scrollbar">
+        <div className="space-y-3 w-full overflow-y-auto max-h-[80vh] no-scrollbar">
           {title && (
             <h2
               className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
@@ -709,7 +1035,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     for (let i = 0; i < words.length; i += wordLimit) {
       const slideText = words.slice(i, i + wordLimit).join(" ");
       slides.push(
-        <div className=" overflow-y-auto max-h-[80vh] no-scrollbar rounded-t-3xl">
+        <div className=" overflow-y-auto max-h-[80vh]  no-scrollbar rounded-t-3xl">
           {title && i === 0 && (
             <h2
               className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
@@ -725,7 +1051,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
           <p
             className={`${getScriptureFontClass()} font-oswald leading-relaxed text-[#9a674a] dark:text-white`}
             style={{
-              lineHeight: 1.4,
+              lineHeight: 1.2,
               // fontFamily: "garamond",
             }}
           >
@@ -771,7 +1097,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     for (let i = 0; i < words.length; i += wordLimit) {
       const slideText = words.slice(i, i + wordLimit).join(" ");
       slides.push(
-        <div className=" overflow-y-auto max-h-[80vh] no-scrollbar rounded-t-3xl">
+        <div className=" overflow-y-auto overflow-x-hidden max-h-[80vh] no-scrollbar rounded-t-3xl">
           {title && i === 0 && (
             <h2
               className={`${getTitleFontClass()} font-semibold text-[#9a674a] dark:text-purple-300 mb-4`}
@@ -807,52 +1133,570 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     const buildSlides = () => {
       const newSlides: React.ReactNode[] = [];
 
-      // Title slide
+      // Title slide with circular overlay design (inspired by the reference image)
       newSlides.push(
-        <div className="space-y-6">
-          <h1
-            className={`${getTitleFontClass()} font-impact font-bold cursor-pointer hover:opacity-80 transition-opacity`}
-            style={{ lineHeight: 1.2, color: titleColor }}
-            onClick={(e) => handleTextClick(e, "title")}
-            title="Click to change color"
-          >
-            {currentPresentation.title}
-          </h1>
-          {currentPresentation.type === "sermon" && (
-            <h2 className="text-2xl md:text-3xl text-stone-300 mt-6">
-              by {(currentPresentation as any).preacher}
-            </h2>
-          )}
+        <div
+          className="w-full  h-full relative overflow-hidden"
+          style={{ minHeight: "100vh" }}
+        >
+          {/* Background image layer - clean without blur */}
+          <div
+            className="absolute inset-0 w-full h-full"
+            style={{
+              backgroundImage: backgroundImage
+                ? `url(${backgroundImage})`
+                : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />{" "}
+          {/* Main centered content with circular overlay */}
+          <div className="fixed inset-0 z-10 flex items-center justify-center p-8">
+            {/* Circular overlay container */}
+            <div className="relative">
+              {/* Large circular background - fixed size that touches screen edges */}
+              <div
+                className=" w-[100vw]  h-[100vh]  flex items-center justify-center relative overflow-hidden shadow-2xl"
+                style={{
+                  backgroundImage: `url(${backgroundImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  boxShadow:
+                    "0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                {/* Blur overlay */}
+                <div className="absolute inset-0  backdrop-blur-md bg-black/40"></div>
+
+                {/* Subtle texture overlay */}
+                <div className="absolute inset-0 rounded- opacity-20">
+                  <div className="w-full h-full rounded- bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                </div>
+
+                {/* Content container */}
+                <div className="relative z-10 text-center space-y-6 px-8 py-12 max-w-2xl">
+                  {/* Main title */}
+                  <h1
+                    className={`${getTitleFontClass()} font-black uppercase tracking-wide cursor-pointer hover:opacity-80 transition-opacity break-words leading-tight`}
+                    style={{
+                      color: titleColor || "#ffffff",
+                      textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                      fontFamily: "Impact, Arial Black, sans-serif",
+                    }}
+                    onClick={(e) => handleTextClick(e, "title")}
+                    title="Click to change color"
+                  >
+                    {currentPresentation.title || "SERMON TITLE HERE"}
+                  </h1>
+
+                  {/* Horizontal separator line */}
+                  <div className="w-3/4 mx-auto h-1 bg-white/90 rounded-full shadow-sm"></div>
+
+                  {/* Subtitle section */}
+                  <div className="space-y-4">
+                    {currentPresentation.type === "sermon" && (
+                      <h2
+                        className="text-lg md:text-xl lg:text-2xl font-bold uppercase tracking-wider text-white/95"
+                        style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.3)" }}
+                      >
+                        by{" "}
+                        {(currentPresentation as any).preacher ||
+                          "PREACHER NAME"}
+                      </h2>
+                    )}
+
+                    {/* Scripture preview as subtitle */}
+                    {currentPresentation.type === "sermon" &&
+                      (currentPresentation as any).scriptures?.length > 0 && (
+                        <div className="text-base md:text-lg font-medium text-white/90 leading-relaxed">
+                          {(currentPresentation as any).scriptures
+                            .slice(0, 1)
+                            .map((scripture: any, index: number) => (
+                              <div key={index}>
+                                <div className="font-bold mb-1 tracking-wide">
+                                  {scripture.reference}
+                                </div>
+                                <div className="text-sm md:text-base text-white/80 italic">
+                                  "{scripture.text.substring(0, 100)}
+                                  {scripture.text.length > 100 ? "..." : ""}"
+                                </div>
+                              </div>
+                            ))}
+                          {(currentPresentation as any).scriptures.length >
+                            1 && (
+                            <div className="text-sm text-white/70 mt-2">
+                              +
+                              {(currentPresentation as any).scriptures.length -
+                                1}{" "}
+                              more scripture
+                              {(currentPresentation as any).scriptures.length >
+                              2
+                                ? "s"
+                                : ""}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    {/* Fallback subtitle if no scriptures */}
+                    {currentPresentation.type === "sermon" &&
+                      (!(currentPresentation as any).scriptures?.length ||
+                        (currentPresentation as any).scriptures.length ===
+                          0) && (
+                        <div className="text-base md:text-lg font-medium text-white/80 uppercase tracking-wide">
+                          INSERT SUBTITLE/SCRIPTURE
+                        </div>
+                      )}
+                  </div>
+                </div>
+
+                {/* Decorative elements */}
+                <div className="absolute top-8 right-8 w-4 h-4 bg-white/20 rounded-full animate-pulse"></div>
+                <div className="absolute bottom-12 left-12 w-3 h-3 bg-white/15 rounded-full animate-pulse delay-1000"></div>
+                <div className="absolute top-1/3 left-8 w-2 h-2 bg-white/10 rounded-full animate-pulse delay-500"></div>
+              </div>
+            </div>
+          </div>
+          {/* Corner date - positioned in bottom-right */}
+          <div className="absolute bottom-8 right-8 z-20">
+            <div className="text-sm text-white/80 bg-black/30 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
+              {new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+          </div>
         </div>
       );
 
       if (currentPresentation.type === "sermon") {
         // Scriptures slide
         if ((currentPresentation as any).scriptures?.length > 0) {
+          const scriptures = (currentPresentation as any).scriptures;
+          const scriptureCount = scriptures.length;
+
+          // Calculate dynamic font size based on scripture count
+          const getDynamicScriptureFontClass = () => {
+            if (scriptureCount <= 3) return getScriptureFontClass();
+            if (scriptureCount <= 6) {
+              const baseSize = scriptureFontSize;
+              const adjustedSize = Math.max(1, baseSize - 1);
+              const sizeMap: { [key: number]: string } = {
+                1: "text-xl",
+                2: "text-2xl",
+                3: "text-3xl",
+                4: "text-4xl",
+                5: "text-5xl",
+                6: "text-6xl",
+                7: "text-7xl",
+                8: "text-8xl",
+                9: "text-9xl",
+              };
+              return sizeMap[adjustedSize] || "text-4xl";
+            }
+            if (scriptureCount <= 10) {
+              const baseSize = scriptureFontSize;
+              const adjustedSize = Math.max(1, baseSize - 2);
+              const sizeMap: { [key: number]: string } = {
+                1: "text-xl",
+                2: "text-2xl",
+                3: "text-3xl",
+                4: "text-4xl",
+                5: "text-5xl",
+                6: "text-6xl",
+                7: "text-7xl",
+                8: "text-8xl",
+                9: "text-9xl",
+              };
+              return sizeMap[adjustedSize] || "text-3xl";
+            }
+            // For more than 10 scriptures, use smaller font
+            const baseSize = scriptureFontSize;
+            const adjustedSize = Math.max(1, baseSize - 3);
+            const sizeMap: { [key: number]: string } = {
+              1: "text-xl",
+              2: "text-2xl",
+              3: "text-3xl",
+              4: "text-4xl",
+              5: "text-5xl",
+              6: "text-6xl",
+              7: "text-7xl",
+              8: "text-8xl",
+              9: "text-9xl",
+            };
+            return sizeMap[adjustedSize] || "text-2xl";
+          };
+
+          // Create columns based on scripture count
+          const createScriptureColumns = () => {
+            if (scriptureCount <= 5) {
+              // Single column, centered
+              return (
+                <div className="flex justify-center w-full">
+                  <div className="flex flex-col gap-6 items-center max-w-4xl">
+                    {scriptures.map((scripture: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className={`${getDynamicScriptureFontClass()} font-anton font-bold p-6 rounded-lg shadow-lg backdrop-blur-sm cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 text-center max-w-3xl`}
+                        style={{
+                          border: "2px solid #4B5563",
+                          borderRadius: "1rem",
+                          letterSpacing: 2,
+                          color: scriptureColor,
+                        }}
+                        onClick={(e) => handleTextClick(e, "scripture")}
+                        title="Click to change color"
+                      >
+                        {scripture.text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            // Multiple columns for more than 5 scriptures
+            const columns: any[][] = [];
+            const scripturepitiesPerColumn = 5;
+
+            for (
+              let i = 0;
+              i < scriptures.length;
+              i += scripturepitiesPerColumn
+            ) {
+              columns.push(scriptures.slice(i, i + scripturepitiesPerColumn));
+            }
+
+            return (
+              <div className="flex justify-center gap-8 w-full overflow-x-hidden">
+                {columns.map((column, columnIdx) => (
+                  <div
+                    key={columnIdx}
+                    className="flex flex-col gap-4 min-w-0 flex-1 max-w-lg"
+                  >
+                    {column.map((scripture: any, idx: number) => (
+                      <div
+                        key={`${columnIdx}-${idx}`}
+                        className={`${getDynamicScriptureFontClass()} font-anton font-bold p-4 rounded-lg shadow-lg backdrop-blur-sm cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 text-center`}
+                        style={{
+                          border: "2px solid #4B5563",
+                          borderRadius: "1rem",
+                          letterSpacing: 2,
+                          color: scriptureColor,
+                        }}
+                        onClick={(e) => handleTextClick(e, "scripture")}
+                        title="Click to change color"
+                      >
+                        {scripture.text}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            );
+          };
+
+          // Custom scripture slide with split layout (completely independent from global background)
           newSlides.push(
-            <div className="space-y-8 flex items-center justify-center flex-col">
-              {/* <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-2">
-                Scripture References
-              </h2> */}
-              <div className="flex flex-wrap  gap-4 justify-center items-center overflow-y-scroll no-scrollbar">
-                {(currentPresentation as any).scriptures.map(
-                  (scripture: any, idx: number) => (
+            // Full screen split layout with image on left, blurred image background on right
+            <div className="w-full h-full flex">
+              {/* Left side - Background image with centered title */}
+              <div
+                className="w-1/2 h-full bg-cover bg-center relative flex items-center justify-center"
+                style={{
+                  backgroundImage: `url(${backgroundImage})`,
+                }}
+              >
+                {/* Optional overlay for better visual depth */}
+                <div className="absolute inset-0 bg-black/40"></div>
+
+                {/* Centered Scripture Reading Title */}
+                <div className="relative z-10 text-center">
+                  <motion.h1
+                    className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                    style={{
+                      color: titleColor,
+                      fontFamily: "Impact, Arial Black, sans-serif",
+                      textShadow: "3px 3px 6px rgba(0,0,0,0.9)",
+                    }}
+                    onClick={(e) => handleTextClick(e, "title")}
+                    title="Click to change color"
+                    initial="hidden"
+                    animate="visible"
+                    variants={(() => {
+                      const variants = (() => {
+                        switch (selectedAnimation) {
+                          case "bouncing-text":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                y: -50,
+                                scale: 0.5,
+                                rotate: -10,
+                              },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                scale: 1,
+                                rotate: 0,
+                                transition: {
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 15,
+                                  duration: 1.2,
+                                  delay: 0.2,
+                                },
+                              },
+                            };
+                          case "gliding-sweep":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                x: -200,
+                                scale: 0.8,
+                                filter: "blur(10px)",
+                              },
+                              visible: {
+                                opacity: 1,
+                                x: 0,
+                                scale: 1,
+                                filter: "blur(0px)",
+                                transition: {
+                                  type: "tween",
+                                  ease: [0.25, 0.46, 0.45, 0.94],
+                                  duration: 1.5,
+                                  delay: 0.3,
+                                },
+                              },
+                            };
+                          case "explosive-zoom":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                scale: 0.1,
+                                rotate: -180,
+                                filter: "brightness(0)",
+                              },
+                              visible: {
+                                opacity: 1,
+                                scale: [0.1, 1.2, 1],
+                                rotate: 0,
+                                filter: "brightness(1)",
+                                transition: {
+                                  duration: 1.0,
+                                  ease: "easeOut",
+                                  times: [0, 0.7, 1],
+                                  delay: 0.1,
+                                },
+                              },
+                            };
+                          default:
+                            return {
+                              hidden: { opacity: 0, y: 20 },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                transition: { duration: 0.6 },
+                              },
+                            };
+                        }
+                      })();
+                      return variants;
+                    })()}
+                  >
+                    Scripture Reading
+                  </motion.h1>
+                </div>
+              </div>
+
+              {/* Right side - Scripture content with blurred background */}
+              <div className="w-1/2 h-full relative flex flex-col p-12 overflow-hidden">
+                {/* Blurred background image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${backgroundImage})`,
+                    filter: "blur(10px)",
+                    transform: "scale(1.1)", // Slightly scale up to avoid blur edge artifacts
+                  }}
+                />
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60 backdrop-blur-sm"></div>
+                {/* Decorative background pattern */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-300 to-transparent rounded-full transform translate-x-32 -translate-y-32"></div>
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-300 to-transparent rounded-full transform -translate-x-24 translate-y-24"></div>
+                </div>{" "}
+                {/* Content container */}
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Scripture List - Full height */}
+                  <div className="flex-1 overflow-hidden">
                     <div
-                      key={idx}
-                      className={`${getScriptureFontClass()} font-anton font-bold p-4 rounded-lg shadow-lg backdrop-blur-sm cursor-pointer hover:opacity-80 transition-opacity`}
+                      ref={scriptureScrollRef}
+                      className="h-full overflow-y-auto no-scrollbar pr-4"
                       style={{
-                        border: "2px solid #4B5563",
-                        borderRadius: "1rem",
-                        letterSpacing: 2,
-                        color: scriptureColor,
+                        scrollBehavior: "smooth",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
                       }}
-                      onClick={(e) => handleTextClick(e, "scripture")}
-                      title="Click to change color"
+                      onMouseEnter={() => setIsAutoScrollPaused(true)}
+                      onMouseLeave={() => setIsAutoScrollPaused(false)}
                     >
-                      {scripture.text}
+                      <div className="space-y-8 py-8">
+                        {scriptures.map((scripture: any, idx: number) => (
+                          <motion.div
+                            key={idx}
+                            initial="hidden"
+                            animate="visible"
+                            variants={(() => {
+                              const variants = (() => {
+                                switch (selectedAnimation) {
+                                  case "bouncing-text":
+                                    return {
+                                      hidden: {
+                                        opacity: 0,
+                                        y: -30,
+                                        scale: 0.8,
+                                        rotate: -5,
+                                      },
+                                      visible: {
+                                        opacity: 1,
+                                        y: 0,
+                                        scale: 1,
+                                        rotate: 0,
+                                        transition: {
+                                          type: "spring",
+                                          stiffness: 260,
+                                          damping: 20,
+                                          delay: idx * 0.15,
+                                          duration: 0.8,
+                                        },
+                                      },
+                                    };
+                                  case "gliding-sweep":
+                                    return {
+                                      hidden: {
+                                        opacity: 0,
+                                        x: -100,
+                                        scale: 0.9,
+                                        filter: "blur(5px)",
+                                      },
+                                      visible: {
+                                        opacity: 1,
+                                        x: 0,
+                                        scale: 1,
+                                        filter: "blur(0px)",
+                                        transition: {
+                                          type: "tween",
+                                          ease: [0.25, 0.46, 0.45, 0.94],
+                                          duration: 1.0,
+                                          delay: idx * 0.2,
+                                        },
+                                      },
+                                    };
+                                  case "explosive-zoom":
+                                    return {
+                                      hidden: {
+                                        opacity: 0,
+                                        scale: 0.3,
+                                        rotate: -90,
+                                        filter: "brightness(0.5)",
+                                      },
+                                      visible: {
+                                        opacity: 1,
+                                        scale: [0.3, 1.1, 1],
+                                        rotate: 0,
+                                        filter: "brightness(1)",
+                                        transition: {
+                                          duration: 0.8,
+                                          ease: "easeOut",
+                                          times: [0, 0.6, 1],
+                                          delay: idx * 0.1,
+                                        },
+                                      },
+                                    };
+                                  default:
+                                    return {
+                                      hidden: { opacity: 0, y: 30 },
+                                      visible: {
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: {
+                                          delay: idx * 0.15,
+                                          duration: 0.6,
+                                        },
+                                      },
+                                    };
+                                }
+                              })();
+                              return variants;
+                            })()}
+                            className="group"
+                          >
+                            <div className="flex items-start gap-4">
+                              {/* Number */}
+                              <motion.div
+                                className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
+                                style={{
+                                  backgroundColor: scriptureColor,
+                                  color: "#ffffff",
+                                  textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                                  border: `2px solid ${scriptureColor}`,
+                                }}
+                                whileHover={{ scale: 1.1 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                              >
+                                <span className="font-impact">
+                                  {String(idx + 1).padStart(2, "0")}
+                                </span>
+                              </motion.div>
+
+                              {/* Scripture Content */}
+                              <div className="flex-1">
+                                <motion.div
+                                  className={`${getScriptureFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300`}
+                                  style={{
+                                    color: scriptureColor,
+                                    fontFamily:
+                                      "Impact, Arial Black, sans-serif",
+                                    lineHeight: 1.6,
+                                    textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                                  }}
+                                  onClick={(e) =>
+                                    handleTextClick(e, "scripture")
+                                  }
+                                  title="Click to change color"
+                                  whileHover={{ scale: 1.02, y: -2 }}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 300,
+                                  }}
+                                >
+                                  {scripture.text}
+                                </motion.div>
+
+                                {/* Decorative line */}
+                                <motion.div
+                                  className="w-full h-px mt-6 opacity-50"
+                                  style={{ backgroundColor: scriptureColor }}
+                                  initial={{ scaleX: 0 }}
+                                  animate={{ scaleX: 1 }}
+                                  transition={{
+                                    delay: idx * 0.15 + 0.5,
+                                    duration: 0.8,
+                                  }}
+                                ></motion.div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
-                  )
-                )}
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -864,72 +1708,856 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             (currentPresentation as any).mainMessage,
             "Main Message"
           );
-          messageSlides.forEach((slide) => newSlides.push(slide));
+          messageSlides.forEach((slide, index) => {
+            // Wrap each main message slide with custom independent layout
+            newSlides.push(
+              // Diagonal split layout with background image on top-right triangle
+              <div className="w-full h-full relative overflow-hidden">
+                {/* Background image in diagonal triangle */}
+                <div
+                  className="absolute inset-0 transform origin-top-right"
+                  style={{
+                    background: `linear-gradient(135deg, transparent 0%, transparent 45%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.1) 55%, transparent 55%, transparent 100%), url(${backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    clipPath: "polygon(40% 0%, 100% 0%, 100% 100%, 0% 100%)",
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-black/5 to-black/20"></div>
+                </div>
+
+                {/* Main content area with gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-700/85">
+                  {/* Animated geometric patterns */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute top-1/4 left-1/4 w-32 h-32 border-2 border-white rotate-45 animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-24 h-24 border border-white rounded-full animate-pulse delay-1000"></div>
+                    <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-white/10 transform rotate-12 animate-pulse delay-500"></div>
+                  </div>
+
+                  {/* Content container */}
+                  <div className="relative z-10 flex flex-col h-full p-16">
+                    {/* Decorative header */}
+                    <div className="mb-8 flex items-center gap-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent"></div>
+                      <div className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
+                        <h2 className="text-2xl font-bold text-white tracking-wider">
+                          MAIN MESSAGE
+                        </h2>
+                      </div>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent"></div>
+                    </div>
+
+                    {/* Message content */}
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="max-w-5xl text-center relative">
+                        {/* Content with custom styling */}
+                        <div className="relative p-8 rounded-2xl backdrop-blur-sm border border-white/10 bg-gradient-to-br from-white/5 to-white/1">
+                          {slide}
+                        </div>
+
+                        {/* Decorative corner elements */}
+                        <div className="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-orange-400"></div>
+                        <div className="absolute -top-4 -right-4 w-8 h-8 border-r-2 border-t-2 border-orange-400"></div>
+                        <div className="absolute -bottom-4 -left-4 w-8 h-8 border-l-2 border-b-2 border-orange-400"></div>
+                        <div className="absolute -bottom-4 -right-4 w-8 h-8 border-r-2 border-b-2 border-orange-400"></div>
+                      </div>
+                    </div>
+
+                    {/* Progress indicator for multiple slides */}
+                    {messageSlides.length > 1 && (
+                      <div className="flex justify-center mt-8 gap-2">
+                        {messageSlides.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                              idx === index
+                                ? "bg-orange-400 scale-110"
+                                : "bg-white/30 hover:bg-white/50"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          });
         }
 
-        // Main message points slide (if exists)
-        if ((currentPresentation as any).mainMessagePoints?.length > 0) {
-          newSlides.push(
-            <div className="space-y-1 overflow-y-auto max-h-[80vh] no-scrollbar">
-              {/* <h2 className="text-2xl md:text-3xl font-semibold text-white bg-clip-border text-clip mb-2">
-                Key Points
-              </h2> */}
-              <div className="flex flex-col gap-1">
-                {(currentPresentation as any).mainMessagePoints.map(
-                  (point: any, idx: number) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.2 }}
-                      className="flex items-center justify-center gap-3 py-1 max-h-24 "
+        // Quote slides (each quote gets its own slide) - Split screen design
+        if ((currentPresentation as any).quotes?.length > 0) {
+          const quotes = (currentPresentation as any).quotes;
+
+          quotes.forEach((quoteItem: any, quoteIndex: number) => {
+            // Split screen layout: left side with background image, right side with quote
+            newSlides.push(
+              <div className="w-full h-full flex">
+                {/* Left side - Background image with centered title (1/3 width) */}
+                <div className="w-1/3 h-full relative flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      backgroundImage: `url(${backgroundImage})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  />
+                  {/* Overlay for better text readability */}
+                  <div className="absolute inset-0 bg-black/40"></div>
+
+                  {/* Centered Quotes Title */}
+                  <div className="relative z-10 text-center">
+                    <motion.h1
+                      className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                      style={{
+                        color: titleColor,
+                        fontFamily: "Impact, Arial Black, sans-serif",
+                        textShadow: "3px 3px 6px rgba(0,0,0,0.9)",
+                      }}
+                      onClick={(e) => handleTextClick(e, "title")}
+                      title="Click to change color"
+                      initial="hidden"
+                      animate="visible"
+                      variants={(() => {
+                        const variants = (() => {
+                          switch (selectedAnimation) {
+                            case "bouncing-text":
+                              return {
+                                hidden: {
+                                  opacity: 0,
+                                  y: -50,
+                                  scale: 0.5,
+                                  rotate: -10,
+                                },
+                                visible: {
+                                  opacity: 1,
+                                  y: 0,
+                                  scale: 1,
+                                  rotate: 0,
+                                  transition: {
+                                    type: "spring",
+                                    stiffness: 300,
+                                    damping: 15,
+                                    duration: 1.2,
+                                    delay: 0.2,
+                                  },
+                                },
+                              };
+                            case "gliding-sweep":
+                              return {
+                                hidden: {
+                                  opacity: 0,
+                                  x: -200,
+                                  scale: 0.8,
+                                  filter: "blur(10px)",
+                                },
+                                visible: {
+                                  opacity: 1,
+                                  x: 0,
+                                  scale: 1,
+                                  filter: "blur(0px)",
+                                  transition: {
+                                    type: "tween",
+                                    ease: [0.25, 0.46, 0.45, 0.94],
+                                    duration: 1.5,
+                                    delay: 0.3,
+                                  },
+                                },
+                              };
+                            case "explosive-zoom":
+                              return {
+                                hidden: {
+                                  opacity: 0,
+                                  scale: 0.1,
+                                  rotate: -180,
+                                  filter: "brightness(0)",
+                                },
+                                visible: {
+                                  opacity: 1,
+                                  scale: [0.1, 1.2, 1],
+                                  rotate: 0,
+                                  filter: "brightness(1)",
+                                  transition: {
+                                    duration: 1.0,
+                                    ease: "easeOut",
+                                    times: [0, 0.7, 1],
+                                    delay: 0.1,
+                                  },
+                                },
+                              };
+                            default:
+                              return {
+                                hidden: { opacity: 0, y: 20 },
+                                visible: {
+                                  opacity: 1,
+                                  y: 0,
+                                  transition: { duration: 0.6 },
+                                },
+                              };
+                          }
+                        })();
+                        return variants;
+                      })()}
                     >
-                      <div
-                        className="flex-shrink-0 w-4 h-4 rounded-full bg-gradient-to-r from-[white] to-[white] message-bullet"
-                        style={{ color: mainMessageColor }}
-                      ></div>
-                      <p
-                        className={`${getMainMessageFontClass()} font-teko leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 hover:translate-x-1`}
-                        style={{ color: mainMessageColor }}
-                        onClick={(e) => handleTextClick(e, "mainMessage")}
-                        title="Click to change color and font size"
-                      >
-                        {point.text}
-                      </p>
+                      Quotes
+                    </motion.h1>
+                  </div>
+                </div>
+
+                {/* Right side - Quote content with blurred background (2/3 width) */}
+                <div className="w-2/3 h-full relative flex items-center justify-center overflow-hidden">
+                  {/* Blurred background image */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${backgroundImage})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                      filter: "blur(15px)",
+                      transform: "scale(1.2)", // Slightly scale up to avoid blur edge artifacts
+                    }}
+                  />
+
+                  {/* Additional backdrop blur overlay */}
+                  <div className="absolute inset-0 backdrop-blur-md bg-black/30"></div>
+
+                  {/* Overlay for better text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/50 to-black/30"></div>
+
+                  {/* Quote container with border design */}
+                  <div className="relative  mx-16 z-10">
+                    {/* Top-left quote mark */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3, duration: 0.8 }}
+                      className="absolute -top-4 -left-4 z-10"
+                    >
+                      <div className="text-6xl font-bold text-gray-800 leading-none">
+                        "
+                      </div>
                     </motion.div>
-                  )
+
+                    {/* Bottom-right quote mark */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5, duration: 0.8 }}
+                      className="absolute -bottom-4 -right-4 z-10"
+                    >
+                      <div className="text-6xl font-bold text-gray-800 leading-none transform rotate-180">
+                        "
+                      </div>
+                    </motion.div>
+
+                    {/* Quote box with border */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.8 }}
+                      className="relative border-4 border-white p-12 border-dashed max-h-[70vh] overflow-hidden"
+                    >
+                      {/* Quote text container with scrolling */}
+                      <div
+                        className="max-h-[60vh] overflow-y-auto no-scrollbar"
+                        style={{
+                          scrollBehavior: "smooth",
+                          scrollbarWidth: "none",
+                          msOverflowStyle: "none",
+                        }}
+                      >
+                        <div className="text-center">
+                          <p
+                            className={`${getQuoteFontClass()} font-serif leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 italic`}
+                            style={{
+                              color: quoteColor || "#2d3748",
+                              lineHeight: 1.6,
+                            }}
+                            onClick={(e) => handleTextClick(e, "quote")}
+                            title="Click to change color"
+                          >
+                            {quoteItem.text || quoteItem.message}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Author or reference below the box */}
+                    {(quoteItem.reference || quoteItem.author) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7, duration: 0.8 }}
+                        className="mt-6 text-center"
+                      >
+                        <div className="inline-block px-4 py-2 bg-gray-800/90 text-white rounded-full text-sm font-medium backdrop-blur-sm">
+                          {quoteItem.reference || quoteItem.author}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Prophet initials if available */}
+                    {quoteItem.prophetInitials && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.9, duration: 0.8 }}
+                        className="absolute top-4 right-4"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gray-800/90 text-white flex items-center justify-center text-sm font-bold backdrop-blur-sm">
+                          {quoteItem.prophetInitials}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quote tracker indicators (positioned over the split) */}
+                {quotes.length > 1 && (
+                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+                    {quotes.map((_: any, idx: number) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 1.2 + idx * 0.1 }}
+                        className={`w-8 h-8 rounded-full backdrop-blur-sm border transition-all duration-300 ${
+                          idx === quoteIndex
+                            ? "bg-white/90 border-gray-800 scale-110"
+                            : "bg-white/60 border-gray-600 hover:bg-white/80"
+                        }`}
+                        style={{
+                          boxShadow:
+                            idx === quoteIndex
+                              ? "0 0 20px rgba(0, 0, 0, 0.3)"
+                              : "0 0 10px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
+                        <div className="w-full h-full rounded-full flex items-center justify-center">
+                          <span
+                            className={`text-xs font-bold ${
+                              idx === quoteIndex
+                                ? "text-white"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {idx + 1}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
+
+                {/* Corner label */}
+                <div className="absolute top-20 left-8 z-20">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.0, duration: 0.8 }}
+                    className="px-4 py-2 bg-black/60 rounded-lg backdrop-blur-sm border border-white/20"
+                  >
+                    <span className="text-sm font-bold text-white/90 tracking-wider">
+                      INSPIRATIONAL QUOTES
+                    </span>
+                  </motion.div>
+                </div>
+              </div>
+            );
+          });
+        }
+
+        // Legacy quote slide support (for backward compatibility) - Split screen design
+        if (
+          (currentPresentation as any).quote &&
+          !(currentPresentation as any).quotes?.length
+        ) {
+          const quotes = (currentPresentation as any).quote;
+          const quoteAuthor = (currentPresentation as any).quoteAuthor;
+
+          // Handle multiple quotes by splitting on common delimiters
+          const quotesList = quotes
+            .split(/[;|•]/)
+            .filter((q: string) => q.trim().length > 0);
+
+          // Create split screen quote slide for legacy format
+          newSlides.push(
+            <div className="w-full h-full flex">
+              {/* Left side - Background image with centered title (1/3 width) */}
+              <div className="w-1/3 h-full relative flex items-center justify-center">
+                <div
+                  className="absolute inset-0 w-full h-full"
+                  style={{
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                />
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/40"></div>
+
+                {/* Centered Quotes Title */}
+                <div className="relative z-10 text-center">
+                  <motion.h1
+                    className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                    style={{
+                      color: titleColor,
+                      fontFamily: "Impact, Arial Black, sans-serif",
+                      textShadow: "3px 3px 6px rgba(0,0,0,0.9)",
+                    }}
+                    onClick={(e) => handleTextClick(e, "title")}
+                    title="Click to change color"
+                    initial="hidden"
+                    animate="visible"
+                    variants={(() => {
+                      const variants = (() => {
+                        switch (selectedAnimation) {
+                          case "bouncing-text":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                y: -50,
+                                scale: 0.5,
+                                rotate: -10,
+                              },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                scale: 1,
+                                rotate: 0,
+                                transition: {
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 15,
+                                  duration: 1.2,
+                                  delay: 0.2,
+                                },
+                              },
+                            };
+                          case "gliding-sweep":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                x: -200,
+                                scale: 0.8,
+                                filter: "blur(10px)",
+                              },
+                              visible: {
+                                opacity: 1,
+                                x: 0,
+                                scale: 1,
+                                filter: "blur(0px)",
+                                transition: {
+                                  type: "tween",
+                                  ease: [0.25, 0.46, 0.45, 0.94],
+                                  duration: 1.5,
+                                  delay: 0.3,
+                                },
+                              },
+                            };
+                          case "explosive-zoom":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                scale: 0.1,
+                                rotate: -180,
+                                filter: "brightness(0)",
+                              },
+                              visible: {
+                                opacity: 1,
+                                scale: [0.1, 1.2, 1],
+                                rotate: 0,
+                                filter: "brightness(1)",
+                                transition: {
+                                  duration: 1.0,
+                                  ease: "easeOut",
+                                  times: [0, 0.7, 1],
+                                  delay: 0.1,
+                                },
+                              },
+                            };
+                          default:
+                            return {
+                              hidden: { opacity: 0, y: 20 },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                transition: { duration: 0.6 },
+                              },
+                            };
+                        }
+                      })();
+                      return variants;
+                    })()}
+                  >
+                    Quotes
+                  </motion.h1>
+                </div>
+              </div>
+
+              {/* Right side - Quote content with blurred background */}
+              <div className="w-2/3 h-full relative flex items-center justify-center">
+                {/* Blurred background image */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    filter: "blur(15px)",
+                    transform: "scale(1.2)",
+                  }}
+                />
+
+                {/* Additional backdrop blur overlay */}
+                <div className="absolute inset-0 backdrop-blur-md bg-white/20"></div>
+
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/60 to-white/50"></div>
+
+                {/* Quote container with border design */}
+                <div className="relative max-w-3xl mx-16 z-10">
+                  {/* Top-left quote mark */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="absolute -top-4 -left-4 z-10"
+                  >
+                    <div className="text-6xl font-bold text-gray-800 leading-none">
+                      "
+                    </div>
+                  </motion.div>
+
+                  {/* Bottom-right quote mark */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
+                    className="absolute -bottom-4 -right-4 z-10"
+                  >
+                    <div className="text-6xl font-bold text-gray-800 leading-none transform rotate-180">
+                      "
+                    </div>
+                  </motion.div>
+
+                  {/* Quote box with border */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.8 }}
+                    className="relative border-2 border-gray-800 p-12 bg-white/90 backdrop-blur-sm shadow-xl max-h-[70vh] overflow-hidden"
+                  >
+                    {/* Quote text container with scrolling */}
+                    <div
+                      className="max-h-[60vh] overflow-y-auto no-scrollbar"
+                      style={{
+                        scrollBehavior: "smooth",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
+                      }}
+                    >
+                      <div className="text-center">
+                        <p
+                          className={`${getQuoteFontClass()} font-serif leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 italic`}
+                          style={{
+                            color: quoteColor || "#2d3748",
+                            lineHeight: 1.6,
+                          }}
+                          onClick={(e) => handleTextClick(e, "quote")}
+                          title="Click to change color"
+                        >
+                          {quotes.trim()}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Author section below the box */}
+                  {quoteAuthor && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.7, duration: 0.8 }}
+                      className="mt-6 text-center"
+                    >
+                      <div className="inline-block px-4 py-2 bg-gray-800 text-white rounded-full text-sm font-medium">
+                        {quoteAuthor}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              {/* Corner label */}
+              <div className="absolute top-8 left-8 z-20">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.0, duration: 0.8 }}
+                  className="px-4 py-2 bg-black/60 rounded-lg backdrop-blur-sm border border-white/20"
+                >
+                  <span className="text-sm font-bold text-white/90 tracking-wider">
+                    INSPIRATIONAL QUOTES
+                  </span>
+                </motion.div>
               </div>
             </div>
           );
         }
 
-        // Quote slide (if exists)
-        if ((currentPresentation as any).quote) {
+        // Main message points slide (if exists)
+        if ((currentPresentation as any).mainMessagePoints?.length > 0) {
           newSlides.push(
-            <div className="space-y-6">
-              <h2 className="text-2xl md:text-3xl font-semibold text-purple-300 mb-6">
-                Quote
-              </h2>
-              <p
-                className={`${getQuoteFontClass()} font-archivo italic cursor-pointer hover:opacity-80 transition-opacity`}
-                style={{ color: quoteColor }}
-                onClick={(e) => handleTextClick(e, "quote")}
-                title="Click to change color"
-              >
-                "
-                {(currentPresentation as any).quote
-                  .split(",")
-                  .map((part: string) => (
-                    <p key={part.trim()}>{part.trim()}</p>
-                  ))}
-                "
-              </p>
-              {(currentPresentation as any).quoteAuthor && (
-                <p className="text-xl md:text-2xl text-gray-300 mt-6">
-                  — {(currentPresentation as any).quoteAuthor}
-                </p>
-              )}
+            // Split screen layout with background image and blur effect
+            <div className="w-full h-full flex">
+              {/* Left side - Background image with centered title (1/3 width) */}
+              <div className="w-1/3 h-full relative flex items-center justify-center">
+                <div
+                  className="absolute inset-0 w-full h-full"
+                  style={{
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                />
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/40"></div>
+
+                {/* Centered Highlights Title */}
+                <div className="relative z-10 text-center">
+                  <motion.h1
+                    className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                    style={{
+                      color: titleColor,
+                      fontFamily: "Impact, Arial Black, sans-serif",
+                      textShadow: "3px 3px 6px rgba(0,0,0,0.9)",
+                    }}
+                    onClick={(e) => handleTextClick(e, "title")}
+                    title="Click to change color"
+                    initial="hidden"
+                    animate="visible"
+                    variants={(() => {
+                      const variants = (() => {
+                        switch (selectedAnimation) {
+                          case "bouncing-text":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                y: -50,
+                                scale: 0.5,
+                                rotate: -10,
+                              },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                scale: 1,
+                                rotate: 0,
+                                transition: {
+                                  type: "spring",
+                                  stiffness: 300,
+                                  damping: 15,
+                                  duration: 1.2,
+                                  delay: 0.2,
+                                },
+                              },
+                            };
+                          case "gliding-sweep":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                x: -200,
+                                scale: 0.8,
+                                filter: "blur(10px)",
+                              },
+                              visible: {
+                                opacity: 1,
+                                x: 0,
+                                scale: 1,
+                                filter: "blur(0px)",
+                                transition: {
+                                  type: "tween",
+                                  ease: [0.25, 0.46, 0.45, 0.94],
+                                  duration: 1.5,
+                                  delay: 0.3,
+                                },
+                              },
+                            };
+                          case "explosive-zoom":
+                            return {
+                              hidden: {
+                                opacity: 0,
+                                scale: 0.1,
+                                rotate: -180,
+                                filter: "brightness(0)",
+                              },
+                              visible: {
+                                opacity: 1,
+                                scale: [0.1, 1.2, 1],
+                                rotate: 0,
+                                filter: "brightness(1)",
+                                transition: {
+                                  duration: 1.0,
+                                  ease: "easeOut",
+                                  times: [0, 0.7, 1],
+                                  delay: 0.1,
+                                },
+                              },
+                            };
+                          default:
+                            return {
+                              hidden: { opacity: 0, y: 20 },
+                              visible: {
+                                opacity: 1,
+                                y: 0,
+                                transition: { duration: 0.6 },
+                              },
+                            };
+                        }
+                      })();
+                      return variants;
+                    })()}
+                  >
+                    Highlights
+                  </motion.h1>
+                </div>
+              </div>
+
+              {/* Right side - Main message points with blurred background (2/3 width) */}
+              <div className="w-2/3 h-full relative flex flex-col p-12 overflow-hidden">
+                {/* Blurred background image */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    filter: "blur(15px)",
+                    transform: "scale(1.2)",
+                  }}
+                />
+
+                {/* Additional backdrop blur overlay */}
+                <div className="absolute inset-0 backdrop-blur-md bg-black/30"></div>
+
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/40"></div>
+
+                {/* Content container */}
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Main Message Points List with auto-scrolling - Full height */}
+                  <div className="flex-1 overflow-hidden">
+                    <div
+                      className="h-full overflow-y-auto no-scrollbar pr-4"
+                      style={{
+                        scrollBehavior: "smooth",
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
+                      }}
+                    >
+                      <div className="space-y-6 py-8">
+                        {(currentPresentation as any).mainMessagePoints.map(
+                          (point: any, idx: number) => (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, x: -50 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{
+                                delay: idx * 0.15 + 0.3,
+                                duration: 0.8,
+                              }}
+                              className="group"
+                            >
+                              <div className="flex items-start gap-6">
+                                {/* Animated bullet point */}
+                                <motion.div
+                                  className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mt-1"
+                                  style={{
+                                    backgroundColor: mainMessageColor,
+                                    color: "#ffffff",
+                                    textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                                    border: `2px solid ${mainMessageColor}`,
+                                  }}
+                                  whileHover={{ scale: 1.1 }}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 300,
+                                  }}
+                                >
+                                  <span className="font-impact">
+                                    {String(idx + 1).padStart(2, "0")}
+                                  </span>
+                                </motion.div>
+
+                                {/* Point content */}
+                                <div className="flex-1">
+                                  <motion.div
+                                    className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 group-hover:translate-x-2`}
+                                    style={{
+                                      color: mainMessageColor,
+                                      fontFamily:
+                                        "Impact, Arial Black, sans-serif",
+                                      lineHeight: 1.6,
+                                      textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                                    }}
+                                    onClick={(e) =>
+                                      handleTextClick(e, "mainMessage")
+                                    }
+                                    title="Click to change color and font size"
+                                    whileHover={{ scale: 1.02, y: -2 }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 300,
+                                    }}
+                                  >
+                                    {point.text}
+                                  </motion.div>
+
+                                  {/* Decorative line under each point */}
+                                  <motion.div
+                                    className="w-full h-px mt-4 opacity-50"
+                                    style={{
+                                      backgroundColor: mainMessageColor,
+                                    }}
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{
+                                      delay: idx * 0.15 + 0.8,
+                                      duration: 0.6,
+                                    }}
+                                  ></motion.div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Corner label */}
+              <div className="absolute top-20 left-8 z-20">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.0, duration: 0.8 }}
+                  className="px-4 py-2 bg-black/60 rounded-lg backdrop-blur-sm border border-white/20"
+                >
+                  <span className="text-sm font-[garamond] font-bold text-white/90 tracking-wider">
+                    Message highlights
+                  </span>
+                </motion.div>
+              </div>
             </div>
           );
         }
@@ -980,8 +2608,18 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       return newSlides;
     };
 
-    setSlides(buildSlides());
-    setCurrentSlide(0);
+    const newSlides = buildSlides();
+    setSlides(newSlides);
+
+    // Only reset to slide 0 if the presentation itself changed
+    const presentationChanged =
+      previousPresentationRef.current !== currentPresentation;
+    if (presentationChanged) {
+      setCurrentSlide(0);
+    }
+
+    // Update the previous presentation ref
+    previousPresentationRef.current = currentPresentation;
   }, [
     currentPresentation,
     titleFontSize,
@@ -992,7 +2630,15 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     scriptureColor,
     quoteColor,
     mainMessageColor,
+    backgroundImage, // Add backgroundImage dependency so slides update when background changes
   ]);
+
+  // Separate effect to handle slide bounds when slides array changes
+  useEffect(() => {
+    if (currentSlide >= slides.length && slides.length > 0) {
+      setCurrentSlide(0);
+    }
+  }, [slides.length, currentSlide]);
 
   const nextSlide = useCallback(() => {
     if (currentSlide < slides.length - 1) {
@@ -1067,11 +2713,6 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     }
   }, [isAutoPlaying, stopAutoPlay]);
 
-  const handleIntervalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newInterval = parseInt(e.target.value) * 1000;
-    setAutoPlayInterval(newInterval);
-  };
-
   // Add effect to handle auto-play state
   useEffect(() => {
     if (isAutoPlaying && slides.length > 0) {
@@ -1140,6 +2781,9 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       if (autoPlayTimerRef.current) {
         clearInterval(autoPlayTimerRef.current);
       }
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+      }
     };
   }, []);
 
@@ -1166,7 +2810,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
     >
       {/* Controls */}
       {!isPresentationMode && (
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 f4d0] to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 f4d0] to-transparent">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBack}
@@ -1191,7 +2835,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               {isAutoPlaying ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button
-              onClick={() => setShowSettings(!showSettings)}
+              onClick={toggleSettings}
               className={`p-2 rounded-full ${
                 showSettings
                   ? "bg-[#9a674a] text-white"
@@ -1233,176 +2877,17 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       )}
 
       {/* Settings Panel */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showSettings && (
           <motion.div
             ref={settingsRef}
             initial={{ opacity: 0, x: -300, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -300, scale: 0.9 }}
-            className="absolute top-16 left-4 z-20  max-w-5xl  bg-black/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 p-4"
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute top-16 left-4 z-20 max-w-5xl bg-black/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 p-4"
           >
-            <div className="space-y-">
-              {/* Header */}
-              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#9a674a] to-[#7a5236] flex items-center justify-center shadow-lg">
-                  <Settings size={12} className="text-white" />
-                </div>
-                <h3 className="text-base font-semibold text-[#9a674a] dark:text-white">
-                  Presentation Settings
-                </h3>
-              </div>
-
-              {/* Settings Grid */}
-              <div className="grid grid-cols-1 gap-4">
-                {/* Auto-play & Animation Column */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
-                    ⚡ Playback & Animation
-                  </h4>
-
-                  {/* Auto-play Interval */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
-                        Auto-play Interval
-                      </label>
-                      <div className="px-2 py-1 rounded text-xs font-medium bg-[#9a674a]/10 text-[#9a674a] dark:bg-white/10 dark:text-white border border-[#9a674a]/20">
-                        {autoPlayInterval / 1000}s
-                      </div>
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="10"
-                      step="1"
-                      value={autoPlayInterval / 1000}
-                      onChange={handleIntervalChange}
-                      className="w-full h-1.5 bg-gray-200/30 dark:bg-gray-700/30 rounded-lg appearance-none cursor-pointer slider-thumb backdrop-blur-sm"
-                      style={{
-                        background: `linear-gradient(90deg, #9a674a 0%, #7a5236 ${
-                          ((autoPlayInterval / 1000 - 1) / (10 - 1)) * 100
-                        }%, rgba(156, 163, 175, 0.3) ${
-                          ((autoPlayInterval / 1000 - 1) / (10 - 1)) * 100
-                        }%, rgba(156, 163, 175, 0.3) 100%)`,
-                      }}
-                    />
-                  </div>
-
-                  {/* Animation Settings */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
-                      Power Animation
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={selectedAnimation}
-                        onChange={(e) => {
-                          setSelectedAnimation(e.target.value);
-                          localStorage.setItem(
-                            "presentationAnimation",
-                            e.target.value
-                          );
-                        }}
-                        className="w-full px-3 py-2 text-xs bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-lg text-[#9a674a] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#9a674a]/50 focus:border-[#9a674a] transition-all duration-200 backdrop-blur-sm appearance-none cursor-pointer"
-                      >
-                        {powerAnimations.map((animation) => (
-                          <option
-                            key={animation.value}
-                            value={animation.value}
-                            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          >
-                            {animation.label}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg
-                          className="w-3 h-3 text-[#9a674a] dark:text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {powerAnimations.find(
-                        (a) => a.value === selectedAnimation
-                      )?.description || "Choose a powerful animation effect"}
-                    </div>
-                    <div className="text-xs text-blue-400 dark:text-blue-300 mt-2">
-                      💡 Tip: Click on text elements to change colors & font
-                      sizes!
-                    </div>
-                  </div>
-                  {/* Background Images Column */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-[#9a674a] dark:text-gray-300 border-b border-white/10 pb-2">
-                      🖼️ Backgrounds
-                    </h4>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-[#9a674a] dark:text-gray-300">
-                        Background Images
-                      </label>
-                      <div className="relative overflow-hidden">
-                        <div
-                          className="flex space-x-[-12px] overflow-x-auto scrollbar-hide pb-2"
-                          style={{
-                            scrollbarWidth: "none",
-                            msOverflowStyle: "none",
-                          }}
-                        >
-                          {presentationbgs.map((bg, index) => (
-                            <div
-                              key={index}
-                              onClick={() => handleBackgroundChange(bg)}
-                              className={`relative flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-300 transform hover:scale-105 hover:z-10 hover:shadow-lg ${
-                                backgroundImage === bg
-                                  ? "border-[#9a674a] shadow-lg ring-1 ring-[#9a674a]/50 z-20 scale-105"
-                                  : "border-white/20 hover:border-[#9a674a]/60"
-                              }`}
-                              style={{
-                                marginLeft: index === 0 ? "0" : "-8px",
-                                zIndex:
-                                  backgroundImage === bg ? 20 : 10 - index,
-                              }}
-                            >
-                              <img
-                                src={bg}
-                                alt={`BG ${index + 1}`}
-                                className="w-full h-full object-cover rounded-full"
-                              />
-                              <div
-                                className={`absolute inset-0 bg-gradient-to-t from-black/20 to-transparent transition-opacity duration-300 ${
-                                  backgroundImage === bg
-                                    ? "opacity-100"
-                                    : "opacity-0 hover:opacity-60"
-                                }`}
-                              />
-                              {backgroundImage === bg && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-2 h-2 rounded-full bg-[#9a674a] shadow-lg border border-white animate-pulse" />
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        {/* Scroll hint indicator */}
-                        <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white/20 to-transparent pointer-events-none" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {settingsContent}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1518,17 +3003,93 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             }`}
           >
             <AnimatePresence initial={false} custom={direction}>
-              <Slide
-                key={currentSlide}
-                content={slides[currentSlide]}
-                currentSlide={currentSlide}
-                slideIndex={currentSlide}
-                backgroundImage={backgroundImage}
-                animation={selectedAnimation}
-                titleColor={titleColor}
-                scriptureColor={scriptureColor}
-                quoteColor={quoteColor}
-              />
+              {/* Check for independent slide types that bypass Slide component */}
+              {(() => {
+                // Determine if current slide needs independent rendering
+                const isScriptureSlide =
+                  currentPresentation?.type === "sermon" &&
+                  (currentPresentation as any).scriptures?.length > 0 &&
+                  currentSlide === 1;
+
+                const isMainMessageSlide =
+                  currentPresentation?.type === "sermon" &&
+                  (currentPresentation as any).mainMessage &&
+                  currentSlide >= 2 &&
+                  currentSlide <
+                    2 +
+                      Math.ceil(
+                        ((currentPresentation as any).mainMessage?.split(" ")
+                          .length || 0) / 100
+                      );
+
+                const isQuoteSlide =
+                  currentPresentation?.type === "sermon" &&
+                  ((currentPresentation as any).quotes?.length > 0 ||
+                    (currentPresentation as any).quote) &&
+                  currentSlide >=
+                    2 +
+                      Math.ceil(
+                        ((currentPresentation as any).mainMessage?.split(" ")
+                          .length || 0) / 100
+                      ) &&
+                  currentSlide <
+                    2 +
+                      Math.ceil(
+                        ((currentPresentation as any).mainMessage?.split(" ")
+                          .length || 0) / 100
+                      ) +
+                      ((currentPresentation as any).quotes?.length || 0) +
+                      ((currentPresentation as any).quote ? 1 : 0);
+
+                const needsIndependentRender =
+                  isScriptureSlide || isMainMessageSlide || isQuoteSlide;
+
+                return needsIndependentRender ? (
+                  // Render independent slides directly without Slide component wrapper
+                  <motion.div
+                    key={currentSlide}
+                    custom={currentSlide > 1 ? 1 : -1}
+                    variants={{
+                      enter: (direction: number) => ({
+                        x: direction > 0 ? "100%" : "-100%",
+                        opacity: 0,
+                      }),
+                      center: {
+                        x: 0,
+                        opacity: 1,
+                      },
+                      exit: (direction: number) => ({
+                        x: direction < 0 ? "100%" : "-100%",
+                        opacity: 0,
+                      }),
+                    }}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      type: "tween",
+                      ease: "easeInOut",
+                      duration: 0.8,
+                    }}
+                    className="absolute inset-0"
+                  >
+                    {slides[currentSlide]}
+                  </motion.div>
+                ) : (
+                  // Render all other slides with normal Slide component
+                  <Slide
+                    key={currentSlide}
+                    content={slides[currentSlide]}
+                    currentSlide={currentSlide}
+                    slideIndex={currentSlide}
+                    backgroundImage={backgroundImage}
+                    animation={selectedAnimation}
+                    titleColor={titleColor}
+                    scriptureColor={scriptureColor}
+                    quoteColor={quoteColor}
+                  />
+                );
+              })()}
             </AnimatePresence>
 
             {/* Navigation Arrows */}
@@ -1600,7 +3161,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               <input
                 type="range"
                 min="1"
-                max="8"
+                max="10"
                 step="1"
                 value={titleFontSize}
                 onChange={(e) =>
@@ -1701,7 +3262,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               <input
                 type="range"
                 min="1"
-                max="8"
+                max="10"
                 step="1"
                 value={scriptureFontSize}
                 onChange={(e) =>
@@ -1802,7 +3363,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               <input
                 type="range"
                 min="1"
-                max="8"
+                max="10"
                 step="1"
                 value={quoteFontSize}
                 onChange={(e) =>
@@ -1903,7 +3464,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               <input
                 type="range"
                 min="1"
-                max="8"
+                max="10"
                 step="1"
                 value={mainMessageFontSize}
                 onChange={(e) =>
@@ -2012,6 +3573,16 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
           scrollbar-width: none;
         }
 
+        /* No scrollbar styling for scripture section */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
         /* Stylish blinking bullet animation */
         @keyframes stylishBlink {
           0%, 100% { 
@@ -2067,6 +3638,56 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
         .message-bullet:hover::before {
           animation-play-state: paused;
         }
+
+        /* Auto-scroll animation for scriptures */
+        .animate-scroll {
+          animation: gentle-auto-scroll 30s linear infinite;
+        }
+
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+
+        @keyframes gentle-auto-scroll {
+          0% {
+            scroll-behavior: smooth;
+          }
+          10% {
+            scroll-behavior: smooth;
+          }
+          90% {
+            scroll-behavior: smooth;
+          }
+          100% {
+            scroll-behavior: smooth;
+          }
+        }
+
+        /* Enhanced scrollbar for scripture area */
+        .scripture-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .scripture-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+        }
+
+        .scripture-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+          transition: all 0.3s ease;
+        }
+
+        .scripture-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Smooth scroll behavior */
+        .smooth-scroll {
+          scroll-behavior: smooth;
+        }
+
       `}</style>
     </div>
   );

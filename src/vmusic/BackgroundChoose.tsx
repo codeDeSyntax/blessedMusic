@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Palette, FolderUp, RefreshCw, Monitor } from "lucide-react";
+import { Tooltip } from "antd";
 import { useAppDispatch } from "@/store";
 import { setCurrentScreen } from "@/store/slices/appSlice";
 import TitleBar from "../shared/TitleBar";
@@ -20,12 +21,10 @@ const SkeletonLoader = React.memo(() => {
   return (
     <div className="relative p-8 w-fit mx-auto">
       <div className="relative grid grid-cols-4 gap-4">
-        {" "}
-        {/* Changed to 4 columns for faster rendering */}
         {skeletonItems.map((index) => (
           <div
             key={index}
-            className="relative bg-white dark:bg-gray-800 shadow-lg rounded-sm overflow-hidden"
+            className="relative bg-white shadow-lg rounded-sm overflow-hidden"
             style={{
               width: "160px",
               height: "200px",
@@ -33,12 +32,12 @@ const SkeletonLoader = React.memo(() => {
             }}
           >
             {/* Image skeleton */}
-            <div className="w-full h-[140px] bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="w-full h-[140px] bg-gray-200 animate-pulse" />
 
             {/* Text skeleton */}
             <div className="p-3 space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse" />
             </div>
           </div>
         ))}
@@ -189,13 +188,33 @@ const PresentationBackgroundSelector: React.FC = () => {
   useEffect(() => {
     loadBackgrounds();
 
+    // Load saved background from localStorage
+    const savedBackgroundSrc = localStorage.getItem("bmusicpresentationbg");
+    if (savedBackgroundSrc) {
+      // Find the background in our default backgrounds first
+      const savedBg = defaultBackgrounds.find(
+        (bg) => bg.src === savedBackgroundSrc
+      );
+      if (savedBg) {
+        setSelectedBackground(savedBg);
+      } else {
+        // If not found in defaults, create a temporary background object
+        setSelectedBackground({
+          name: "Saved Background",
+          src: savedBackgroundSrc,
+          category: "Custom",
+          isCustom: true,
+        });
+      }
+    }
+
     // Cleanup function
     return () => {
       if (abortController.current) {
         abortController.current.abort();
       }
     };
-  }, [loadBackgrounds]);
+  }, [loadBackgrounds, defaultBackgrounds]);
 
   // Handle window resize with throttling
   useEffect(() => {
@@ -317,142 +336,184 @@ const PresentationBackgroundSelector: React.FC = () => {
   }, [backgrounds, selectedCategory]);
 
   return (
-    <div
-      className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden"
-      style={{
-        backgroundColor: localTheme === "creamy" ? "#faeed1" : "inherit",
-      }}
-    >
+    <div className="h-screen flex flex-col bg-white overflow-hidden relative">
       <TitleBar />
 
       <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="p-4 lg:p-6 space-y-6 flex-shrink-0">
+        {/* Header with Navigation and Categories */}
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => dispatch(setCurrentScreen("Songs"))}
-                className="px-4 py-2 bg-[#4d3403] text-white rounded-lg hover:bg-primary transition-colors flex items-center gap-2"
-                // className="p-2 rounded-full bg-[#] text-white hover:bg-purple-600 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </motion.button>
-
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                <Palette className="w-6 h-6" />
+            <div className="flex items-center gap-3">
+              <Tooltip title="Back to Songs">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => dispatch(setCurrentScreen("Songs"))}
+                  className="p-2 bg-[#4d3403] text-white rounded-lg hover:bg-[#5d4413] transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </motion.button>
+              </Tooltip>
+              <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Palette className="w-5 h-5" />
                 Presentation Backgrounds
               </h1>
             </div>
 
-            <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleUploadBackground}
-                className="px-4 py-2 bg-[#4d3403] text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
-              >
-                <FolderUp className="w-4 h-4" />
-                <span>Upload</span>
-              </motion.button>
+            {/* Action Buttons, Categories, and Custom Path */}
+            <div className="flex items-center gap-4">
+              {/* Category Pills */}
+              <div className="flex items-center gap-2">
+                {categories.map((category) => {
+                  // Define icons/emojis for each category
+                  const getCategoryIcon = (cat: string) => {
+                    switch (cat) {
+                      case "All":
+                        return "🌟";
+                      case "Nature":
+                        return "🌿";
+                      case "Landscape":
+                        return "🏔️";
+                      case "Abstract":
+                        return "🎨";
+                      case "Texture":
+                        return "🧱";
+                      case "Custom":
+                        return "📁";
+                      default:
+                        return "📷";
+                    }
+                  };
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={projectBackground}
-                disabled={!selectedBackground}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                  selectedBackground
-                    ? "bg-green-600 text-white hover:bg-green-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
-                <Monitor className="w-4 h-4" />
-                <span>Present</span>
-              </motion.button>
+                  return (
+                    <Tooltip key={category} title={category}>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`
+                          w-8 h-8 rounded-full flex items-center justify-center text-sm
+                          transition-all duration-200 shadow-sm
+                          ${
+                            selectedCategory === category
+                              ? "bg-[#4d3403] text-white shadow-md scale-105"
+                              : "bg-[#4d3403] text-white hover:bg-[#5d4413] hover:shadow-md"
+                          }
+                        `}
+                      >
+                        {getCategoryIcon(category)}
+                      </motion.button>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-gray-300"></div>
+
+              {/* Custom images path display */}
+              {customImagesPath && (
+                <div className="px-3 py-1 text-xs text-gray-500 bg-gray-50 rounded-lg max-w-48">
+                  <span className="font-medium">Custom: </span>
+                  <span className="truncate">
+                    {customImagesPath.split("/").pop() ||
+                      customImagesPath.split("\\").pop()}
+                  </span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <Tooltip title="Upload Background Folder">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleUploadBackground}
+                    className="p-2 bg-[#4d3403] text-white rounded-lg hover:bg-[#5d4413] transition-colors"
+                  >
+                    <FolderUp className="w-4 h-4" />
+                  </motion.button>
+                </Tooltip>
+
+                <Tooltip title="Present Background Preview">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={projectBackground}
+                    disabled={!selectedBackground}
+                    className={`p-2 rounded-lg transition-colors ${
+                      selectedBackground
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    <Monitor className="w-4 h-4" />
+                  </motion.button>
+                </Tooltip>
+              </div>
             </div>
           </div>
-
-          {/* Category Pills */}
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <motion.button
-                key={category}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedCategory(category)}
-                className={`
-                  px-4 py-2 rounded-full text-sm font-medium
-                  transition-all duration-200
-                  ${
-                    selectedCategory === category
-                      ? "bg-[#4d3403] text-white shadow-lg shadow-[#4d3403]/20"
-                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-700"
-                  }
-                `}
-              >
-                {category}
-              </motion.button>
-            ))}
-            {/* Custom images path display */}
-            {customImagesPath && (
-              <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50 px-4 py-2 rounded-lg">
-                Custom images from: {customImagesPath}
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Background Grid - Scrollable Container */}
-        <div className="flex-1 w-[90%] mx-auto overflow-y-auto no-scrollbar">
-          <div className="h-full flex items-center justify-center">
-            {isLoadingImages ? (
-              <SkeletonLoader />
-            ) : (
-              <BackgroundGrid
-                backgrounds={filteredBackgrounds}
-                selectedBackground={selectedBackground}
-                onSelectBackground={handleSelectBackground}
-              />
-            )}
+        {/* Main Content Area - Scrollable */}
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-white">
+          <div className="p-6">
+            <div className="flex items-center justify-center min-h-full">
+              {isLoadingImages ? (
+                <SkeletonLoader />
+              ) : (
+                <BackgroundGrid
+                  backgrounds={filteredBackgrounds}
+                  selectedBackground={selectedBackground}
+                  onSelectBackground={handleSelectBackground}
+                />
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Selected Background Preview */}
-        {selectedBackground && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-0 left-0 right-0 bg-transparent p-4 shadow-lg border-t border-gray-200 dark:border-gray-700"
+      {/* Floating Selected Background Avatar */}
+      {selectedBackground && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          className="fixed bottom-6 right-6 z-50"
+        >
+          <Tooltip
+            title={`Selected: ${selectedBackground.name} (${selectedBackground.category})`}
+            placement="left"
           >
-            <div className="container mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="relative">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="w-16 h-16 rounded-full border-2 border-dashed border-[#4d3403] bg-white shadow-lg overflow-hidden cursor-pointer"
+                onClick={() => setSelectedBackground(null)}
+              >
                 <img
                   src={selectedBackground.src}
                   alt={selectedBackground.name}
-                  className="w-16 h-16 object-cover rounded-lg"
+                  className="w-full h-full object-cover"
                 />
-                <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white">
-                    {selectedBackground.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {selectedBackground.category}
-                  </p>
-                </div>
-              </div>
+              </motion.div>
 
-              <button
-                onClick={() => setSelectedBackground(null)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              {/* Close button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedBackground(null);
+                }}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors shadow-md"
               >
-                <RefreshCw className="w-5 h-5" />
-              </button>
+                ×
+              </motion.button>
             </div>
-          </motion.div>
-        )}
-      </div>
+          </Tooltip>
+        </motion.div>
+      )}
     </div>
   );
 };
