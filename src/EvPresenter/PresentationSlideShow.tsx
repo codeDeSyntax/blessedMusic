@@ -863,10 +863,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       5: "text-5xl",
       6: "text-6xl",
       7: "text-7xl",
-      8: "text-8xl",
-      9: "text-9xl",
+      // 8: "text-8xl",
+      // 9: "text-9xl",
     };
-    return sizeMap[titleFontSize] || "text-4xl";
+    return sizeMap[titleFontSize] || "text-8xl";
   };
 
   const getScriptureFontClass = () => {
@@ -878,8 +878,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       5: "text-5xl",
       6: "text-6xl",
       7: "text-7xl",
-      8: "text-8xl",
-      9: "text-9xl",
+   
     };
     return sizeMap[scriptureFontSize] || "text-6xl";
   };
@@ -891,10 +890,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       3: "text-3xl",
       4: "text-4xl",
       5: "text-5xl",
-      6: "text-6xl",
-      7: "text-7xl",
-      8: "text-8xl",
-      9: "text-9xl",
+      // 6: "text-6xl",
+      // 7: "text-7xl",
+      // 8: "text-8xl",
+      // 9: "text-9xl",
     };
     return sizeMap[quoteFontSize] || "text-5xl";
   };
@@ -1142,7 +1141,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
         >
           {/* Background image layer - clean without blur */}
           <div
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-[100vw] h-full"
             style={{
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
@@ -1152,7 +1151,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               backgroundRepeat: "no-repeat",
             }}
           />{" "}
-          {/* Main centered content with circular overlay */}
+          {/* Main centered w-full content with circular overlay */}
           <div className="fixed inset-0 z-10 flex items-center justify-center p-8">
             {/* Circular overlay container */}
             <div className="relative">
@@ -1169,7 +1168,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 }}
               >
                 {/* Blur overlay */}
-                <div className="absolute inset-0  backdrop-blur-md bg-black/40"></div>
+                <div className="absolute inset-0   backdrop-blur-md bg-black/20"></div>
 
                 {/* Subtle texture overlay */}
                 <div className="absolute inset-0 rounded- opacity-20">
@@ -1177,24 +1176,32 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 </div>
 
                 {/* Content container */}
-                <div className="relative z-10 text-center space-y-6 px-8 py-12 max-w-4xl">
+                <div className="relative z-10 text-center py-0  px-8  max-w-5xl">
                   {/* Main title */}
-                  <h1
-                    className={`${getTitleFontClass()} font-black uppercase tracking-wide cursor-pointer hover:opacity-80 transition-opacity break-words leading-tight fontoswald`}
+                  <span
+                    className={`${getTitleFontClass()}  font-black uppercase tracking-wide cursor-pointer hover:opacity-80 transition-opacity break-words leading-tight fontoswald font-impact`}
                     style={{
                       color: titleColor || "#ffffff",
                       textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
-                      fontFamily: "Arial Black, sans-serif",
+                      // fontFamily: "Imapct",
                       // fontSize: `${titleFontSize}px`,
                     }}
                     onClick={(e) => handleTextClick(e, "title")}
                     title="Click to change color"
                   >
                     {currentPresentation.title || "SERMON TITLE HERE"}
-                  </h1>
+                  </span>
 
                   {/* Horizontal separator line */}
-                  <div className="w-3/4 mx-auto h-1 bg-white/90 border-white border-2 border-dashed rounded-full shadow-sm"></div>
+                  <div className="w-3/4 mx-auto my-2  bg-black/90 border-white border-2 border-dashed rounded-full shadow-sm"
+                  style={{
+                      borderColor: titleColor + "80" || "#ffffff",
+                      borderStyle:"double"
+                      // textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                      // fontFamily: "Imapct",
+                      // fontSize: `${titleFontSize}px`,
+                    }}
+                  ></div>
 
                   {/* Subtitle section */}
                   <div className="space-y-4">
@@ -1262,7 +1269,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             </div>
           </div>
           {/* Corner date - positioned in bottom-right */}
-          <div className="absolute bottom-8 right-8 z-20">
+          <div className="absolute bottom-36 right-8 z-20">
             <div className="text-sm text-white/80 bg-black/30 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
               {new Date().toLocaleDateString("en-US", {
                 year: "numeric",
@@ -1309,9 +1316,9 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 4: "text-4xl",
                 5: "text-5xl",
                 6: "text-6xl",
-                7: "text-7xl",
-                8: "text-8xl",
-                9: "text-9xl",
+                // 7: "text-7xl",
+                // 8: "text-8xl",
+                // 9: "text-9xl",
               };
               return sizeMap[adjustedSize] || "text-7xl";
             }
@@ -1325,11 +1332,11 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               4: "text-4xl",
               5: "text-5xl",
               6: "text-6xl",
-              7: "text-7xl",
-              8: "text-8xl",
+              // 7: "text-7xl",
+              // 8: "text-8xl",
               // 9: "text-9xl",
             };
-            return sizeMap[adjustedSize] || "text-2xl";
+            return sizeMap[adjustedSize] || "text-6xl";
           };
 
           // Create columns based on scripture count
@@ -1382,7 +1389,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                     {column.map((scripture: any, idx: number) => (
                       <div
                         key={`${columnIdx}-${idx}`}
-                        className={`${getDynamicScriptureFontClass()} font-anton font-bold p-4 rounded-lg shadow-lg backdrop-blur-sm cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 text-center`}
+                        className={`${getDynamicScriptureFontClass()} font- font-bold p-4 rounded-lg shadow-lg backdrop-blur-sm cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105 text-center`}
                         style={{
                           border: "2px solid #4B5563",
                           borderRadius: "1rem",
@@ -1418,7 +1425,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 {/* Centered Scripture Reading Title */}
                 <div className="relative z-10 text-center">
                   <motion.h1
-                    className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                    className="text-6xl font-LTFuzz italic cursor-pointer hover:opacity-80 transition-all duration-300"
                     style={{
                       color: titleColor,
                       fontFamily: "Impact, Arial Black, sans-serif",
@@ -1659,7 +1666,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                               {/* Scripture Content */}
                               <div className="flex-1">
                                 <motion.div
-                                  className={`${getScriptureFontClass()} font- leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300`}
+                                  className={`${getScriptureFontClass()} font-impact font-bold leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300`}
                                   style={{
                                     color: scriptureColor,
                                    
@@ -1730,11 +1737,11 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 {/* Main content area with gradient background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-700/85">
                   {/* Animated geometric patterns */}
-                  {/* <div className="absolute inset-0 opacity-5">
+                  <div className="absolute inset-0 opacity-5">
                     <div className="absolute top-1/4 left-1/4 w-32 h-32 border-2 border-white rotate-45 animate-pulse"></div>
                     <div className="absolute bottom-1/4 right-1/4 w-24 h-24 border border-white rounded-full animate-pulse delay-1000"></div>
                     <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-white/10 transform rotate-12 animate-pulse delay-500"></div>
-                  </div> */}
+                  </div>
                 </div>
               </div>
             );
@@ -1869,7 +1876,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.7, duration: 0.8 }}
                           >
-                            <div className="inline-block px-4 py-2 font-bitter  text-white rounded-full text-xl font-medium backdrop-blur-sm italic">
+                            <div className="inline-block px-4 py-2 font-LTFuzz  text-white rounded-full text-xl font-medium backdrop-blur-sm italic">
                               {quoteItem.reference || quoteItem.author}
                             </div>
                           </motion.div>
@@ -1882,7 +1889,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.9, duration: 0.8 }}
                           >
-                            <div className="w-12 h-12 font-bitter rounded-full text-white flex items-center justify-center text-xl font-bold backdrop-blur-sm border-2 italic border-white/20">
+                            <div className="w-12 h-12 font-LTFuzz rounded-full text-white flex items-center justify-center text-xl font-bold backdrop-blur-sm border-2 italic border-white/20">
                               {quoteItem.prophetInitials}
                             </div>
                           </motion.div>
@@ -1954,7 +1961,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                       >
                         <div className="text-center">
                           <p
-                            className={`${getQuoteFontClass()} font-bitter leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 italic`}
+                            className={`${getQuoteFontClass()} font-LTFuzz leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 italic`}
                             style={{
                               color: quoteColor || "#2d3748",
                               lineHeight: 1.6,
@@ -2037,7 +2044,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 <div className="absolute inset-0 backdrop-blur-md bg-black/30"></div>
 
                 {/* Overlay for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/50 to-black/30"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-black/30 to-black/10"></div>
 
                 {/* Content container */}
                 <div className="relative z-10 flex flex-col h-full">
@@ -2109,12 +2116,12 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                                 {/* Point content */}
                                 <div className="flex-1">
                                   <motion.div
-                                    className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 group-hover:translate-x-2`}
+                                    className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 group-hover:translate-x-2 font-LTFuzz`}
                                     style={{
                                       color: mainMessageColor,
-                                      fontFamily:
-                                        "Impact, Arial Black, sans-serif",
-                                      lineHeight: 1.6,
+                                      // fontFamily:
+                                      //   "Impact, Arial Black, sans-serif",
+                                      lineHeight: 1.3,
                                       textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
                                     }}
                                     onClick={(e) =>

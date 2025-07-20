@@ -166,7 +166,7 @@ const PresentationCard: React.FC<{
           )}
 
           {/* Presentation ID - Receipt Number */}
-          <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
+          {/* <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
             <div className="flex items-center">
               <FileText size={12} className="mr-1" />
               <span>SermonID #:</span>
@@ -174,7 +174,7 @@ const PresentationCard: React.FC<{
             <span className="font-mono">
               {presentation.id.slice(0, 8).toUpperCase()}
             </span>
-          </div>
+          </div> */}
 
           {/* Background Image Preview */}
           {presentation.backgroundImage && (

@@ -561,14 +561,14 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                     type="text"
                     value={newQuoteReference}
                     onChange={(e) => setNewQuoteReference(e.target.value)}
-                    placeholder="Quote reference (e.g., Isaiah 1:18)"
-                    className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm"
+                    placeholder="reference (e.g., Stature of a  pe...p56)"
+                    className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm placeholder:italic"
                   />
                   <input
                     type="text"
                     value={newQuoteProphetInitials}
                     onChange={(e) => setNewQuoteProphetInitials(e.target.value)}
-                    placeholder="Prophet's initials (auto-filled when selecting preacher)"
+                    placeholder=" initials (auto-filled when selecting preacher)"
                     className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm"
                   />
 
@@ -649,7 +649,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                       editingQuoteIndex !== null ? cancelEditQuote : addQuote
                     }
                     // disabled={!newQuoteText.trim()}/
-                    className={`px-4 py-2 h-8  rounded-lg text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2 ${
+                    className={`px-4 py-2 h-8 cursor-pointer  rounded-lg text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2 ${
                       editingQuoteIndex !== null
                         ? "bg-gray-500 hover:bg-gray-600"
                         : "bg-[#9a674a] hover:bg-[#8b5a3c]"

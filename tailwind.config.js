@@ -25,9 +25,10 @@ export default {
         haettenschweiler: ['"Haettenschweiler"', 'sans-serif'],
         impact: ['"Impact"', 'sans-serif'],
         teko: ['"Teko Light"', 'sans-serif'],
-        alumini: ['"Alumini Sans Black"', 'sans-serif']
-      }
-      
+        alumini: ['"Alumini Sans Black"', 'sans-serif'],
+        LTFuzz: ['"LTFuzz"', 'sans-serif'],
+      },
+
     },
   },
   corePlugins: {
