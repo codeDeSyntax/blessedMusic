@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
-import { Presentation, EvSermon, EvOther, EvCustom } from "@/types";
+import { Presentation, EvSermon } from "@/types";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -840,6 +840,50 @@ ipcMain.handle("focus-main-window", async () => {
   }
 });
 
+// Handler to construct file path properly
+ipcMain.handle(
+  "construct-file-path",
+  async (_, basePath: string, fileName: string) => {
+    try {
+      const fullPath = path.join(basePath, fileName);
+      return { success: true, path: fullPath };
+    } catch (error) {
+      console.error("Error constructing file path:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to construct path",
+      };
+    }
+  }
+);
+
+// Handler to open file in default app (e.g., notepad for .txt files)
+ipcMain.handle("open-file-in-default-app", async (_, filePath: string) => {
+  try {
+    // Normalize the path to handle different path separators
+    const normalizedPath = path.normalize(filePath);
+    console.log("Opening file:", normalizedPath);
+
+    // Check if file exists before trying to open
+    if (!fs.existsSync(normalizedPath)) {
+      return {
+        success: false,
+        error: `File not found: ${normalizedPath}`,
+      };
+    }
+
+    await shell.openPath(normalizedPath);
+    return { success: true };
+  } catch (error) {
+    console.error("Error opening file:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to open file",
+    };
+  }
+});
+
 // Presentation master handlers
 function sanitizeFilename(title: string): string {
   // Remove invalid filename characters and replace spaces with underscores
@@ -873,16 +917,10 @@ ipcMain.handle("load-presentations", async (_, directoryPath: string) => {
         const id = idMatch ? idMatch[1] : file.replace(".txt", "");
 
         // Parse based on content type
-        if (content.includes("#TYPE: sermon")) {
+        if (content.includes("#TYPE: sermon") || content.includes("TYPE: sermon")) {
           presentations.push(parseSermonFile(content, id));
-        } else if (content.includes("#TYPE: other")) {
-          presentations.push(parseOtherFile(content, id));
-        } else if (content.includes("TYPE: sermon")) {
-          // Legacy format
-          presentations.push(parseSermonFile(content, id));
-        } else if (content.includes("TYPE: other")) {
-          // Legacy format
-          presentations.push(parseOtherFile(content, id));
+        } else {
+          console.warn(`Skipping unsupported presentation type in file: ${file}`);
         }
       }
     }
@@ -915,10 +953,8 @@ ipcMain.handle(
 
       if (newPresentation.type === "sermon") {
         content = formatSermonToText(newPresentation as EvSermon);
-      } else if (newPresentation.type === "custom") {
-        content = formatCustomToText(newPresentation as EvCustom);
       } else {
-        content = formatOtherToText(newPresentation as EvOther);
+        throw new Error(`Unsupported presentation type: ${newPresentation.type}`);
       }
 
       // Create filename based on title and ID
@@ -972,13 +1008,8 @@ ipcMain.handle(
         content.includes("TYPE: sermon")
       ) {
         existingPresentation = parseSermonFile(content, id);
-      } else if (
-        content.includes("#TYPE: custom") ||
-        content.includes("TYPE: custom")
-      ) {
-        existingPresentation = parseCustomFile(content, id);
       } else {
-        existingPresentation = parseOtherFile(content, id);
+        throw new Error(`Unsupported presentation type in file: ${existingFile}`);
       }
 
       // Merge updates with existing presentation
@@ -992,12 +1023,8 @@ ipcMain.handle(
       let newContent: string;
       if (updatedPresentation.type === "sermon") {
         newContent = formatSermonToText(updatedPresentation as EvSermon);
-      } else if (updatedPresentation.type === "custom") {
-        newContent = formatCustomToText(updatedPresentation as EvCustom);
-      } else if (updatedPresentation.type === "other") {
-        newContent = formatOtherToText(updatedPresentation as EvOther);
       } else {
-        throw new Error("Invalid presentation type");
+        throw new Error(`Unsupported presentation type: ${updatedPresentation.type}`);
       }
 
       // If title changed, create new filename
@@ -1104,51 +1131,6 @@ ${
 ${EvSermon.backgroundImage || ""}`;
 }
 
-function formatOtherToText(other: Presentation): string {
-  if (other.type !== "other") throw new Error("Not an other presentation");
-
-  const EvOther = other as EvOther;
-
-  return `#TYPE: other
-#METADATA
-ID: ${other.id}
-TITLE: ${other.title}
-CREATED_AT: ${other.createdAt}
-UPDATED_AT: ${other.updatedAt}
-
-#CONTENT
-MESSAGE: ${EvOther.message || ""}
-
-#IMAGE_DATA
-${EvOther.backgroundImage || ""}`;
-}
-
-function formatCustomToText(custom: Presentation): string {
-  if (custom.type !== "custom") throw new Error("Not a custom presentation");
-
-  const EvCustom = custom as EvCustom;
-
-  return `#TYPE: custom
-#METADATA
-ID: ${custom.id}
-TITLE: ${custom.title}
-DESCRIPTION: ${EvCustom.description || ""}
-CREATED_AT: ${custom.createdAt}
-UPDATED_AT: ${custom.updatedAt}
-
-#SLIDES
-${
-  EvCustom.slides
-    ? EvCustom.slides
-        .map((slide, index) => `SLIDE_${index + 1}: ${JSON.stringify(slide)}`)
-        .join("\n")
-    : ""
-}
-
-#IMAGE_DATA
-${EvCustom.backgroundImage || ""}`;
-}
-
 function parseSermonFile(content: string, id: string): EvSermon {
   const lines = content.split("\n");
   const sermon: Partial<EvSermon> = {
@@ -1253,115 +1235,6 @@ function parseSermonFile(content: string, id: string): EvSermon {
   }
 
   return sermon as EvSermon;
-}
-
-function parseOtherFile(content: string, id: string): EvOther {
-  const lines = content.split("\n");
-  const other: Partial<EvOther> = {
-    id,
-    type: "other",
-  };
-
-  let section = "";
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      section = line.slice(1).trim(); // Add trim() here to remove whitespace
-      continue;
-    }
-
-    if (!line.includes(":")) continue;
-
-    const [key, ...valueParts] = line.split(":");
-    const value = valueParts.join(":").trim(); // Rejoin with : to preserve any : in the value
-
-    switch (section) {
-      case "METADATA":
-        switch (key.trim()) {
-          case "TITLE":
-            other.title = value;
-            break;
-          case "CREATED_AT":
-            other.createdAt = value;
-            break;
-          case "UPDATED_AT":
-            other.updatedAt = value;
-            break;
-        }
-        break;
-      case "CONTENT":
-        if (key.trim() === "MESSAGE") {
-          other.message = value;
-        }
-        break;
-      case "IMAGE_DATA":
-        // Handle background image from the IMAGE_DATA section
-        if (value.trim()) {
-          other.backgroundImage = value;
-        }
-        break;
-    }
-  }
-
-  return other as EvOther;
-}
-
-function parseCustomFile(content: string, id: string): EvCustom {
-  const lines = content.split("\n");
-  const custom: Partial<EvCustom> = {
-    id,
-    type: "custom",
-    slides: [],
-  };
-
-  let section = "";
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      section = line.slice(1).trim(); // Add trim() here to remove whitespace
-      continue;
-    }
-
-    if (!line.includes(":")) continue;
-
-    const [key, ...valueParts] = line.split(":");
-    const value = valueParts.join(":").trim(); // Rejoin with : to preserve any : in the value
-
-    switch (section) {
-      case "METADATA":
-        switch (key.trim()) {
-          case "TITLE":
-            custom.title = value;
-            break;
-          case "DESCRIPTION":
-            custom.description = value;
-            break;
-          case "CREATED_AT":
-            custom.createdAt = value;
-            break;
-          case "UPDATED_AT":
-            custom.updatedAt = value;
-            break;
-        }
-        break;
-      case "SLIDES":
-        if (key.trim().startsWith("SLIDE_")) {
-          try {
-            const slide = JSON.parse(value);
-            custom.slides?.push(slide);
-          } catch (error) {
-            console.error("Failed to parse slide:", error);
-          }
-        }
-        break;
-      case "IMAGE_DATA":
-        // Handle background image from the IMAGE_DATA section
-        if (value.trim()) {
-          custom.backgroundImage = value;
-        }
-        break;
-    }
-  }
-
-  return custom as EvCustom;
 }
 
 // New function to create React-based song projection window

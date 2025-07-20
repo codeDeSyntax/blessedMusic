@@ -12,6 +12,7 @@ export interface Quote {
   reference?: string;
   text: string;
   prophetInitials?: string;
+  preacherImage?: string; // Path to the preacher's image
 }
 
 export interface EditSong {
@@ -97,26 +98,4 @@ export type EvSermon = {
   backgroundImage?: string;
 };
 
-export type EvOther = {
-  id: string;
-  type: "other";
-  title: string;
-  message: string;
-  slides: Slide[];
-  createdAt: string;
-  updatedAt: string;
-  backgroundImage?: string;
-};
-
-export type EvCustom = {
-  id: string;
-  type: "custom";
-  title: string;
-  slides: Slide[];
-  createdAt: string;
-  updatedAt: string;
-  backgroundImage?: string;
-  description?: string;
-};
-
-export type Presentation = EvSermon | EvOther | EvCustom;
+export type Presentation = EvSermon;

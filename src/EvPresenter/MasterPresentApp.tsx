@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { PresentationLayout } from "./PresentationLayout";
 import { PresentationList } from "./PList";
-import { SermonForm, OtherForm } from "./PresentationForm";
-import { CustomSlideEditor } from "./CustomSlideEditor";
+import { SermonForm } from "./PresentationForm";
 import { PresentationSlideshow } from "./PresentationSlideShow";
 import { Presentation } from "@/types";
 import { PresentationDetail } from "./PresentationDetail";
@@ -14,10 +13,10 @@ import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterO
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
 type ViewState =
-  | { type: "list"; category: "sermon" | "other" | "custom" }
+  | { type: "list"; category: "sermon" }
   | { type: "detail"; presentation: Presentation }
   | { type: "edit"; presentation: Presentation }
-  | { type: "create"; category: "sermon" | "other" | "custom" }
+  | { type: "create"; category: "sermon" }
   | { type: "mpresenter"; presentation: Presentation };
 
 const PresentationMasterPage: React.FC = () => {
@@ -25,9 +24,7 @@ const PresentationMasterPage: React.FC = () => {
     type: "list",
     category: "sermon",
   });
-  const [selectedCategory, setSelectedCategory] = useState<
-    "sermon" | "other" | "custom"
-  >("sermon");
+  const [selectedCategory, setSelectedCategory] = useState<"sermon">("sermon");
   const dispatch = useAppDispatch();
   const { currentPresentation, selectPresentation } = usePresenterOperations();
 
@@ -76,12 +73,12 @@ const PresentationMasterPage: React.FC = () => {
               setViewState({ type: "create", category: viewState.category })
             }
             onCategoryChange={(category) => {
-              setSelectedCategory(category);
-              setViewState({ type: "list", category });
+              // Only allow "sermon" category now
+              if (category === "sermon") {
+                setSelectedCategory(category);
+                setViewState({ type: "list", category });
+              }
             }}
-            onNewCustom={() =>
-              setViewState({ type: "create", category: "custom" })
-            }
           />
         );
 
@@ -109,40 +106,8 @@ const PresentationMasterPage: React.FC = () => {
         );
 
       case "edit":
-        return viewState.presentation.type === "sermon" ? (
+        return (
           <SermonForm
-            initialData={viewState.presentation}
-            onSave={() =>
-              setViewState({
-                type: "list",
-                category: viewState.presentation.type,
-              })
-            }
-            onCancel={() =>
-              setViewState({
-                type: "detail",
-                presentation: viewState.presentation,
-              })
-            }
-          />
-        ) : viewState.presentation.type === "custom" ? (
-          <CustomSlideEditor
-            initialData={viewState.presentation}
-            onSave={() =>
-              setViewState({
-                type: "list",
-                category: viewState.presentation.type,
-              })
-            }
-            onCancel={() =>
-              setViewState({
-                type: "detail",
-                presentation: viewState.presentation,
-              })
-            }
-          />
-        ) : (
-          <OtherForm
             initialData={viewState.presentation}
             onSave={() =>
               setViewState({
@@ -160,17 +125,8 @@ const PresentationMasterPage: React.FC = () => {
         );
 
       case "create":
-        return viewState.category === "sermon" ? (
+        return (
           <SermonForm
-            onSave={() =>
-              setViewState({ type: "list", category: viewState.category })
-            }
-            onCancel={() =>
-              setViewState({ type: "list", category: viewState.category })
-            }
-          />
-        ) : (
-          <OtherForm
             onSave={() =>
               setViewState({ type: "list", category: viewState.category })
             }
@@ -194,9 +150,7 @@ const PresentationMasterPage: React.FC = () => {
   const getTitle = () => {
     switch (viewState.type) {
       case "list":
-        return viewState.category === "sermon"
-          ? "Sermons"
-          : "Other Presentations";
+        return "Sermons";
       case "detail":
         return viewState.presentation.title;
       case "edit":

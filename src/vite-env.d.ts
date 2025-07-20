@@ -52,5 +52,12 @@ interface Window {
       data: any;
     }) => Promise<{ success: boolean; error?: string }>;
     focusMainWindow: () => Promise<{ success: boolean; error?: string }>;
+    openFileInDefaultApp: (
+      filePath: string
+    ) => Promise<{ success: boolean; error?: string }>;
+    constructFilePath: (
+      basePath: string,
+      fileName: string
+    ) => Promise<{ success: boolean; path?: string; error?: string }>;
   };
 }

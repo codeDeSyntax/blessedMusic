@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   X as XIcon,
   FolderUp,
+  Edit2,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation, Scripture, MessagePoint, Quote } from "@/types";
@@ -72,6 +73,9 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   const [newQuoteText, setNewQuoteText] = useState("");
   const [newQuoteProphetInitials, setNewQuoteProphetInitials] = useState("");
   const [newQuotePreacherImage, setNewQuotePreacherImage] = useState("");
+  const [editingQuoteIndex, setEditingQuoteIndex] = useState<number | null>(
+    null
+  );
   const [backgroundImage, setBackgroundImage] = useState(
     initialData?.backgroundImage || ""
   );
@@ -147,7 +151,18 @@ export const SermonForm: React.FC<SermonFormProps> = ({
         prophetInitials: newQuoteProphetInitials.trim() || undefined,
         preacherImage: newQuotePreacherImage.trim() || undefined,
       };
-      setQuotes([...quotes, newQuote]);
+
+      if (editingQuoteIndex !== null) {
+        // Update existing quote
+        const updatedQuotes = [...quotes];
+        updatedQuotes[editingQuoteIndex] = newQuote;
+        setQuotes(updatedQuotes);
+        setEditingQuoteIndex(null);
+      } else {
+        // Add new quote
+        setQuotes([...quotes, newQuote]);
+      }
+
       setNewQuoteReference("");
       setNewQuoteText("");
       setNewQuoteProphetInitials("");
@@ -155,10 +170,62 @@ export const SermonForm: React.FC<SermonFormProps> = ({
     }
   };
 
+  const editQuote = (index: number) => {
+    const quote = quotes[index];
+    setNewQuoteReference(quote.reference || "");
+    setNewQuoteText(quote.text);
+    setNewQuoteProphetInitials(quote.prophetInitials || "");
+
+    // Map the preacher image to the correct initials when editing
+    if (quote.preacherImage === "./bob.jpg") {
+      setNewQuotePreacherImage("./bob.jpg");
+      // Ensure initials match if not already set
+      if (!quote.prophetInitials) {
+        setNewQuoteProphetInitials("R.L.L");
+      }
+    } else if (quote.preacherImage === "./wmb.jpeg") {
+      setNewQuotePreacherImage("./wmb.jpeg");
+      // Ensure initials match if not already set
+      if (!quote.prophetInitials) {
+        setNewQuoteProphetInitials("WMB");
+      }
+    } else {
+      setNewQuotePreacherImage(quote.preacherImage || "");
+    }
+
+    setEditingQuoteIndex(index);
+  };
+
+  const cancelEditQuote = () => {
+    setNewQuoteReference("");
+    setNewQuoteText("");
+    setNewQuoteProphetInitials("");
+    setNewQuotePreacherImage("");
+    setEditingQuoteIndex(null);
+  };
+
   const removeQuote = (index: number) => {
-    const updatedQuotes = [...quotes];
-    updatedQuotes.splice(index, 1);
-    setQuotes(updatedQuotes);
+    // Show confirmation dialog before deleting
+    const quote = quotes[index];
+    const previewText =
+      quote.text.substring(0, 100) + (quote.text.length > 100 ? "..." : "");
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete this quote?\n\n"${previewText}"`
+    );
+
+    if (confirmDelete) {
+      const updatedQuotes = [...quotes];
+      updatedQuotes.splice(index, 1);
+      setQuotes(updatedQuotes);
+
+      // If we're editing this quote, cancel the edit
+      if (editingQuoteIndex === index) {
+        cancelEditQuote();
+      } else if (editingQuoteIndex !== null && editingQuoteIndex > index) {
+        // Adjust editing index if needed
+        setEditingQuoteIndex(editingQuoteIndex - 1);
+      }
+    }
   };
 
   const handleKeyDown = (
@@ -325,7 +392,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 <button
                   type="button"
                   onClick={addScripture}
-                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#8b5a3c] dark:hover:bg-purple-700 transition-colors duration-200 flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#9a674a] dark:hover:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
                 >
                   <Plus size={16} />
                   Add
@@ -335,18 +402,18 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 {scriptures.map((scripture, index) => (
                   <div
                     key={index}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#fdf4d0] dark:bg-gray-800/30 border border-[#9a674a]/20 dark:border-gray-700"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 group rounded-full bg-[#fdf4d0] dark:bg-stone-800/30 border border-dashed border-[#9a674a]/20 dark:border-gray-700"
                   >
                     <span className="text-sm text-[#9a674a] dark:text-gray-300">
                       {scripture.text}
                     </span>
-                    <button
-                      type="button"
+                    <div
+                      // type="div"
                       onClick={() => removeScripture(index)}
-                      className="p-1 rounded-full hover:bg-[#9a674a]/10 dark:hover:bg-gray-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
+                      className="p-1 h-4 w-4 hidden group-hover:flex cursor-pointer  rounded-full bg-red-700 text-center hover:bg-red-700 dark:hover:bg-red-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
                     >
                       <X size={14} />
-                    </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -430,23 +497,6 @@ export const SermonForm: React.FC<SermonFormProps> = ({
               )}
             </div>
 
-            {/* Main Message Input */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
-                <div className="flex items-center">
-                  <MessageSquare size={16} className="mr-1" />
-                  <span>Main Message (Optional)</span>
-                </div>
-              </label>
-              <textarea
-                value={mainMessage}
-                onChange={(e) => setMainMessage(e.target.value)}
-                placeholder="Enter the main message"
-                rows={3}
-                className="w-[90%] px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-gray-700 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-purple-500 transition-all shadow-sm resize-none"
-              />
-            </div>
-
             {/* Main Message Points */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
@@ -467,7 +517,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 <button
                   type="button"
                   onClick={addMessagePoint}
-                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#8b5a3c] dark:hover:bg-purple-700 transition-colors duration-200 flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#9a674a] dark:hover:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
                 >
                   <Plus size={16} />
                   Add
@@ -477,19 +527,19 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 {mainMessagePoints.map((point, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 px-4 py-3 rounded-lg bg-[#fdf4d0] dark:bg-gray-800/30 border border-[#9a674a]/20 dark:border-gray-700"
+                    className="flex items-start gap-3 px-4 py-3 rounded-lg bg-[#fdf4d0] dark:bg-stone-800/30 border border-dashed border-[#9a674a]/20 dark:border-stone-300"
                   >
                     <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#9a674a] mt-2"></div>
                     <span className="flex-1 text-sm text-[#9a674a] dark:text-gray-300">
                       {point.text}
                     </span>
-                    <button
-                      type="button"
+                    <div
+                      // type="div"
                       onClick={() => removeMessagePoint(index)}
-                      className="p-1 rounded-full hover:bg-[#9a674a]/10 dark:hover:bg-gray-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
+                      className="p-1 h-4 w-4 cursor-pointer rounded-full bg-red-700 hover:bg-red-700 dark:hover:bg-red-700 text-white  transition-colors duration-200"
                     >
                       <X size={14} />
-                    </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -518,10 +568,67 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                     type="text"
                     value={newQuoteProphetInitials}
                     onChange={(e) => setNewQuoteProphetInitials(e.target.value)}
-                    placeholder="Prophet's initials (e.g., EGW)"
+                    placeholder="Prophet's initials (auto-filled when selecting preacher)"
                     className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm"
                   />
+
+                  {/* Preacher Selection by Initials */}
+                  <div className="flex gap-2">
+                    <div
+                      onClick={() => {
+                        setNewQuotePreacherImage("/bob.jpg");
+                        setNewQuoteProphetInitials("R.L.L");
+                      }}
+                      className={`cursor-pointer rounded-full h-10 w-10 flex items-center justify-center border transition-all duration-200 text-xs font-bold ${
+                        newQuotePreacherImage === "/bob.jpg"
+                          ? "bg-[#9a674a] border-[#9a674a] ring-2 ring-[#9a674a]/50 text-white"
+                          : "bg-[#fdf4d0] dark:bg-bgray border-[#9a674a]/20 hover:bg-[#9a674a]/10 text-[#9a674a] dark:text-gray-300"
+                      }`}
+                      title="R.L.L - Select Bob's image"
+                    >
+                      R.L.L
+                    </div>
+                    <div
+                      onClick={() => {
+                        setNewQuotePreacherImage("/wmb.jpeg");
+                        setNewQuoteProphetInitials("WMB");
+                      }}
+                      className={`cursor-pointer rounded-full h-10 w-10 flex items-center justify-center border transition-all duration-200 text-xs font-bold ${
+                        newQuotePreacherImage === "/wmb.jpeg"
+                          ? "bg-[#9a674a] border-[#9a674a] ring-2 ring-[#9a674a]/50 text-white"
+                          : "bg-[#fdf4d0] dark:bg-bgray border-[#9a674a]/20 hover:bg-[#9a674a]/10 text-[#9a674a] dark:text-gray-300"
+                      }`}
+                      title="WMB - Select WMB's image"
+                    >
+                      WMB
+                    </div>
+                  </div>
                 </div>
+
+                {/* Selected preacher image preview */}
+                {/* {newQuotePreacherImage && (
+                  <div className="flex items-center gap-2 p-2 bg-[#9a674a]/10 dark:bg-gray-800/50 rounded-lg">
+                    <img
+                      src={newQuotePreacherImage}
+                      alt="Selected preacher"
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <span className="text-xs text-[#9a674a] dark:text-gray-300">
+                      Selected:{" "}
+                      {newQuotePreacherImage
+                        .replace("./", "")
+                        .split(".")[0]
+                        .toUpperCase()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setNewQuotePreacherImage("")}
+                      className="ml-auto p-1 rounded-full hover:bg-[#9a674a]/20 text-[#9a674a] dark:text-gray-400"
+                    >
+                      <XIcon size={12} />
+                    </button>
+                  </div>
+                )} */}
                 <div className="flex gap-2">
                   <textarea
                     value={newQuoteText}
@@ -533,60 +640,110 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                       }
                     }}
                     placeholder="Enter the quote text"
-                    rows={2}
-                    className="flex-1 px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm resize-none text-sm"
+                    rows={10}
+                    className="flex-1 px-3 no-scrollbar py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm resize-none text-sm"
                   />
-                  <button
-                    type="button"
-                    onClick={addQuote}
-                    disabled={!newQuoteText.trim()}
-                    className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                  <div
+                    // type="div"
+                    onClick={
+                      editingQuoteIndex !== null ? cancelEditQuote : addQuote
+                    }
+                    // disabled={!newQuoteText.trim()}/
+                    className={`px-4 py-2 h-8  rounded-lg text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2 ${
+                      editingQuoteIndex !== null
+                        ? "bg-gray-500 hover:bg-gray-600"
+                        : "bg-[#9a674a] hover:bg-[#8b5a3c]"
+                    }`}
                   >
-                    <Plus size={16} />
-                    Add
-                  </button>
+                    {editingQuoteIndex !== null ? (
+                      <>
+                        <X size={16} />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} />
+                        Add
+                      </>
+                    )}
+                  </div>
+                  {editingQuoteIndex !== null && (
+                    <div
+                      // type="div"
+                      onClick={addQuote}
+                      // disabled={!newQuoteText.trim()}
+                      className="px-4 py-2 h-8 rounded-lg bg-primary text-white hove disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <Save size={16} />
+                      Update
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-[#9a674a]/70 dark:text-gray-400">
-                  Press Ctrl+Enter in the text area or click Add to add the
-                  quote
+                  {editingQuoteIndex !== null
+                    ? "Currently editing a quote. Update it or cancel to add a new one."
+                    : "Press Ctrl+Enter in the text area or click Add to add the quote"}
                 </p>
               </div>
 
               {/* Quote tags display */}
               <div className="flex flex-wrap gap-2">
-                {quotes.map((quoteItem, index) => (
-                  <div
-                    key={index}
-                    className="inline-flex flex-col gap-1 p-3 rounded-xl bg-[#fdf4d0] dark:bg-gray-800/30 border border-[#9a674a]/20 dark:border-gray-700 shadow-sm max-w-xs"
-                  >
-                    {/* Quote header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {quoteItem.reference && (
-                          <span className="text-xs font-medium text-[#9a674a] dark:text-gray-400">
-                            {quoteItem.reference}
-                          </span>
-                        )}
-                        {quoteItem.prophetInitials && (
-                          <span className="text-xs px-2 py-0.5 bg-[#9a674a]/10 text-[#9a674a] dark:bg-gray-700 dark:text-gray-300 rounded-full font-bold">
-                            {quoteItem.prophetInitials}
-                          </span>
-                        )}
+                {quotes.map((quoteItem, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className={`inline-flex flex-col gap-1 p-3 rounded-xl border-dashed border shadow-sm max-w-xs transition-all duration-200 ${
+                        editingQuoteIndex === index
+                          ? "bg-stone-50 dark:bg-primary/20 border-primary dark:border-primary ring-2 ring-primary dark:ring-primary"
+                          : "bg-[#fdf4d0] dark:bg-stone-800/30 border-[#9a674a]/20 dark:border-stone-700"
+                      }`}
+                    >
+                      {/* Quote header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {/* Preacher image avatar */}
+                          {quoteItem.preacherImage && (
+                            <img
+                              src={quoteItem.preacherImage}
+                              alt="Preacher"
+                              className="w-6 h-6 rounded-full object-cover border-2 border-[#9a674a]/20"
+                            />
+                          )}
+                          {quoteItem.reference && (
+                            <span className="text-xs font-medium text-[#9a674a] dark:text-gray-400">
+                              {quoteItem.reference}
+                            </span>
+                          )}
+                          {quoteItem.prophetInitials && (
+                            <span className="text-xs px-2 py-0.5 bg-[#9a674a]/10 text-[#9a674a] dark:bg-gray-700 dark:text-gray-300 rounded-full font-bold">
+                              {quoteItem.prophetInitials}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div
+                            onClick={() => editQuote(index)}
+                            className="p-1 h-4 w-4 bg-red-700 text-white rounded-full  dark:hover:bg-red-700  dark:text-gray-400 transition-colors duration-200"
+                            title="Edit quote"
+                          >
+                            <Edit2 size={10} />
+                          </div>
+                          <div
+                            onClick={() => removeQuote(index)}
+                            className="p-1 h-4 w-4 bg-red-700 text-white rounded-full  dark:hover:bg-red-700  dark:text-gray-400 transition-colors duration-200"
+                            title="Remove quote"
+                          >
+                            <X size={12} />
+                          </div>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeQuote(index)}
-                        className="p-1 rounded-full hover:bg-[#9a674a]/10 dark:hover:bg-gray-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
-                      >
-                        <X size={12} />
-                      </button>
+                      {/* Quote text */}
+                      <p className="text-sm text-[#9a674a] dark:text-gray-300 line-clamp-3">
+                        "{quoteItem.text}"
+                      </p>
                     </div>
-                    {/* Quote text */}
-                    <p className="text-sm text-[#9a674a] dark:text-gray-300 line-clamp-3">
-                      "{quoteItem.text}"
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -597,14 +754,14 @@ export const SermonForm: React.FC<SermonFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 bg-red-500 rounded-lg border border-[#9a674a]/20 dark:border-gray-700 text-[#9a674a] dark:text-gray-300 hover:bg-[#9a674a]/10 dark:hover:bg-gray-800 transition-colors duration-200"
+            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
+            className="px-6 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#9a674a] dark:hover:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -615,267 +772,6 @@ export const SermonForm: React.FC<SermonFormProps> = ({
               <>
                 <Save size={16} />
                 Save
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </form>
-  );
-};
-
-export const OtherForm: React.FC<SermonFormProps> = ({
-  initialData,
-  onSave,
-  onCancel,
-}) => {
-  const { createPresentation, savePresentation } = usePresenterOperations();
-  const { isDarkMode } = useTheme();
-
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [message, setMessage] = useState((initialData as any)?.message || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState(
-    initialData?.backgroundImage || ""
-  );
-  const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
-
-  const [customImagesPath, setCustomImagesPath] = useState(
-    localStorage.getItem("evpresenterimagespath") || ""
-  );
-  const [availableImages, setAvailableImages] = useState<string[]>([]);
-
-  // Load custom images when path changes
-  useEffect(() => {
-    const loadCustomImages = async () => {
-      if (customImagesPath) {
-        try {
-          const customImages = await window.api.getImages(customImagesPath);
-          setAvailableImages(customImages);
-        } catch (error) {
-          console.error("Failed to load custom images:", error);
-        }
-      }
-    };
-
-    loadCustomImages();
-  }, [customImagesPath]);
-
-  const handleSelectImagesDirectory = async () => {
-    try {
-      const result = await window.api.selectDirectory();
-      if (typeof result === "string" && result) {
-        setCustomImagesPath(result);
-        localStorage.setItem("evpresenterimagespath", result);
-      }
-    } catch (error) {
-      console.error("Failed to select directory:", error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const presentationData = {
-        type: "other" as const,
-        title,
-        message,
-        slides: initialData?.slides || [],
-        backgroundImage,
-      };
-
-      if (initialData?.id) {
-        await savePresentation(initialData.id, presentationData);
-      } else {
-        await createPresentation(presentationData);
-      }
-
-      onSave();
-    } catch (error) {
-      console.error("Failed to save presentation:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const randomColors = useMemo(() => {
-    const generateRandomColor = () => {
-      return `rgba(${Math.floor(Math.random() * 255)},${Math.floor(
-        Math.random() * 255
-      )},${Math.floor(Math.random() * 255)},1)`;
-    };
-    return {
-      color1: generateRandomColor(),
-      color2: generateRandomColor(),
-      color3: generateRandomColor(),
-      color4: generateRandomColor(),
-    };
-  }, []);
-
-  return (
-    <form onSubmit={handleSubmit} className="h-[98%] max-w-3xl mx-auto">
-      <div
-        className="bg-[#faeed1] dark:bg-bgray/70 rounded-2xl shadow-xl border border-[#9a674a]/20 dark:border-gray-800 h-full flex flex-col"
-        style={{
-          borderWidth: 2,
-          borderStyle: "dashed",
-          borderColor: isDarkMode ? "purple" : "#9a674a",
-        }}
-      >
-        {/* Form Header */}
-        <div className="flex items-center p-6 pb-4 border-b border-[#9a674a]/20 dark:border-gray-800">
-          <div className="bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] p-3 rounded-xl text-white shadow-md mr-4">
-            <Film size={24} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-[#9a674a] dark:text-gray-100">
-              {initialData?.id ? "Edit Presentation" : "New Presentation"}
-            </h2>
-            <p className="text-sm text-[#9a674a]/70 dark:text-gray-400">
-              Fill in the details below
-            </p>
-          </div>
-        </div>
-
-        {/* Form Content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-6">
-          <div className="space-y-5">
-            {/* Title Input */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
-                Title
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="Enter presentation title"
-                className={halfInputClasses}
-              />
-            </div>
-
-            {/* Background Image Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-[#9a674a] mb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <ImageIcon size={16} className="mr-1" />
-                    <span>Background Image</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSelectImagesDirectory}
-                    className="flex items-center px-3 py-1.5 text-xs rounded-lg bg-[#9a674a]/10 text-[#9a674a] hover:bg-[#9a674a]/20 transition-colors"
-                  >
-                    <FolderUp size={14} className="mr-1.5" />
-                    Select Folder
-                  </button>
-                </div>
-              </label>
-
-              {/* Image Grid with Overlapping Cards */}
-              <div className="relative p-2">
-                <div className="flex overflow-x-auto no-scrollbar py-4 px-2">
-                  <div className="flex space-x-[-20px]">
-                    {availableImages.length > 0 ? (
-                      availableImages.map((img, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setBackgroundImage(img)}
-                          className={`relative w-24 h-16 rounded-lg overflow-hidden hover:translate-y-[-4px] transform transition-all duration-200 ${
-                            backgroundImage === img
-                              ? "ring-2 ring-[#9a674a] translate-y-[-4px] z-10"
-                              : "hover:z-10"
-                          }`}
-                          style={{
-                            boxShadow:
-                              backgroundImage === img
-                                ? "0 4px 12px rgba(154, 103, 74, 0.2)"
-                                : "0 2px 8px rgba(0, 0, 0, 0.1)",
-                          }}
-                        >
-                          <img
-                            src={img}
-                            alt={`Background ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {backgroundImage === img && (
-                            <div className="absolute inset-0 bg-[#9a674a]/10 border-2 border-[#9a674a]" />
-                          )}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-sm text-[#9a674a]/70 w-full">
-                        No images available. Select a folder with images.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Selected Image Preview */}
-              {backgroundImage && (
-                <div className="relative inline-block">
-                  <img
-                    src={backgroundImage}
-                    alt="Selected background"
-                    className="w-24 h-16 object-cover rounded-lg shadow-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setBackgroundImage("")}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >
-                    <XIcon size={12} />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Message Input */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
-                Message
-              </label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                placeholder="Enter presentation message"
-                rows={4}
-                className={`${inputClasses} min-h-[120px] resize-none`}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Form Footer */}
-        <div className="p-6 border-t border-[#9a674a]/20 dark:border-gray-800 flex justify-between">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-2 rounded-lg border-2 border-[#9a674a] dark:border-purple-500 text-[#9a674a] dark:text-purple-400 hover:bg-[#9a674a]/5 dark:hover:bg-purple-500/10 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] text-white hover:from-[#8b5a3c] hover:to-[#9a674a] transition-all flex items-center space-x-2"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                <span>Save</span>
               </>
             )}
           </button>

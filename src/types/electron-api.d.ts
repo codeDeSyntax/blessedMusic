@@ -25,6 +25,13 @@ interface ElectronAPI {
   onDisplayInfo: (callback: (info: DisplayInfo) => void) => () => void;
   getImages: (dirPath: string) => Promise<string[]>;
   focusMainWindow: () => Promise<{ success: boolean; error?: string }>;
+  openFileInDefaultApp: (
+    filePath: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  constructFilePath: (
+    basePath: string,
+    fileName: string
+  ) => Promise<{ success: boolean; path?: string; error?: string }>;
   // Add other API methods as needed
 }
 

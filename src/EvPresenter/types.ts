@@ -18,20 +18,11 @@ export type SermonPresentation = {
   scriptures: Scripture[];
   mainMessage?: string;
   preacher: string;
-  quote?: string; // Keep for backward compatibility
-  quotes?: Quote[]; // New quote structure
+  quotes?: Quote[]; // Quote structure
   date: string;
   createdAt: string;
   updatedAt: string;
+  backgroundImage?: string;
 };
 
-export type OtherPresentation = {
-  id: string;
-  type: "other";
-  title: string;
-  message: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type Presentation = SermonPresentation | OtherPresentation;
+export type Presentation = SermonPresentation;

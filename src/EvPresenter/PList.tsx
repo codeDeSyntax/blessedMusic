@@ -16,6 +16,7 @@ import {
   Clock,
   FolderEdit,
   Layers,
+  ExternalLink,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
@@ -44,7 +45,8 @@ const PresentationCard: React.FC<{
   onEdit: (presentation: PresentationType) => void;
   onDelete: (id: string) => void;
   onPresent: (presentation: PresentationType) => void;
-}> = ({ presentation, onSelect, onEdit, onDelete, onPresent }) => {
+  onOpenFile: (presentation: PresentationType) => void;
+}> = ({ presentation, onSelect, onEdit, onDelete, onPresent, onOpenFile }) => {
   const { isDarkMode } = useTheme();
   // Determine accent colors based on presentation type
   // const accentColor = presentation.type === "sermon" && isDarkMode ? "9a674a" : "8b5a3c";
@@ -73,7 +75,7 @@ const PresentationCard: React.FC<{
     <motion.div
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
-      className={`flex flex-col  rounded-lg shadow-lg hover:shadow-xl transition-all  duration-500 h-full bg-[#faeed1] dark:bg-ltgray border border-[#9a674a]/20 dark:border-gray-800`}
+      className={`group flex flex-col rounded-lg shadow-lg hover:shadow-xl transition-all duration-500 h-full bg-[#faeed1] dark:bg-ltgray border border-[#9a674a]/20 dark:border-gray-800`}
       style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264.888-.14 1.652-1.1 2.782.14 3.68.14 1.074 0 2.14-.156 3.204-.156 1.23 0 2.46.156 3.7.156 1.326 0 2.4-.156 3.7-.156' stroke='%23${
           isDarkMode ? "#555555" : "#9a674a"
@@ -104,31 +106,9 @@ const PresentationCard: React.FC<{
           </h3>
 
           {/* Type Badge */}
-          <div
-            className={`bg-yellow-100 dark:bg-stone-600  dark:bg-${
-              presentation.type === "sermon"
-                ? "indigo"
-                : presentation.type === "custom"
-                ? "green"
-                : "purple"
-            }-600 text-black dark:text-white px-3 py-1 rounded-full text-xs font-medium flex items-center`}
-          >
-            {presentation.type === "sermon" ? (
-              <>
-                <BookOpen size={12} className="mr-1" />
-                <span>Sermon</span>
-              </>
-            ) : presentation.type === "custom" ? (
-              <>
-                <Layers size={12} className="mr-1" />
-                <span>Custom</span>
-              </>
-            ) : (
-              <>
-                <Film size={12} className="mr-1" />
-                <span>Other</span>
-              </>
-            )}
+          <div className="bg-yellow-100 dark:bg-stone-600 text-black dark:text-white px-3 py-1 rounded-full text-xs font-medium flex items-center">
+            <BookOpen size={12} className="mr-1" />
+            <span>Sermon</span>
           </div>
         </div>
 
@@ -216,7 +196,7 @@ const PresentationCard: React.FC<{
 
         {/* Receipt Footer with Actions */}
         <div className="mt-auto pt-3 border-t border-[#9a674a]/30 dark:border-gray-700">
-          <div className="flex items-center">
+          <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -227,8 +207,22 @@ const PresentationCard: React.FC<{
               className={`flex items-center justify-center h-10 w-10 rounded-full bg-transparent dark:text-white text-[#9a674a] dark:text-${
                 presentation.type === "sermon" ? "indigo" : "purple"
               }-400 hover:bg-[#9a674a]/20 dark:hover:bg-stone-700 transition-colors`}
+              title="Edit presentation"
             >
               <Pencil size={16} />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenFile(presentation);
+              }}
+              className="flex items-center justify-center h-10 w-10 rounded-full bg-transparent text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+              title="Open file in notepad"
+            >
+              <ExternalLink size={16} />
             </motion.button>
 
             <motion.button
@@ -239,6 +233,7 @@ const PresentationCard: React.FC<{
                 onPresent(presentation);
               }}
               className={`flex items-center justify-center h-10 w-10 rounded-full bg-transparent dark:text-[#faeed1] text-black shadow-md hover:shadow-lg transition-all duration-300`}
+              title="Start presentation"
             >
               <PresentationIcon size={16} />
             </motion.button>
@@ -251,6 +246,7 @@ const PresentationCard: React.FC<{
                 onDelete(presentation.id);
               }}
               className="flex items-center justify-center h-10 w-10 rounded-full bg-transparent text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+              title="Delete presentation"
             >
               <Trash2 size={16} />
             </motion.button>
@@ -274,14 +270,13 @@ const PresentationCard: React.FC<{
 };
 
 export const PresentationList: React.FC<{
-  type: "sermon" | "other" | "custom";
+  type: "sermon";
   onBack: () => void;
   onSelect: (presentation: PresentationType) => void;
   onEdit: (presentation: PresentationType) => void;
   onNew: () => void;
   onPresent: (presentation: PresentationType) => void;
-  onCategoryChange: (category: "sermon" | "other" | "custom") => void;
-  onNewCustom?: () => void;
+  onCategoryChange: (category: "sermon") => void;
 }> = ({
   type,
   onBack,
@@ -290,7 +285,6 @@ export const PresentationList: React.FC<{
   onNew,
   onPresent,
   onCategoryChange,
-  onNewCustom,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const {
@@ -358,10 +352,46 @@ export const PresentationList: React.FC<{
       alert("Please select a path first to save presentations.");
       return;
     }
-    if (type === "custom" && onNewCustom) {
-      onNewCustom();
-    } else {
-      onNew();
+    onNew();
+  };
+
+  const handleOpenFile = async (presentation: PresentationType) => {
+    try {
+      const selectedPath = localStorage.getItem("evpresenterfilespath") || "";
+      if (!selectedPath) {
+        alert("No file path is configured. Please select a directory first.");
+        return;
+      }
+
+      // Match the server-side filename construction exactly
+      // Remove invalid filename characters, replace spaces with underscores, convert to lowercase
+      const sanitizedTitle = presentation.title
+        .replace(/[/\\?%*:|"<>]/g, "")
+        .replace(/\s+/g, "_")
+        .toLowerCase()
+        .substring(0, 50); // Truncate to match server logic
+
+      const fileName = `${sanitizedTitle}_${presentation.id}.txt`;
+
+      // Use the proper path construction API
+      const pathResult = await window.api.constructFilePath(
+        selectedPath,
+        fileName
+      );
+      if (!pathResult.success || !pathResult.path) {
+        alert(`Failed to construct file path: ${pathResult.error}`);
+        return;
+      }
+
+      const result = await window.api.openFileInDefaultApp(pathResult.path);
+
+      if (!result.success) {
+        console.error("Failed to open file:", result.error);
+        alert(`Failed to open file: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error opening file:", error);
+      alert("Failed to open the file. Please make sure the file exists.");
     }
   };
 
@@ -380,13 +410,7 @@ export const PresentationList: React.FC<{
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <h1 className="text-2xl flex items-center justify-cen font-bold text-[#9a674a] dark:bg-gradient-to-r dark:from-[#8b5a3c] dark:to-purple-600 dark:bg-clip-text dark:text-transparent">
-                <span>
-                  {type === "sermon"
-                    ? "Sermons"
-                    : type === "custom"
-                    ? "Custom Presentations"
-                    : "Other Presentations"}
-                </span>
+                <span>Sermons</span>
                 {selectedPath ? (
                   <span className="text-sm text-[#9a674a]/70 dark:text-gray-400 ml-2">
                     {selectedPath}
@@ -412,43 +436,6 @@ export const PresentationList: React.FC<{
 
             {/* Search and Controls */}
             <div className="flex w-full md:w-auto gap-3">
-              {/* Category Toggle */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onCategoryChange("sermon")}
-                  className={`px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                    type === "sermon"
-                      ? "bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] shadow-lg"
-                      : "bg-[#9a674a]/10 dark:bg-stone-800 text-[#9a674a] dark:text-gray-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <BookOpen size={18} />
-                  {/* <span>Sermons</span> */}
-                </button>
-                <button
-                  onClick={() => onCategoryChange("other")}
-                  className={`px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                    type === "other"
-                      ? "bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] shadow-lg"
-                      : "bg-[#9a674a]/10 dark:bg-stone-700 text-[#9a674a] dark:text-gray-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <Film size={18} />
-                  {/* <span>Other</span> */}
-                </button>
-                <button
-                  onClick={() => onCategoryChange("custom")}
-                  className={`px-4 py-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${
-                    type === "custom"
-                      ? "bg-[#9a674a] dark:bg-stone-800 text-[#faeed1] shadow-lg"
-                      : "bg-[#9a674a]/10 dark:bg-stone-700 text-[#9a674a] dark:text-gray-400 hover:bg-[#9a674a]/20 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <Layers size={18} />
-                  {/* <span>Custom</span> */}
-                </button>
-              </div>
-
               {/* Search Bar */}
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -461,13 +448,7 @@ export const PresentationList: React.FC<{
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Search ${
-                    type === "sermon"
-                      ? "sermons"
-                      : type === "custom"
-                      ? "custom presentations"
-                      : "presentations"
-                  }...`}
+                  placeholder="Search sermons..."
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-[#9a674a]/10 dark:bg-stone-800/50 text-[#9a674a] dark:text-gray-100 placeholder-[#9a674a]/50 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9a674a]/30 dark:focus:ring-primary/50 transition-all"
                 />
               </div>
@@ -561,6 +542,7 @@ export const PresentationList: React.FC<{
                   onEdit={onEdit}
                   onDelete={handleDelete}
                   onPresent={onPresent}
+                  onOpenFile={handleOpenFile}
                 />
               ))}
             </div>

@@ -97,6 +97,10 @@ contextBridge.exposeInMainWorld("api", {
   sendToBiblePresentation: (data: { type: string; data: any }) =>
     ipcRenderer.invoke("send-to-bible-presentation", data),
   focusMainWindow: () => ipcRenderer.invoke("focus-main-window"),
+  openFileInDefaultApp: (filePath: string) =>
+    ipcRenderer.invoke("open-file-in-default-app", filePath),
+  constructFilePath: (basePath: string, fileName: string) =>
+    ipcRenderer.invoke("construct-file-path", basePath, fileName),
 });
 
 // --------- Preload scripts loading ---------
