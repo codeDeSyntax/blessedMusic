@@ -28,6 +28,18 @@ const PresentationMasterPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentPresentation, selectPresentation } = usePresenterOperations();
 
+  // Set currentScreen to mpresenter when component mounts and when in presentation mode
+  useEffect(() => {
+    dispatch(setCurrentScreen("mpresenter"));
+  }, [dispatch]);
+
+  // Ensure currentScreen stays as mpresenter when in presentation mode
+  useEffect(() => {
+    if (viewState.type === "mpresenter") {
+      dispatch(setCurrentScreen("mpresenter"));
+    }
+  }, [viewState.type, dispatch]);
+
   // Handle back navigation based on current view state
   const handleBack = () => {
     switch (viewState.type) {

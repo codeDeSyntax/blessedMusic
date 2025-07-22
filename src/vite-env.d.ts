@@ -59,5 +59,48 @@ interface Window {
       basePath: string,
       fileName: string
     ) => Promise<{ success: boolean; path?: string; error?: string }>;
+    getDisplayInfo: () => Promise<{
+      success: boolean;
+      data?: any;
+      error?: string;
+    }>;
+    logToSecretLogger: (logData: {
+      application: "SONGS" | "BIBLE" | "EVPRESENTER" | "SYSTEM";
+      category:
+        | "INFO"
+        | "WARNING"
+        | "ERROR"
+        | "ACTION"
+        | "PROJECTION"
+        | "FILE_OPERATION";
+      message: string;
+      details?: any;
+    }) => Promise<{ success: boolean; error?: string }>;
+    getSecretLogs: () => Promise<{
+      success: boolean;
+      logs?: Array<{
+        id: string;
+        timestamp: number;
+        date: string;
+        application: "SONGS" | "BIBLE" | "EVPRESENTER" | "SYSTEM";
+        category:
+          | "INFO"
+          | "WARNING"
+          | "ERROR"
+          | "ACTION"
+          | "PROJECTION"
+          | "FILE_OPERATION";
+        message: string;
+        details?: string;
+        age: string;
+      }>;
+      error?: string;
+    }>;
+    clearSecretLogs: () => Promise<{ success: boolean; error?: string }>;
+    exportSecretLogs: () => Promise<{
+      success: boolean;
+      filePath?: string;
+      error?: string;
+    }>;
   };
 }

@@ -17,7 +17,9 @@ import TitleBar from "../shared/TitleBar";
 import CustomEditor from "./SongCreator";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
-import { useAppDispatch } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
+// import { setCurrentScreen } from "@/store/slices/appSlice";
+import { setSongRepo } from "@/store/slices/songSlice";
 import { setCurrentScreen } from "@/store/slices/appSlice";
 
 interface CreateSong {
@@ -60,31 +62,24 @@ const Notification = ({
 };
 
 export default function CreateSong() {
+  const { selectedSong, loadSongs, changeDirectory } = useSongOperations();
+  const dispatch = useAppDispatch();
+  const theme = useAppSelector((state) => state.app.theme);
+  const songRepo = useAppSelector((state) => state.songs.songRepo); // Use Redux state instead of localStorage
+
   const [formData, setFormData] = useState({
     title: "",
     message: "",
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const { songs, selectedSong } = useSongOperations();
-  const dispatch = useAppDispatch();
-
-  // Local state for song repo
-  const [songRepo, setSongRepo] = useState(
-    localStorage.getItem("songRepoDirectory") || ""
-  );
   const [notification, setNotification] = useState<{
     show: boolean;
     message: string;
     type: "success" | "error" | "warning";
   }>({ show: false, message: "", type: "success" });
 
-  useEffect(() => {
-    const savedDirectory = localStorage.getItem("songRepoDirectory");
-    if (savedDirectory) {
-      setSongRepo(savedDirectory);
-    }
-  }, []);
+  // Redux automatically handles songRepo from localStorage, no useEffect needed
 
   useEffect(() => {
     if (notification.show) {
@@ -152,8 +147,7 @@ export default function CreateSong() {
   const selectDirectory = async () => {
     const path = await window.api.selectDirectory();
     if (typeof path === "string") {
-      setSongRepo(path);
-      localStorage.setItem("songRepoDirectory", path);
+      dispatch(setSongRepo(path)); // Use Redux action instead of local state
     }
   };
 

@@ -344,7 +344,7 @@ const SettingsModal: React.FC = () => {
                           </button>
                         </div>
                         {customImagesPath && (
-                          <div className="p-2 bg-white/10 dark:bg-black/20 rounded-lg backdrop-blur-sm">
+                          <div className="px-2 bg-green-500/10 dark:bg-green-500/20 rounded-lg backdrop-blur-sm">
                             <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                               {customImagesPath}
                             </p>
@@ -403,7 +403,7 @@ const SettingsModal: React.FC = () => {
               {verseByVerseMode && imageBackgroundMode ? (
                 <div className="flex-1 overflow-hidden">
                   <div className="h-full overflow-y-auto glass-scroll pr-2">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-2 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3   gap-2 sm:gap-3">
                       {bibleBgs.map((bg, index) => (
                         <div
                           key={index}

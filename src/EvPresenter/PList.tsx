@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
-import { useTheme } from "@/Provider/Theme";
+import { useEvPresenterTheme } from "@/Provider/EvPresenterTheme";
 
 // Set of background images we'll use randomly for the cards
 const backgroundImages = [
@@ -47,7 +47,7 @@ const PresentationCard: React.FC<{
   onPresent: (presentation: PresentationType) => void;
   onOpenFile: (presentation: PresentationType) => void;
 }> = ({ presentation, onSelect, onEdit, onDelete, onPresent, onOpenFile }) => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useEvPresenterTheme();
   // Determine accent colors based on presentation type
   // const accentColor = presentation.type === "sermon" && isDarkMode ? "9a674a" : "8b5a3c";
   const backgroundImage = isDarkMode ? "./wood10.jpg" : "./wood11.jpg";
@@ -294,7 +294,7 @@ export const PresentationList: React.FC<{
     isLoading,
     error,
   } = usePresenterOperations();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useEvPresenterTheme();
 
   // Local state for path management
   const [selectedPath, setSelectedPath] = useState(

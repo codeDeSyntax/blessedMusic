@@ -6,6 +6,7 @@ import SettingsModal from "./components/SettingsModal";
 import ShortcutsModal from "./components/ShortcutsModal";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
+import { useBibleAutoSync } from "@/features/bible/hooks/useBibleAutoSync";
 import {
   TRANSLATIONS,
   setActiveFeature,
@@ -20,6 +21,10 @@ const Biblelayout: React.FC = () => {
   );
   const isFullScreen = useAppSelector((state) => state.bible.isFullScreen);
   const { initializeBibleData } = useBibleOperations();
+
+  // Auto-sync Bible navigation with projection window
+  useBibleAutoSync();
+
   const initializationRef = useRef(false);
 
   // Initialize Bible data

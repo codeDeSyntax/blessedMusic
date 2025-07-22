@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation, Scripture, MessagePoint, Quote } from "@/types";
-import { useTheme } from "@/Provider/Theme";
+import { useEvPresenterTheme } from "@/Provider/EvPresenterTheme";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
 interface SermonFormProps {
@@ -44,7 +44,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
 
   // Local path management
   const selectedPath = localStorage.getItem("evpresenterfilespath") || "";
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useEvPresenterTheme();
 
   const [title, setTitle] = useState(initialData?.title || "");
   const [preacher, setPreacher] = useState(

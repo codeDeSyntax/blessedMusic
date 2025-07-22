@@ -13,6 +13,8 @@ import FloatingActionBar from "./components/FloatingActionBar";
 import ScriptureBlockView from "./components/ScriptureBlockView";
 import ScriptureParagraphView from "./components/ScriptureParagraphView";
 import VerseByVerseView from "./components/VerseByVerseView";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle, AlertCircle } from "lucide-react";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 import {
   setCurrentBook,
@@ -32,9 +34,45 @@ interface Book {
   chapters: { chapter: number }[];
 }
 
+// Notification component for Bible projection feedback
+const BibleNotification = ({
+  message,
+  type = "error",
+}: {
+  message: string;
+  type?: "success" | "error" | "warning";
+}) => {
+  const bgColor = {
+    success: "bg-green-500",
+    error: "bg-red-500",
+    warning: "bg-amber-500",
+  }[type];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -50, x: "-50%" }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className="fixed top-8 left-1/2 z-50"
+    >
+      <div
+        className={`flex items-center gap-2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg`}
+      >
+        {type === "success" ? (
+          <CheckCircle className="w-5 h-5" />
+        ) : (
+          <AlertCircle className="w-5 h-5" />
+        )}
+        <span className="font-medium">{message}</span>
+      </div>
+    </motion.div>
+  );
+};
+
 const ScriptureContent: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { getCurrentChapterVerses, getBookChapterCount } = useBibleOperations();
+  const { getCurrentChapterVerses, getBookChapterCount, initializeBibleData } =
+    useBibleOperations();
 
   // Select state from Redux
   const currentBook = useAppSelector((state) => state.bible.currentBook);
@@ -69,6 +107,13 @@ const ScriptureContent: React.FC = () => {
   const [isBookDropdownOpen, setIsBookDropdownOpen] = useState(false);
   const [isChapterDropdownOpen, setIsChapterDropdownOpen] = useState(false);
   const [isVerseDropdownOpen, setIsVerseDropdownOpen] = useState(false);
+
+  // State for projection notifications
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error" | "warning";
+  }>({ show: false, message: "", type: "success" });
 
   // State for verse tracking and interaction
   const [visibleVerses, setVisibleVerses] = useState<number[]>([]);
@@ -234,6 +279,23 @@ const ScriptureContent: React.FC = () => {
     }
   }, [isAutoScrolling, startAutoScroll, stopAutoScroll]);
 
+  // Notification functions and auto-hide timer
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification((prev) => ({ ...prev, show: false }));
+      }, 4000); // Show for 4 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
+
+  const showNotification = (
+    message: string,
+    type: "success" | "error" | "warning"
+  ) => {
+    setNotification({ show: true, message, type });
+  };
+
   // Handle user scroll interaction
   useEffect(() => {
     const handleUserScroll = (e: Event) => {
@@ -317,47 +379,152 @@ const ScriptureContent: React.FC = () => {
   }, []);
 
   // Function to open Bible presentation window directly
-  const handleOpenBiblePresentation = () => {
-    // Prepare presentation data
-    if (currentBook && currentChapter && bibleData && currentTranslation) {
-      const translationData = bibleData[currentTranslation];
-      if (translationData && translationData.books) {
-        const bookData = translationData.books.find(
-          (book: any) => book.name === currentBook
-        );
+  const handleOpenBiblePresentation = async () => {
+    console.log("📺 Attempting to open Bible presentation...");
 
-        if (bookData) {
-          const chapterData = bookData.chapters?.find(
-            (ch: any) => ch.chapter === currentChapter
-          );
+    // Enhanced logging for debugging
+    console.log("📚 Bible presentation state check:", {
+      currentBook,
+      currentChapter,
+      currentTranslation,
+      hasBibleData: !!bibleData,
+      bibleDataKeys: bibleData ? Object.keys(bibleData) : [],
+    });
 
-          if (chapterData?.verses) {
-            const presentationData = {
-              book: currentBook,
-              chapter: currentChapter,
-              verses: chapterData.verses,
-              translation: currentTranslation,
-              selectedVerse: currentVerse || undefined,
-            };
-
-            // Default settings
-            const settings = {
-              fontSize: 6,
-              textColor: "#ffffff",
-              backgroundColor: "#1e293b",
-              versesPerSlide: 1,
-            };
-
-            // Open external presentation window directly
-            if (typeof window !== "undefined" && window.api) {
-              window.api.createBiblePresentationWindow({
-                presentationData,
-                settings,
-              });
-            }
-          }
-        }
+    // If Bible data is not loaded, try to initialize it first
+    if (!bibleData || Object.keys(bibleData).length === 0) {
+      console.log("🔄 Bible data not loaded, attempting to initialize...");
+      showNotification("Loading Bible data...", "warning");
+      try {
+        await initializeBibleData();
+        // Wait a bit for the data to load
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error("❌ Failed to initialize Bible data:", error);
+        showNotification("Failed to load Bible data", "error");
+        return;
       }
+    }
+
+    // Prepare presentation data
+    if (!currentBook) {
+      console.error("❌ Cannot open presentation: No current book selected");
+      showNotification("Please select a book first", "error");
+      return;
+    }
+
+    if (!currentChapter) {
+      console.error("❌ Cannot open presentation: No current chapter selected");
+      showNotification("Please select a chapter first", "error");
+      return;
+    }
+
+    if (!bibleData) {
+      console.error("❌ Cannot open presentation: Bible data not loaded");
+      showNotification("Bible data not available. Please try again.", "error");
+      return;
+    }
+
+    if (!currentTranslation) {
+      console.error(
+        "❌ Cannot open presentation: No current translation selected"
+      );
+      showNotification("Please select a Bible translation first", "error");
+      return;
+    }
+
+    const translationData = bibleData[currentTranslation];
+    if (!translationData) {
+      console.error(
+        `❌ Cannot open presentation: Translation data not found for ${currentTranslation}`
+      );
+      showNotification(
+        `Translation '${currentTranslation}' not found`,
+        "error"
+      );
+      return;
+    }
+
+    if (!translationData.books) {
+      console.error(
+        `❌ Cannot open presentation: Books data not found for ${currentTranslation}`
+      );
+      showNotification("Translation data incomplete", "error");
+      return;
+    }
+
+    const bookData = translationData.books.find(
+      (book: any) => book.name === currentBook
+    );
+
+    if (!bookData) {
+      console.error(
+        `❌ Cannot open presentation: Book data not found for ${currentBook}`
+      );
+      showNotification(
+        `Book '${currentBook}' not found in ${currentTranslation}`,
+        "error"
+      );
+      return;
+    }
+
+    const chapterData = bookData.chapters?.find(
+      (ch: any) => ch.chapter === currentChapter
+    );
+
+    if (!chapterData?.verses) {
+      console.error(
+        `❌ Cannot open presentation: Chapter data or verses not found for ${currentBook} ${currentChapter}`
+      );
+      showNotification(
+        `Chapter ${currentChapter} not found in ${currentBook}`,
+        "error"
+      );
+      return;
+    }
+
+    const presentationData = {
+      book: currentBook,
+      chapter: currentChapter,
+      verses: chapterData.verses,
+      translation: currentTranslation,
+      selectedVerse: currentVerse || undefined,
+    };
+
+    // Default settings
+    const settings = {
+      fontSize: 6,
+      textColor: "#ffffff",
+      backgroundColor: "#1e293b",
+      versesPerSlide: 1,
+    };
+
+    console.log("✅ Bible presentation data prepared:", {
+      book: presentationData.book,
+      chapter: presentationData.chapter,
+      translation: presentationData.translation,
+      verseCount: presentationData.verses.length,
+      selectedVerse: presentationData.selectedVerse,
+    });
+
+    // Open external presentation window directly
+    if (typeof window !== "undefined" && window.api) {
+      try {
+        showNotification(
+          `Projecting ${currentBook} ${currentChapter}`,
+          "success"
+        );
+        window.api.createBiblePresentationWindow({
+          presentationData,
+          settings,
+        });
+        console.log("🚀 Bible presentation window creation request sent");
+      } catch (error) {
+        console.error("❌ Failed to create Bible presentation window:", error);
+        showNotification("Failed to open projection window", "error");
+      }
+    } else {
+      console.error("❌ Cannot open presentation: Window API not available");
     }
   };
 
@@ -412,8 +579,8 @@ const ScriptureContent: React.FC = () => {
   const chapterCount = getBookChapterCount(currentBook);
   const [selectedBg, setSelectedBg] = useState<string | null>(null);
 
-  // Update visible verses logic
-  const updateVisibleVerses = () => {
+  // Update visible verses logic with throttling to prevent excessive renders
+  const updateVisibleVerses = useCallback(() => {
     if (!contentRef.current) return;
 
     const container = contentRef.current;
@@ -439,9 +606,12 @@ const ScriptureContent: React.FC = () => {
       visibleVerseNumbers.length > 0 &&
       visibleVerseNumbers[0] !== selectedVerse
     ) {
-      setSelectedVerse(visibleVerseNumbers[0]);
+      const newVerse = visibleVerseNumbers[0];
+      setSelectedVerse(newVerse);
+      // Also update Redux state so auto-sync can detect the change and update projection
+      dispatch(setCurrentVerse(newVerse));
     }
-  };
+  }, [selectedVerse, dispatch]);
 
   // set versetextcolor on theme change
   useEffect(() => {
@@ -452,25 +622,39 @@ const ScriptureContent: React.FC = () => {
     }
   }, [isDarkMode, dispatch]);
 
-  // Scroll event listener
+  // Throttling ref
+  const tickingRef = useRef(false);
+
+  // Throttled scroll handler to prevent excessive renders
+  const throttledUpdateVisibleVerses = useCallback(() => {
+    if (!tickingRef.current) {
+      requestAnimationFrame(() => {
+        updateVisibleVerses();
+        tickingRef.current = false;
+      });
+      tickingRef.current = true;
+    }
+  }, [updateVisibleVerses]);
+
+  // Scroll event listener with throttling
   useEffect(() => {
     const container = contentRef.current;
     if (container) {
-      container.addEventListener("scroll", updateVisibleVerses);
+      container.addEventListener("scroll", throttledUpdateVisibleVerses);
       return () => {
-        container.removeEventListener("scroll", updateVisibleVerses);
+        container.removeEventListener("scroll", throttledUpdateVisibleVerses);
       };
     }
-  }, [contentRef.current]);
+  }, [throttledUpdateVisibleVerses]);
 
-  // Reset when chapter changes
+  // Reset when book or chapter changes (but NOT when verse changes from scrolling)
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
     setSelectedVerse(null);
     setIsVerseDropdownOpen(false);
-  }, [currentBook, currentChapter, currentVerse]);
+  }, [currentBook, currentChapter]);
 
   // Send live updates to presentation window when navigation changes
   useEffect(() => {
@@ -710,33 +894,50 @@ const ScriptureContent: React.FC = () => {
     }, 100);
   };
 
-  const handleVerseSelect = (verse: number) => {
-    setSelectedVerse(verse);
-    setIsVerseDropdownOpen(false);
-    // Also update currentVerse for external projection sync
-    dispatch(setCurrentVerse(verse));
+  const handleVerseSelect = useCallback(
+    (verse: number) => {
+      // Only update if verse actually changed
+      if (selectedVerse !== verse) {
+        setSelectedVerse(verse);
+        dispatch(setCurrentVerse(verse));
 
-    // Send immediate update to presentation
-    setTimeout(() => {
-      sendLiveUpdateToPresentation();
-    }, 50);
+        // Send immediate update to presentation (debounced by auto-sync hook)
+        setTimeout(() => {
+          sendLiveUpdateToPresentation();
+        }, 50);
 
-    if (verseRefs.current[verse]) {
-      verseRefs.current[verse]?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-    dispatch(addToHistory(`${currentBook} ${currentChapter}:${verse}`));
-    addToHistory(`${currentBook} ${currentChapter}:${verse}`);
-  };
+        if (verseRefs.current[verse]) {
+          verseRefs.current[verse]?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+        dispatch(addToHistory(`${currentBook} ${currentChapter}:${verse}`));
+        addToHistory(`${currentBook} ${currentChapter}:${verse}`);
+      }
+      setIsVerseDropdownOpen(false);
+    },
+    [
+      selectedVerse,
+      dispatch,
+      currentBook,
+      currentChapter,
+      sendLiveUpdateToPresentation,
+      addToHistory,
+    ]
+  );
 
   // Handler for verse clicks to set current verse
-  const handleVerseClick = (verse: number) => {
-    // Update both selectedVerse and currentVerse for consistency
-    setSelectedVerse(verse);
-    dispatch(setCurrentVerse(verse));
-  };
+  const handleVerseClick = useCallback(
+    (verse: number) => {
+      // Only update if verse actually changed to prevent unnecessary renders
+      if (selectedVerse !== verse) {
+        setSelectedVerse(verse);
+        dispatch(setCurrentVerse(verse));
+      }
+    },
+    [selectedVerse, dispatch]
+  );
 
   // Get chapters and verses
   const getChapters = () => {
@@ -898,6 +1099,16 @@ const ScriptureContent: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Bible projection notifications */}
+      <AnimatePresence>
+        {notification.show && (
+          <BibleNotification
+            message={notification.message}
+            type={notification.type}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Language Toggler - Fixed Position */}
       <div className="fixed bottom-6 right-6 z-50">

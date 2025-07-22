@@ -145,24 +145,97 @@ const BlessedMusic = () => {
   // Available shortcuts:
   // - Delete: Delete selected song (with confirmation)
   // - Enter: Present selected song
-  // - E: Edit selected song (goes to edit screen)
+  // - Ctrl+E: Edit selected song (goes to edit screen)
   // - Escape: Deselect current song
+  // - Arrow Up/Down: Navigate through songs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent shortcuts when user is typing in input fields
+      const target = e.target as HTMLElement;
+
+      // More comprehensive input detection
+      const isInputField =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.contentEditable === "true" ||
+        target.getAttribute("contenteditable") === "true" ||
+        target.closest("input") !== null ||
+        target.closest("textarea") !== null ||
+        target.closest('[contenteditable="true"]') !== null ||
+        // Check for common input wrapper classes
+        target.closest(".ant-input") !== null ||
+        target.closest('[role="textbox"]') !== null;
+
+      // Additional check: if the target has focus and can receive text input
+      const hasFocus = document.activeElement === target;
+      const isFormElement = target.matches(
+        'input, textarea, select, [contenteditable="true"]'
+      );
+
+      // Skip keyboard shortcuts if user is typing in an input field
+      if (isInputField || (hasFocus && isFormElement)) {
+        console.log(
+          "Skipping keyboard shortcut - user is typing in input field:",
+          target
+        );
+        return;
+      }
+
+      // Get current songs list based on active tab
+      const currentSongs = activeTab === "favorites" ? favorites : filteredSongs;
+      
+      // Arrow key navigation
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault(); // Prevent default scrolling behavior
+        
+        if (currentSongs.length === 0) return;
+        
+        let newIndex = 0;
+        
+        if (selectedSong) {
+          // Find current selected song index
+          const currentIndex = currentSongs.findIndex(song => song.id === selectedSong.id);
+          
+          if (e.key === "ArrowDown") {
+            // Move to next song (with wrap around)
+            newIndex = currentIndex >= 0 && currentIndex < currentSongs.length - 1 
+              ? currentIndex + 1 
+              : 0; // Wrap to first song
+          } else if (e.key === "ArrowUp") {
+            // Move to previous song (with wrap around)
+            newIndex = currentIndex > 0 
+              ? currentIndex - 1 
+              : currentSongs.length - 1; // Wrap to last song
+          }
+        } else {
+          // No song selected, select first song
+          newIndex = 0;
+        }
+        
+        // Select the new song
+        if (currentSongs[newIndex]) {
+          selectSong(currentSongs[newIndex]);
+        }
+        return;
+      }
+
+      // Only trigger edit shortcut with Ctrl+E, not just 'e'
+      if (e.key === "e" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); // Prevent any default behavior
+        if (selectedSong) {
+          goToEdit();
+        } else {
+          alert("Please select a song first to edit it.");
+        }
+        return;
+      }
+
       if (e.key === "Delete" && selectedSong) {
         showDeleteConfirmation();
       }
       // RESTORED: Enter key to present selected song
       if (e.key === "Enter" && selectedSong) {
         presentSong(selectedSong);
-      }
-      // Edit shortcut: 'e' key to go to edit screen
-      if (e.key === "e" || e.key === "E") {
-        if (selectedSong) {
-          goToEdit();
-        } else {
-          alert("Please select a song first to edit it.");
-        }
       }
       // Additional shortcuts
       if (e.key === "Escape") {
@@ -177,6 +250,10 @@ const BlessedMusic = () => {
     presentSong,
     deselectSong,
     goToEdit,
+    selectSong,
+    activeTab,
+    favorites,
+    filteredSongs,
   ]);
 
   const handleSongClick = (song: Song) => {
@@ -285,6 +362,7 @@ const BlessedMusic = () => {
                             onSingleClick={handleSongClick}
                             onDoubleClick={handleSongDoubleClick}
                             containerHeight={window.innerHeight * 0.7}
+                            selectedSong={selectedSong}
                           />
                         </div>
                       ))}

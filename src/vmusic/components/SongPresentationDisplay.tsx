@@ -159,12 +159,26 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
         return [{ type: "Song", content: ["No lyrics found"] }];
       }
 
+      // Helper function to detect chorus patterns (case-insensitive)
+      const isChorusPattern = (text: string): boolean => {
+        const cleanText = text.trim().toLowerCase();
+        // Match various chorus patterns:
+        // - "chorus", "chorus:", "chorus 1", etc.
+        // - "refrain", "refrain:", etc.
+        // - Any text containing "chorus" or "refrain"
+        return (
+          /^(chorus|refrain|hook)(\s*\d+)?\s*:?\s*$/i.test(cleanText) ||
+          /chorus|refrain|hook/i.test(cleanText)
+        );
+      };
+
       paragraphs.forEach((p, index) => {
         const text = p.textContent?.trim() || "";
-        const verseMatch = text.match(/^Verse (\d+)$/);
-        const isChorus = text === "Chorus";
+        const verseMatch = text.match(/^Verse (\d+)$/i); // Case insensitive verse matching
+        const isChorus = isChorusPattern(text);
 
         if (verseMatch) {
+          // Save previous section if it exists
           if (currentType && currentContent.length > 0) {
             sections.push({
               type: currentType,
@@ -176,6 +190,7 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
           currentNumber = parseInt(verseMatch[1]);
           currentContent = [];
         } else if (isChorus) {
+          // Save previous section if it exists
           if (currentType && currentContent.length > 0) {
             sections.push({
               type: currentType,
@@ -187,9 +202,14 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
           currentNumber = null;
           currentContent = [];
         } else if (text && !verseMatch && !isChorus) {
+          // If we don't have a current type, treat as generic song content
+          if (!currentType) {
+            currentType = "Song";
+          }
           currentContent.push(text);
         }
 
+        // Handle the last section
         if (index === paragraphs.length - 1 && currentContent.length > 0) {
           sections.push({
             type: currentType!,
@@ -212,7 +232,17 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
   const createDisplaySequence = useCallback(
     (sections: SongSection[]): SongSection[] => {
       const sequence: SongSection[] = [];
-      const firstChorus = sections.find((section) => section.type === "Chorus");
+
+      // Find first chorus using flexible pattern matching
+      const firstChorus = sections.find((section) => {
+        const sectionType = section.type.toLowerCase();
+        return (
+          sectionType === "chorus" ||
+          sectionType.includes("chorus") ||
+          sectionType.includes("refrain") ||
+          sectionType.includes("hook")
+        );
+      });
 
       if (!firstChorus) {
         return [...sections];
@@ -221,12 +251,19 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
       sections.forEach((section, index) => {
         sequence.push(section);
 
-        if (section.type === "Verse" && firstChorus) {
-          const nextSectionIsChorus =
-            index + 1 < sections.length &&
-            sections[index + 1].type === "Chorus";
+        // Check if current section is a verse
+        if (section.type.toLowerCase() === "verse") {
+          // Check if next section is already a chorus
+          const nextSection = sections[index + 1];
+          const nextIsChorus =
+            nextSection &&
+            (nextSection.type.toLowerCase() === "chorus" ||
+              nextSection.type.toLowerCase().includes("chorus") ||
+              nextSection.type.toLowerCase().includes("refrain") ||
+              nextSection.type.toLowerCase().includes("hook"));
 
-          if (!nextSectionIsChorus) {
+          // If next section is not a chorus, add a chorus repeat
+          if (!nextIsChorus && firstChorus) {
             const chorusRepeat = {
               ...firstChorus,
               isRepeating: true,

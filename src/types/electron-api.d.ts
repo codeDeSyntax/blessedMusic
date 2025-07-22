@@ -8,6 +8,26 @@ interface DisplayInfo {
   };
 }
 
+interface DetailedDisplayInfo {
+  totalDisplays: number;
+  primaryDisplay: {
+    id: number;
+    bounds: { x: number; y: number; width: number; height: number };
+    workArea: { x: number; y: number; width: number; height: number };
+    scaleFactor: number;
+    internal: boolean;
+  };
+  allDisplays: Array<{
+    id: number;
+    bounds: { x: number; y: number; width: number; height: number };
+    workArea: { x: number; y: number; width: number; height: number };
+    scaleFactor: number;
+    rotation: number;
+    internal: boolean;
+    isPrimary: boolean;
+  }>;
+}
+
 interface ElectronAPI {
   minimizeApp: () => void;
   minimizeProjection: () => void;
@@ -32,6 +52,11 @@ interface ElectronAPI {
     basePath: string,
     fileName: string
   ) => Promise<{ success: boolean; path?: string; error?: string }>;
+  getDisplayInfo: () => Promise<{
+    success: boolean;
+    data?: DetailedDisplayInfo;
+    error?: string;
+  }>;
   // Add other API methods as needed
 }
 
@@ -41,4 +66,4 @@ declare global {
   }
 }
 
-export { DisplayInfo, ElectronAPI };
+export { DisplayInfo, DetailedDisplayInfo, ElectronAPI };

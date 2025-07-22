@@ -106,6 +106,7 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
 
   // Projection state management
   const { isProjectionActive, closeProjection } = useBibleProjectionState();
+  const [isProjectionLoading, setIsProjectionLoading] = useState(false);
 
   const [isVisible, setIsVisible] = useState(false);
   const [bookSearchQuery, setBookSearchQuery] = useState("");
@@ -125,6 +126,21 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const chapterSearchInputRef = useRef<HTMLInputElement>(null);
   const verseSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle projection with loading state
+  const handleOpenPresentationWithLoading = async () => {
+    if (!onOpenPresentation || isProjectionLoading) return;
+
+    setIsProjectionLoading(true);
+    try {
+      await onOpenPresentation();
+    } catch (error) {
+      console.error("Failed to open presentation:", error);
+    } finally {
+      // Reset loading state after a short delay
+      setTimeout(() => setIsProjectionLoading(false), 1000);
+    }
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -1012,14 +1028,23 @@ const FloatingActionBar: React.FC<FloatingActionBarProps> = ({
                 <div className="flex items-center gap-2">
                   <Tooltip title="Open Bible Presentation" placement="bottom">
                     <button
-                      onClick={onOpenPresentation}
-                      className={`p-2 rounded-lg transition-colors duration-200 ${
+                      onClick={handleOpenPresentationWithLoading}
+                      disabled={isProjectionLoading}
+                      className={`p-2 rounded-lg transition-colors duration-200 relative ${
                         isVerseByVerseView && hasBackgroundImage
                           ? "bg-white/10 text-white hover:bg-white/20"
                           : "text-orange-500 dark:text-orange-400 bg-white dark:bg-[#3d332a] hover:bg-primary/10 dark:hover:bg-[#4a3e34] hover:text-primary dark:hover:text-primary"
+                      } ${
+                        isProjectionLoading
+                          ? "opacity-75 cursor-not-allowed"
+                          : ""
                       }`}
                     >
-                      <Monitor size={16} />
+                      {isProjectionLoading ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Monitor size={16} />
+                      )}
                     </button>
                   </Tooltip>
 

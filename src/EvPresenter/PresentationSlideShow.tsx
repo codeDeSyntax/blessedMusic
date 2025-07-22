@@ -25,7 +25,7 @@ import {
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setCurrentScreen, CurrentScreen } from "@/store/slices/appSlice";
-import { useTheme } from "@/Provider/Theme";
+import { useEvPresenterTheme } from "@/Provider/EvPresenterTheme";
 
 // Memoized background image component for performance
 const BackgroundImage = React.memo(
@@ -259,7 +259,7 @@ const Slide: React.FC<SlideProps> = ({
   scriptureColor,
   quoteColor,
 }) => {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode } = useEvPresenterTheme();
   const [isContentVisible, setIsContentVisible] = useState(false);
 
   // Trigger content animation when slide becomes active
@@ -878,7 +878,6 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
       5: "text-5xl",
       6: "text-6xl",
       7: "text-7xl",
-   
     };
     return sizeMap[scriptureFontSize] || "text-6xl";
   };
@@ -1193,10 +1192,11 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                   </span>
 
                   {/* Horizontal separator line */}
-                  <div className="w-3/4 mx-auto my-2  bg-black/90 border-white border-2 border-dashed rounded-full shadow-sm"
-                  style={{
+                  <div
+                    className="w-3/4 mx-auto my-2  bg-black/90 border-white border-2 border-dashed rounded-full shadow-sm"
+                    style={{
                       borderColor: titleColor + "80" || "#ffffff",
-                      borderStyle:"double"
+                      borderStyle: "double",
                       // textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
                       // fontFamily: "Imapct",
                       // fontSize: `${titleFontSize}px`,
@@ -1414,7 +1414,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
             <div className="w-full h-full flex">
               {/* Left side - Background image with centered title */}
               <div
-                className="w-1/2 h-full bg-cover bg-center relative flex items-center justify-center"
+                className="w-1/2 h-full bg-cover bg-center relative flex items-center justify-center "
                 style={{
                   backgroundImage: `url(${backgroundImage})`,
                 }}
@@ -1425,7 +1425,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 {/* Centered Scripture Reading Title */}
                 <div className="relative z-10 text-center">
                   <motion.h1
-                    className="text-6xl font-LTFuzz italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                    className="text-6xl font-[garamond] italic cursor-pointer hover:opacity-80 transition-all duration-300"
                     style={{
                       color: titleColor,
                       fontFamily: "Impact, Arial Black, sans-serif",
@@ -1522,10 +1522,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
               </div>
 
               {/* Right side - Scripture content with blurred background */}
-              <div className="w-1/2 h-full relative flex flex-col p-12 overflow-hidden">
+              <div className="w-1/2 h-full  relative flex flex-col p-12 overflow-hidden">
                 {/* Blurred background image */}
                 <div
-                  className="absolute inset-0 bg-cover bg-center"
+                  className="absolute inset-0 bg-cover bg-center rotate-12"
                   style={{
                     backgroundImage: `url(${backgroundImage})`,
                     filter: "blur(10px)",
@@ -1643,9 +1643,9 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                               })();
                               return variants;
                             })()}
-                            className="group"
+                            className="group "
                           >
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-start gap-4 ">
                               {/* Number */}
                               <motion.div
                                 className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
@@ -1666,10 +1666,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                               {/* Scripture Content */}
                               <div className="flex-1">
                                 <motion.div
-                                  className={`${getScriptureFontClass()} font-impact font-bold leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300`}
+                                  className={`${getScriptureFontClass()} font-bitter font-bold leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300`}
                                   style={{
                                     color: scriptureColor,
-                                   
+
                                     lineHeight: 1.6,
                                     textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
                                   }}
@@ -1710,44 +1710,6 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
           );
         }
 
-        // Main message slide(s) - break into multiple slides if needed
-        if ((currentPresentation as any).mainMessage) {
-          const messageSlides = createMainMessageSlides(
-            (currentPresentation as any).mainMessage,
-            "Main Message"
-          );
-          messageSlides.forEach((slide, index) => {
-            // Wrap each main message slide with custom independent layout
-            newSlides.push(
-              // Diagonal split layout with background image on top-right triangle
-              <div className="w-full h-full relative overflow-hidden">
-                {/* Background image in diagonal triangle */}
-                <div
-                  className="absolute inset-0 transform origin-top-right"
-                  style={{
-                    background: `linear-gradient(135deg, transparent 0%, transparent 45%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.1) 55%, transparent 55%, transparent 100%), url(${backgroundImage})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    clipPath: "polygon(40% 0%, 100% 0%, 100% 100%, 0% 100%)",
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-black/5 to-black/20"></div>
-                </div>
-
-                {/* Main content area with gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-700/85">
-                  {/* Animated geometric patterns */}
-                  <div className="absolute inset-0 opacity-5">
-                    <div className="absolute top-1/4 left-1/4 w-32 h-32 border-2 border-white rotate-45 animate-pulse"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-24 h-24 border border-white rounded-full animate-pulse delay-1000"></div>
-                    <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-white/10 transform rotate-12 animate-pulse delay-500"></div>
-                  </div>
-                </div>
-              </div>
-            );
-          });
-        }
-
         // Quote slides (each quote gets its own slide) - Split screen design
         if ((currentPresentation as any).quotes?.length > 0) {
           const quotes = (currentPresentation as any).quotes;
@@ -1755,7 +1717,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
           quotes.forEach((quoteItem: any, quoteIndex: number) => {
             // Split screen layout: left side with background image, right side with quote
             newSlides.push(
-              <div className="w-full h-full flex">
+              <div className="w-full h-full flex bg-black">
                 {/* Left side - Background image with centered title (1/3 width) */}
                 <div className="w-1/3 h-full relative flex items-center justify-center">
                   <div
@@ -1876,7 +1838,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.7, duration: 0.8 }}
                           >
-                            <div className="inline-block px-4 py-2 font-LTFuzz  text-white rounded-full text-xl font-medium backdrop-blur-sm italic">
+                            <div className="inline-block px-4 py-2 font-bitter   text-white rounded-full text-xl font-thin backdrop-blur-sm italic">
                               {quoteItem.reference || quoteItem.author}
                             </div>
                           </motion.div>
@@ -1889,7 +1851,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.9, duration: 0.8 }}
                           >
-                            <div className="w-12 h-12 font-LTFuzz rounded-full text-white flex items-center justify-center text-xl font-bold backdrop-blur-sm border-2 italic border-white/20">
+                            <div className="w-12 h-12 font-[garamond] rounded-full text-white flex items-center justify-center text-xl font-bold backdrop-blur-sm border-2 italic border-white/20">
                               {quoteItem.prophetInitials}
                             </div>
                           </motion.div>
@@ -1900,10 +1862,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                 </div>
 
                 {/* Right side - Quote content with blurred background (2/3 width) */}
-                <div className="w-2/3 h-full relative flex items-center justify-center overflow-hidden">
+                <div className="w-2/3 h-full  relative flex items-center justify-center overflow-hidden bg-white">
                   {/* Blurred background image */}
                   <div
-                    className="absolute inset-0"
+                    className="absolute inset-0 skew-x-12 "
                     style={{
                       backgroundImage: `url(${backgroundImage})`,
                       backgroundSize: "cover",
@@ -1915,10 +1877,10 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                   />
 
                   {/* Additional backdrop blur overlay */}
-                  <div className="absolute inset-0 backdrop-blur-md bg-black/30"></div>
+                  <div className="absolute inset-0 skew-x-12 backdrop-blur-sm bg-black/10"></div>
 
                   {/* Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/50 to-black/30"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/30 to-black/30"></div>
 
                   {/* Quote container with border design */}
                   <div className="relative  mx-16 z-10">
@@ -1961,7 +1923,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                       >
                         <div className="text-center">
                           <p
-                            className={`${getQuoteFontClass()} font-LTFuzz leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 italic`}
+                            className={`${getQuoteFontClass()} font-bitter leading-relaxed  cursor-pointer hover:opacity-80 transition-all duration-300 `}
                             style={{
                               color: quoteColor || "#2d3748",
                               lineHeight: 1.6,
@@ -2116,7 +2078,7 @@ export const PresentationSlideshow: React.FC<{ onBack: () => void }> = ({
                                 {/* Point content */}
                                 <div className="flex-1">
                                   <motion.div
-                                    className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 group-hover:translate-x-2 font-LTFuzz`}
+                                    className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 group-hover:translate-x-2 font-[garamond]`}
                                     style={{
                                       color: mainMessageColor,
                                       // fontFamily:

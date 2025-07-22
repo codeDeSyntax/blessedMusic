@@ -10,6 +10,7 @@ interface VirtualSongListProps {
   onSingleClick: (song: Song) => void;
   onDoubleClick: (song: Song) => void;
   containerHeight?: number;
+  selectedSong?: Song | null;
 }
 
 const ITEM_HEIGHT = 50; // Reduced height for more compact list view
@@ -22,12 +23,13 @@ const VirtualSongList = React.memo(
     onSingleClick,
     onDoubleClick,
     containerHeight = 600,
+    selectedSong,
   }: VirtualSongListProps) => {
     const [scrollTop, setScrollTop] = useState(0);
     const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(
       null
     );
-    
+
     // Use local theme for songs app instead of Redux theme
     const [localTheme, setLocalTheme] = useState(
       localStorage.getItem("bmusictheme") || "white"
@@ -42,10 +44,16 @@ const VirtualSongList = React.memo(
         }
       };
 
-      window.addEventListener("localStorageChange", handleCustomStorageChange as EventListener);
-      
+      window.addEventListener(
+        "localStorageChange",
+        handleCustomStorageChange as EventListener
+      );
+
       return () => {
-        window.removeEventListener("localStorageChange", handleCustomStorageChange as EventListener);
+        window.removeEventListener(
+          "localStorageChange",
+          handleCustomStorageChange as EventListener
+        );
       };
     }, []);
 
@@ -86,9 +94,10 @@ const VirtualSongList = React.memo(
             <div style={{ transform: `translateY(${offsetY}px)` }}>
               <table className="w-full table-auto rounded-md">
                 <thead
-                  className={`rounded-md sticky top-0  z-10 $` }
+                  className={`rounded-md sticky top-0  z-10 $`}
                   style={{
-                    backgroundColor: localTheme === "creamy" ? "#fdf4d0" : "#f9f9f9",
+                    backgroundColor:
+                      localTheme === "creamy" ? "#fdf4d0" : "#f9f9f9",
                   }}
                 >
                   <tr className="text-[#9a674a] rounded-md">
@@ -121,6 +130,7 @@ const VirtualSongList = React.memo(
                       onDoubleClick={onDoubleClick}
                       isTable={true}
                       localTheme={localTheme}
+                      selectedSong={selectedSong}
                     />
                   ))}
                 </tbody>
@@ -137,25 +147,38 @@ const VirtualSongList = React.memo(
         ref={setContainerRef}
         className="w-full overflow-y-auto overflow-x-hidden no-scrollbar h-full"
         onScroll={handleScroll}
-        style={{ 
+        style={{
           height: containerHeight || 600,
           maxWidth: "100%",
         }}
       >
-        <div style={{ height: totalHeight, position: "relative", width: "100%", maxWidth: "100%" }}>
-          <div style={{ transform: `translateY(${offsetY}px)`, width: "100%", maxWidth: "100%" }}>
+        <div
+          style={{
+            height: totalHeight,
+            position: "relative",
+            width: "100%",
+            maxWidth: "100%",
+          }}
+        >
+          <div
+            style={{
+              transform: `translateY(${offsetY}px)`,
+              width: "100%",
+              maxWidth: "100%",
+            }}
+          >
             {/* Modern Header - Compact and responsive */}
-            <div 
+            <div
               className={`sticky top-0 z-10 mb-2 p-3 rounded-lg shadow-sm backdrop-blur-md ${
-                localTheme === "creamy" 
-                  ? "bg-gradient-to-r from-amber-600/10 to-orange-50/50 border border-amber-200" 
+                localTheme === "creamy"
+                  ? "bg-gradient-to-r from-amber-600/10 to-orange-50/50 border border-amber-200"
                   : "bg-gradient-to-r from-amber-50/90 to-amber-70/80 border border-orange-200"
               }`}
               style={{ maxWidth: "100%" }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div 
+                  <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       localTheme === "creamy"
                         ? "bg-gradient-to-r from-[#9a674a] to-[#9a674a]"
@@ -165,7 +188,10 @@ const VirtualSongList = React.memo(
                     <Music className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm text-gray-800" style={{ fontFamily: "Georgia" }}>
+                    <h3
+                      className="font-semibold text-sm text-gray-800"
+                      style={{ fontFamily: "Georgia" }}
+                    >
                       {viewMode === "table" ? "Songs Collection" : "List View"}
                     </h3>
                     <p className="text-xs text-gray-600">
@@ -173,7 +199,7 @@ const VirtualSongList = React.memo(
                     </p>
                   </div>
                 </div>
-                
+
                 {/* <div className="text-right">
                   <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                     localTheme === "creamy"
@@ -185,7 +211,7 @@ const VirtualSongList = React.memo(
                 </div> */}
               </div>
             </div>
-    
+
             {/* Songs List - Properly constrained */}
             <div className="space-y-1 px-2 py-1" style={{ maxWidth: "100%" }}>
               {visibleSongs.map((song, index) => (
@@ -196,6 +222,7 @@ const VirtualSongList = React.memo(
                   onDoubleClick={onDoubleClick}
                   isTable={viewMode === "table"}
                   localTheme={localTheme}
+                  selectedSong={selectedSong}
                 />
               ))}
             </div>

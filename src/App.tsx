@@ -16,6 +16,7 @@ import PresentationMasterPage from "./EvPresenter/MasterPresentApp";
 import Recents from "./vmusic/Recents";
 import { useAppSelector, useAppDispatch } from "./store";
 import { setCurrentScreen } from "./store/slices/appSlice";
+import { SecretLogsManager } from "./components/SecretLogsManager";
 
 const App = () => {
   const currentScreen = useAppSelector((state) => state.app.currentScreen);
@@ -98,43 +99,45 @@ const App = () => {
   }, []);
 
   return (
-    <div
-      className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-white dark:bg-ltgray `}
-      style={{ fontFamily: "Palatino" }}
-    >
-      {/* <BlessedMusic /> */}
-      {currentScreen === "Home" ? (
-        <WorkspaceSelector />
-      ) : currentScreen === "create" ? (
-        <CreateSong />
-      ) : currentScreen === "Songs" ? (
-        <BlessedMusic />
-      ) : currentScreen === "edit" ? (
-        <EditSong />
-      ) : currentScreen === "Presentation" ? (
-        <SongPresentation />
-      ) : currentScreen === "instRoom" ? (
-        <InstrumentShowroom />
-      ) : currentScreen === "categorize" ? (
-        <SongCollectionManager />
-      ) : currentScreen === "userguide" ? (
-        <UserGuidePage />
-      ) : currentScreen === "backgrounds" ? (
-        <PresentationBackgroundSelector />
-      ) : currentScreen === "bible" ? (
-        <Biblelayout />
-      ) : currentScreen === "mpresenter" ? (
-        <PresentationMasterPage />
-      ) : currentScreen === "recents" ? (
-        <Recents />
-      ) : (
-        <ArrowLeftCircle
-          className="size-6 text-white"
-          onClick={() => dispatch(setCurrentScreen("Home"))}
-        />
-      )}
-      {/* <SongPresentation/> */}
-    </div>
+    <SecretLogsManager>
+      <div
+        className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-white dark:bg-ltgray `}
+        style={{ fontFamily: "Palatino" }}
+      >
+        {/* <BlessedMusic /> */}
+        {currentScreen === "Home" ? (
+          <WorkspaceSelector />
+        ) : currentScreen === "create" ? (
+          <CreateSong />
+        ) : currentScreen === "Songs" ? (
+          <BlessedMusic />
+        ) : currentScreen === "edit" ? (
+          <EditSong />
+        ) : currentScreen === "Presentation" ? (
+          <SongPresentation />
+        ) : currentScreen === "instRoom" ? (
+          <InstrumentShowroom />
+        ) : currentScreen === "categorize" ? (
+          <SongCollectionManager />
+        ) : currentScreen === "userguide" ? (
+          <UserGuidePage />
+        ) : currentScreen === "backgrounds" ? (
+          <PresentationBackgroundSelector />
+        ) : currentScreen === "bible" ? (
+          <Biblelayout />
+        ) : currentScreen === "mpresenter" ? (
+          <PresentationMasterPage />
+        ) : currentScreen === "recents" ? (
+          <Recents />
+        ) : (
+          <ArrowLeftCircle
+            className="size-6 text-white"
+            onClick={() => dispatch(setCurrentScreen("Home"))}
+          />
+        )}
+        {/* <SongPresentation/> */}
+      </div>
+    </SecretLogsManager>
   );
 };
 

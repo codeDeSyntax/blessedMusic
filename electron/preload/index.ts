@@ -101,6 +101,16 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("open-file-in-default-app", filePath),
   constructFilePath: (basePath: string, fileName: string) =>
     ipcRenderer.invoke("construct-file-path", basePath, fileName),
+  getDisplayInfo: () => ipcRenderer.invoke("get-display-info"),
+  logToSecretLogger: (logData: {
+    application: string;
+    category: string;
+    message: string;
+    details?: any;
+  }) => ipcRenderer.invoke("log-to-secret-logger", logData),
+  getSecretLogs: () => ipcRenderer.invoke("get-secret-logs"),
+  clearSecretLogs: () => ipcRenderer.invoke("clear-secret-logs"),
+  exportSecretLogs: () => ipcRenderer.invoke("export-secret-logs"),
 });
 
 // --------- Preload scripts loading ---------

@@ -8,6 +8,7 @@ import Help from "@/shared/Help";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 import { setCurrentScreen } from "@/store/slices/appSlice";
 import { setActiveFeature } from "@/store/slices/bibleSlice";
+import { BibleProjectionControlRoom } from "./components/BibleProjectionControlRoom";
 
 const TitleBar: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -15,16 +16,21 @@ const TitleBar: React.FC = () => {
   const { handleMinimize, handleMaximize, handleClose } = useBibleOperations();
   const { isDarkMode } = useTheme();
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [showProjectionControlRoom, setShowProjectionControlRoom] =
+    useState<boolean>(false);
   const [selectedBg, setSelectedBg] = useState<string>('url("./wood2.jpg")');
   const [nextBg, setNextBg] = useState<string>('url("./wood7.png")');
   const [bgOpacity, setBgOpacity] = useState<number>(1);
-  const [selectedPath, setSelectedPath] = useState<string>(() => 
-    localStorage.getItem("evpresenterfilespath") || ""
+  const [selectedPath, setSelectedPath] = useState<string>(
+    () => localStorage.getItem("evpresenterfilespath") || ""
   );
 
-  const setAndSaveCurrentScreen = useCallback((screen: string) => {
-    dispatch(setCurrentScreen(screen as any));
-  }, [dispatch]);
+  const setAndSaveCurrentScreen = useCallback(
+    (screen: string) => {
+      dispatch(setCurrentScreen(screen as any));
+    },
+    [dispatch]
+  );
 
   const selectEvpd = async () => {
     const path = await window.api.selectDirectory();
@@ -120,9 +126,17 @@ const TitleBar: React.FC = () => {
           {/* theme toggler */}
           <ThemeToggle />
           <Help />
+          {/* Projection Control Room button */}
+          <div
+            onClick={() => setShowProjectionControlRoom(true)}
+            className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer hover:bg-gray-50 dark:hover:bg-bgray"
+            title="Projection Control Room"
+          >
+            <Monitor className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+          </div>
           {/* Settings button */}
           <div
-            onClick={() => dispatch(setActiveFeature('settings'))}
+            onClick={() => dispatch(setActiveFeature("settings"))}
             className="w-6 h-6 rounded-full flex items-center justify-center group cursor-pointer hover:bg-gray-50 dark:hover:bg-bgray"
           >
             <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white" />
@@ -222,6 +236,12 @@ const TitleBar: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Bible Projection Control Room */}
+      <BibleProjectionControlRoom
+        isOpen={showProjectionControlRoom}
+        onClose={() => setShowProjectionControlRoom(false)}
+      />
     </div>
   );
 };

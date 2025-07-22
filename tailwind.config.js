@@ -27,6 +27,7 @@ export default {
         teko: ['"Teko Light"', 'sans-serif'],
         alumini: ['"Alumini Sans Black"', 'sans-serif'],
         LTFuzz: ['"LTFuzz"', 'sans-serif'],
+        ThePriest: ['"thepriest"', 'sans-serif'],
       },
 
     },
