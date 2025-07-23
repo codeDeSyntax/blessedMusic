@@ -3,6 +3,8 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
+import { Extension } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
 import {
   AlignLeft,
   AlignCenter,
@@ -15,6 +17,99 @@ import { BoldOutlined } from "@ant-design/icons";
 import { VersePaste } from "./VersePaste";
 import { ChorusPaste } from "./ChorusPaste";
 
+// Auto-bold extension for verse/chorus patterns
+const AutoBoldExtension = Extension.create({
+  name: "autoBold",
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey("autoBold"),
+
+        appendTransaction(transactions, oldState, newState) {
+          // Only process if there were actual changes to the document
+          if (!transactions.some((tr) => tr.docChanged)) {
+            return null;
+          }
+
+          const tr = newState.tr;
+          let modified = false;
+
+          // Pattern to match verse, chorus, bridge, intro, outro, etc.
+          const patterns = [
+            /\b(verse\s*\d*)\b/gi,
+            /\b(chorus)\b/gi,
+            /\b(bridge)\b/gi,
+            /\b(intro)\b/gi,
+            /\b(outro)\b/gi,
+            /\b(pre-?chorus)\b/gi,
+            /\b(refrain)\b/gi,
+            /\b(hook)\b/gi,
+            /\b(tag)\b/gi,
+            /\b(coda)\b/gi,
+            /\b(v\d+)\b/gi, // v1, v2, etc.
+            /\b(c\d*)\b/gi, // c, c1, c2, etc.
+          ];
+
+          newState.doc.descendants((node, pos) => {
+            if (node.isText && node.text) {
+              patterns.forEach((pattern) => {
+                pattern.lastIndex = 0; // Reset regex state
+                let match;
+                const text = node.text!;
+
+                while ((match = pattern.exec(text)) !== null) {
+                  const from = pos + match.index;
+                  const to = from + match[0].length;
+
+                  // Check if this range is valid and within document bounds
+                  if (
+                    from >= 0 &&
+                    to <= newState.doc.content.size &&
+                    from < to
+                  ) {
+                    try {
+                      // Check if this text is already bold
+                      let hasBold = false;
+                      newState.doc.nodesBetween(from, to, (node, nodePos) => {
+                        if (node.isText) {
+                          const marks = node.marks || [];
+                          if (marks.some((mark) => mark.type.name === "bold")) {
+                            hasBold = true;
+                          }
+                        }
+                      });
+
+                      if (!hasBold) {
+                        // Apply bold mark to the matched text
+                        tr.addMark(
+                          from,
+                          to,
+                          newState.schema.marks.bold.create()
+                        );
+                        modified = true;
+                      }
+                    } catch (e) {
+                      // Skip if there's an error with the position
+                      console.warn("AutoBold: Skipping invalid position", {
+                        from,
+                        to,
+                        error: e,
+                      });
+                    }
+                  }
+                }
+              });
+            }
+          });
+
+          return modified ? tr : null;
+        },
+      }),
+    ];
+  },
+});
+
 interface CustomEditorProps {
   formData: any;
   setFormData: (data: any) => void;
@@ -26,6 +121,7 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
+      AutoBoldExtension,
       TextAlign.configure({
         types: ["paragraph", "heading", "placeholder"],
         alignments: ["left", "center", "right", "justify"],
@@ -104,6 +200,72 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
 
   const clearContent = () => {
     editor.commands.clearContent();
+  };
+
+  // Function to manually apply auto-bold to existing content
+  const applyAutoBold = () => {
+    const { state, view } = editor;
+    const { tr } = state;
+    let modified = false;
+
+    const patterns = [
+      /\b(verse\s*\d*)\b/gi,
+      /\b(chorus)\b/gi,
+      /\b(bridge)\b/gi,
+      /\b(intro)\b/gi,
+      /\b(outro)\b/gi,
+      /\b(pre-?chorus)\b/gi,
+      /\b(refrain)\b/gi,
+      /\b(hook)\b/gi,
+      /\b(tag)\b/gi,
+      /\b(coda)\b/gi,
+      /\b(v\d+)\b/gi,
+      /\b(c\d*)\b/gi,
+    ];
+
+    state.doc.descendants((node, pos) => {
+      if (node.isText && node.text) {
+        patterns.forEach((pattern) => {
+          pattern.lastIndex = 0;
+          let match;
+          const text = node.text!;
+
+          while ((match = pattern.exec(text)) !== null) {
+            const from = pos + match.index;
+            const to = from + match[0].length;
+
+            if (from >= 0 && to <= state.doc.content.size && from < to) {
+              try {
+                let hasBold = false;
+                state.doc.nodesBetween(from, to, (checkNode) => {
+                  if (checkNode.isText) {
+                    const marks = checkNode.marks || [];
+                    if (marks.some((mark) => mark.type.name === "bold")) {
+                      hasBold = true;
+                    }
+                  }
+                });
+
+                if (!hasBold) {
+                  tr.addMark(from, to, state.schema.marks.bold.create());
+                  modified = true;
+                }
+              } catch (e) {
+                console.warn("Manual AutoBold: Skipping invalid position", {
+                  from,
+                  to,
+                  error: e,
+                });
+              }
+            }
+          }
+        });
+      }
+    });
+
+    if (modified) {
+      view.dispatch(tr);
+    }
   };
 
   return (
@@ -185,6 +347,11 @@ const CustomEditor = ({ formData, setFormData }: CustomEditorProps) => {
             {/* Clear Content */}
             <MenuButton onClick={clearContent} tooltip="Clear All Content">
               <X className="w-4 h-4" />
+            </MenuButton>
+
+            {/* Auto-Bold Song Parts */}
+            <MenuButton onClick={applyAutoBold} tooltip="Auto-Bold Song Parts">
+              <BoldOutlined className="w-4 h-4" />
             </MenuButton>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Particle {
   x: number;
@@ -26,8 +26,12 @@ const InteractiveBackground: React.FC = () => {
     const particles: Particle[] = [];
 
     const createParticle = (x: number, y: number) => {
-      const size = Math.random() * 8 + 3; // Slightly larger for backdrop effect
-      const color = `hsl(${Math.random() * 360}, 80%, 60%)`; // Softer saturation for backdrop
+      const size = Math.random() * 8 + 3;
+
+      // Use transparent colors for backdrop blur effect
+      const alpha = 0.3 + Math.random() * 0.4; // 0.3 - 0.7 alpha
+      const color = `rgba(255, 255, 255, ${alpha})`;
+
       const speedX = Math.random() * 3 - 1.5;
       const speedY = Math.random() * 3 - 1.5;
       particles.push({ x, y, size, color, speedX, speedY });
@@ -55,26 +59,25 @@ const InteractiveBackground: React.FC = () => {
           );
           gradient.addColorStop(
             0,
-            particle.color.replace("hsl", "hsla").replace(")", ", 0.6)")
+            particle.color.replace("rgba", "rgba").replace("0.8)", "0.6)")
           );
           gradient.addColorStop(
             0.5,
-            particle.color.replace("hsl", "hsla").replace(")", ", 0.3)")
+            particle.color.replace("rgba", "rgba").replace("0.8)", "0.3)")
           );
           gradient.addColorStop(
             1,
-            particle.color.replace("hsl", "hsla").replace(")", ", 0)")
+            particle.color.replace("rgba", "rgba").replace("0.8)", "0)")
           );
 
           ctx.fillStyle = gradient;
+
           ctx.beginPath();
           ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
           ctx.fill();
 
           // Add the solid color center
-          ctx.fillStyle = particle.color
-            .replace("hsl", "hsla")
-            .replace(")", ", 0.8)");
+          ctx.fillStyle = particle.color;
           ctx.beginPath();
           ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
           ctx.fill();
@@ -110,9 +113,10 @@ const InteractiveBackground: React.FC = () => {
       ref={canvasRef}
       className="fixed inset-0 w-full h-full"
       style={{
-        // pointerEvents: "none",
+        pointerEvents: "none",
         zIndex: 9999,
-        mixBlendMode: "screen",
+        mixBlendMode: "multiply",
+        backdropFilter: "blur(0.5px) saturate(1.2) contrast(1.1)",
       }}
     />
   );

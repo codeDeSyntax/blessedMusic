@@ -149,6 +149,9 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     null
   );
   const [isControlPanelVisible, setIsControlPanelVisible] = useState(true);
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+  const [backgroundLoadingTimeout, setBackgroundLoadingTimeout] =
+    useState<NodeJS.Timeout | null>(null);
 
   // Handle mouse enter/leave for scripture reference
   const handleMouseEnterTopRegion = useCallback(() => {
@@ -172,8 +175,33 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
       if (hoverTimeoutId) {
         clearTimeout(hoverTimeoutId);
       }
+      if (backgroundLoadingTimeout) {
+        clearTimeout(backgroundLoadingTimeout);
+      }
     };
-  }, [hoverTimeoutId]);
+  }, [hoverTimeoutId, backgroundLoadingTimeout]);
+
+  // Monitor background changes for loading state
+  useEffect(() => {
+    // Show loading state when background image changes
+    if (projectionBackgroundImage && projectionBackgroundImage.trim() !== "") {
+      setIsBackgroundLoading(true);
+
+      // Clear any existing timeout
+      if (backgroundLoadingTimeout) {
+        clearTimeout(backgroundLoadingTimeout);
+      }
+
+      // Set timeout to hide loading state
+      const timeout = setTimeout(() => {
+        setIsBackgroundLoading(false);
+      }, 1000); // Hide after 1 second
+
+      setBackgroundLoadingTimeout(timeout);
+    } else {
+      setIsBackgroundLoading(false);
+    }
+  }, [projectionBackgroundImage]);
 
   // Local state for background management (using Redux for persistence but local for UI)
   const [backgroundImage, setBackgroundImage] = useState("");
@@ -339,6 +367,8 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
+        // Add transition for smooth background changes
+        transition: "background-image 0.3s ease-in-out",
       };
       console.log("BiblePresentationDisplay: Using background image:", {
         original: projectionBackgroundImage,
@@ -352,6 +382,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     ) {
       const style = {
         background: `linear-gradient(135deg, ${projectionGradientColors[0]} 0%, ${projectionGradientColors[1]} 100%)`,
+        transition: "background 0.3s ease-in-out",
       };
       console.log(
         "BiblePresentationDisplay: Using gradient background:",
@@ -361,6 +392,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
     } else {
       const style = {
         backgroundColor: projectionBackgroundColor || "#1e293b",
+        transition: "background-color 0.3s ease-in-out",
       };
       console.log("BiblePresentationDisplay: Using solid background:", style);
       return style;
@@ -1058,6 +1090,21 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
       {/* Enhanced Background - Using Redux projection settings */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-full h-full" style={getBackgroundStyle()} />
+
+        {/* Background Loading Overlay */}
+        {isBackgroundLoading && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-20">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/20 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-white font-medium">
+                  Loading Background...
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Overlay effects for depth - adaptive based on background type */}
         {projectionBackgroundImage &&
         projectionBackgroundImage.trim() !== "" ? (
@@ -1154,7 +1201,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -30, scale: 0.95 }}
               transition={{
-                duration: 0.2,
+                duration: 0.1,
                 ease: [0.25, 0.46, 0.45, 0.94],
               }}
               className="verse-content text-center w-full flex flex-col items-center justify-center "
@@ -1167,15 +1214,15 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
               />
 
               {/* Verses Container - properly positioned */}
-              <div className=" relative z-10 w-full flex flex-col items-center justify-center">
+              <div className=" relative z-10 w-full flex flex-col items-start justify-center">
                 {currentVerses.map((verse, index) => (
                   <motion.div
                     key={verse.verse}
                     initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
                     animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                     transition={{
-                      delay: index * 0.2 + 0.3,
-                      duration: 0.8,
+                      delay: index * 0.1 + 0.2,
+                      duration: 0.2,
                       ease: [0.25, 0.46, 0.45, 0.94],
                     }}
                     className="w-full flex flex-col items-center justify-center"
@@ -1200,7 +1247,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                             ? settings.versesPerSlide === 1
                               ? currentVerses[0]?.verse
                               : `${currentVerses[0]?.verse}-${
-                                  currentVerses[currentVerses.length - 1]?.verse 
+                                  currentVerses[currentVerses.length - 1]?.verse
                                 }`
                             : "1"}
                         </span>

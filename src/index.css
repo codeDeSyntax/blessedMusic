@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,7 +8,7 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Palatino";
+  font-family: "EB Garamond", "Times New Roman", serif;
   overflow-x: hidden;
 }
 .wqote {
@@ -272,4 +274,38 @@ button:hover {
   100% {
     background-position: 200% 50%;
   }
+}
+
+/* Modern Thin Scrollbar with Cream Theme */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d4c4a8 transparent;
+  overflow-x: hidden; /* Hide horizontal scrollbar */
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 0px; /* Hide horizontal scrollbar */
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d4c4a8;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #c7b596;
+}
+
+.thin-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-horizontal {
+  display: none; /* Hide horizontal scrollbar */
 }

@@ -188,7 +188,7 @@ export default function CreateSong() {
   return (
     <>
       <TitleBar />
-      <div className="h-screen pt-24 bg-[#faeed1] no-scrollbar overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 pt-24">
         <AnimatePresence>
           {notification.show && (
             <Notification
@@ -198,13 +198,13 @@ export default function CreateSong() {
           )}
         </AnimatePresence>
 
-        <div className="max-w-7xl mx-auto px-6 h-[100vh] overflow-hidden">
-          <div className="flex gap-6 h-[85%]">
+        <div className="max-w-7xl mx-auto px-6 h-[calc(100vh-8rem)]">
+          <div className="flex gap-6 h-full">
             {/* Left Sidebar - Compact */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="w-96 bg-[#fdf4d0]/80 backdrop-blur-xl rounded-2xl shadow-xl border border-[#e8ddd0]/40 overflow-hidden flex flex-col"
+              className="w-80 bg-[#fdf4d0]/80 backdrop-blur-xl rounded-2xl shadow-xl border border-[#e8ddd0]/40 overflow-hidden flex flex-col"
             >
               {/* Header */}
               <div className="bg-gradient-to-r from-[#fdf4d0] to-[#f9f0d8] p-4 text-[#9a674a] border-b border-[#e8ddd0]/40 shrink-0">
@@ -263,9 +263,10 @@ export default function CreateSong() {
                         <FolderOpen className="w-3 h-3" />
                         Directory
                       </label>
-                      <div
+                      <button
+                        type="button"
                         onClick={selectDirectory}
-                        className="w-[90%] px-3 py-2 bg-yellow-400/20 border border-[#e8ddd0] rounded-lg 
+                        className="w-full px-3 py-2 bg-white border border-[#e8ddd0] rounded-lg 
                                  hover:bg-[#fdf4d0]/30 transition-all duration-200 text-[#9a674a] text-sm
                                  flex items-center justify-between"
                       >
@@ -273,7 +274,7 @@ export default function CreateSong() {
                           {songRepo || "Select folder..."}
                         </span>
                         <FolderOpen className="w-3 h-3 shrink-0" />
-                      </div>
+                      </button>
                     </div>
 
                     {/* Title Input */}
@@ -288,7 +289,7 @@ export default function CreateSong() {
                         value={formData.title}
                         onChange={handleInputChange}
                         placeholder="Enter song title..."
-                        className="w-[90%] px-3 py-2 bg-yellow-300/20 border-none border-[#e8ddd0] rounded-lg 
+                        className="w-full px-3 py-2 bg-white border border-[#e8ddd0] rounded-lg 
                                  focus:outline-none focus:ring-2 focus:ring-[#9a674a]/30 focus:border-[#9a674a]
                                  transition-all duration-200 text-[#9a674a] placeholder-[#9a674a]/40 text-sm"
                       />
@@ -342,7 +343,7 @@ export default function CreateSong() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex-1 bg-[#fdf4d0]/50 backdrop-blur-xl rounded-2xl shadow-xl border-1 border-[#a6795b]/40 overflow-hidden border-dashed"
+              className="flex-1 bg-[#fdf4d0]/50 backdrop-blur-xl rounded-2xl shadow-xl border border-[#e8ddd0]/40 overflow-hidden"
             >
               <ModernSongEditor formData={formData} setFormData={setFormData} />
             </motion.div>

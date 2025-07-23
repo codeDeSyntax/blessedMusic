@@ -59,6 +59,12 @@ export const BibleProjectionControlRoom: React.FC<
   const [activeSection, setActiveSection] = useState<string>("general");
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [imagePreloadCache, setImagePreloadCache] = useState<Set<string>>(
+    new Set()
+  );
 
   // Available translations
   const availableTranslations = Object.keys({
@@ -202,31 +208,139 @@ export const BibleProjectionControlRoom: React.FC<
     }
   };
 
-  // Handle background image change
-  const handleBackgroundImageChange = (imagePath: string) => {
-    dispatch(setProjectionBackgroundImage(imagePath));
-    if (imagePath) {
-      dispatch(setProjectionGradientColors([])); // Clear gradients when setting image
-    }
-    logBibleProjection(
-      "Projection background image updated from control room",
-      { imagePath }
-    );
+  // Handle background image change with loading state
+  const handleBackgroundImageChange = async (imagePath: string) => {
+    // Set loading state for this specific image
+    setImageLoadingStates((prev) => ({ ...prev, [imagePath]: true }));
 
-    // Send update to presentation window via IPC - immediate switch to image
-    if (typeof window !== "undefined" && window.ipcRenderer) {
-      console.log("ControlRoom: Sending background image update", {
-        backgroundImage: imagePath,
-      });
-      window.ipcRenderer.send("bible-presentation-update", {
-        type: "updateStyle",
-        data: {
+    try {
+      // Preload the image if it's not already cached and it's not empty
+      if (imagePath && !imagePreloadCache.has(imagePath)) {
+        await preloadImage(imagePath);
+        setImagePreloadCache((prev) => new Set([...prev, imagePath]));
+      }
+
+      // Update Redux state
+      dispatch(setProjectionBackgroundImage(imagePath));
+      if (imagePath) {
+        dispatch(setProjectionGradientColors([])); // Clear gradients when setting image
+      }
+
+      logBibleProjection(
+        "Projection background image updated from control room",
+        { imagePath }
+      );
+
+      // Send update to presentation window via IPC
+      if (typeof window !== "undefined" && window.ipcRenderer) {
+        console.log("ControlRoom: Sending background image update", {
           backgroundImage: imagePath,
-          gradientColors: imagePath ? [] : undefined, // Clear gradients immediately when setting image
-        },
-      });
+        });
+        window.ipcRenderer.send("bible-presentation-update", {
+          type: "updateStyle",
+          data: {
+            backgroundImage: imagePath,
+            gradientColors: imagePath ? [] : undefined, // Clear gradients immediately when setting image
+          },
+        });
+      }
+
+      // Small delay to show loading state (minimum feedback time)
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    } catch (error) {
+      console.error("Failed to load background image:", error);
+
+      // Show error feedback - you could add a toast notification here
+      console.warn(`Background image failed to load: ${imagePath}`);
+
+      // Still proceed with setting the background even if preload failed
+      // The browser will handle the actual loading
+      dispatch(setProjectionBackgroundImage(imagePath));
+      if (imagePath) {
+        dispatch(setProjectionGradientColors([]));
+      }
+
+      if (typeof window !== "undefined" && window.ipcRenderer) {
+        window.ipcRenderer.send("bible-presentation-update", {
+          type: "updateStyle",
+          data: {
+            backgroundImage: imagePath,
+            gradientColors: imagePath ? [] : undefined,
+          },
+        });
+      }
+    } finally {
+      // Clear loading state for this image
+      setImageLoadingStates((prev) => ({ ...prev, [imagePath]: false }));
     }
   };
+
+  // Preload image function
+  const preloadImage = (src: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = document.createElement("img") as HTMLImageElement;
+
+      img.onload = () => {
+        console.log("Image preloaded successfully:", src);
+        resolve();
+      };
+
+      img.onerror = () => {
+        console.error("Failed to preload image:", src);
+        reject(new Error(`Failed to load image: ${src}`));
+      };
+
+      // Handle different image path formats
+      if (src.startsWith("./")) {
+        img.src = src;
+      } else if (src.match(/^[A-Za-z]:\\/)) {
+        // Windows absolute path
+        img.src = `file:///${src.replace(/\\/g, "/")}`;
+      } else if (src.startsWith("/")) {
+        // Unix absolute path
+        img.src = `file://${src}`;
+      } else {
+        img.src = src;
+      }
+    });
+  };
+
+  // Preload images when they become available
+  useEffect(() => {
+    const preloadBibleImages = async () => {
+      if (bibleBgs.length > 0) {
+        console.log("Starting to preload background images...");
+        const preloadPromises = bibleBgs.slice(0, 5).map(async (imagePath) => {
+          try {
+            await preloadImage(imagePath);
+            setImagePreloadCache((prev) => new Set([...prev, imagePath]));
+          } catch (error) {
+            console.warn("Failed to preload image:", imagePath, error);
+          }
+        });
+
+        // Preload first 5 images immediately, rest in background
+        await Promise.allSettled(preloadPromises);
+
+        // Preload remaining images in background
+        if (bibleBgs.length > 5) {
+          const remainingPromises = bibleBgs.slice(5).map(async (imagePath) => {
+            try {
+              await preloadImage(imagePath);
+              setImagePreloadCache((prev) => new Set([...prev, imagePath]));
+            } catch (error) {
+              console.warn("Failed to preload image:", imagePath, error);
+            }
+          });
+          Promise.allSettled(remainingPromises);
+        }
+
+        console.log("Background image preloading completed");
+      }
+    };
+
+    preloadBibleImages();
+  }, [bibleBgs]);
 
   // Handle text color change
   const handleTextColorChange = (color: string) => {
@@ -532,80 +646,81 @@ export const BibleProjectionControlRoom: React.FC<
                     </div>
                   </div>
 
-                  {/* Font Multiplier */}
-                  <div className="bg-white/90 dark:bg-black/30 rounded-3xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-xl  backdrop-blur-sm w-[50%]">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#906140] to-[#7d5439] flex items-center justify-center shadow-lg">
-                        <Settings className="w-6 h-6 text-white" />
+                  {/* Font Multiplier - Disabled */}
+                  <div className="relative w-[50%]">
+                    <div className="bg-white/90 dark:bg-black/30 rounded-3xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-xl backdrop-blur-sm">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#906140] to-[#7d5439] flex items-center justify-center shadow-lg">
+                          <Settings className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                            Display Scale
+                          </h3>
+                          <p className="text-gray-500 dark:text-gray-400">
+                            Fine-tune text scaling for different screens
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          Display Scale
-                        </h3>
-                        <p className="text-gray-500 dark:text-gray-400">
-                          Fine-tune text scaling for different screens
-                        </p>
+
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                            Scale Factor
+                          </span>
+                          <span className="text-2xl font-bold text-[#906140] dark:text-[#b8835a]">
+                            {Math.round(standaloneFontMultiplier * 100)}%
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-red-100/80 dark:bg-red-900/40 text-red-600 dark:text-red-400 transition-all duration-200 font-bold text-xl shadow-lg flex items-center justify-center">
+                            <Minus className="w-6 h-6" />
+                          </div>
+
+                          <div className="flex-1">
+                            <input
+                              type="range"
+                              min="0.1"
+                              max="3.0"
+                              step="0.1"
+                              value={standaloneFontMultiplier}
+                              readOnly
+                              className="w-full h-3 bg-gray-200 dark:bg-bgray rounded-2xl appearance-none cursor-not-allowed 
+                                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 
+                                       [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-[#906140] [&::-webkit-slider-thumb]:to-[#7d5439] 
+                                       [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-not-allowed
+                                       [&::-webkit-slider-thumb]:shadow-xl [&::-webkit-slider-thumb]:border-0"
+                            />
+                          </div>
+
+                          <div className="w-14 h-14 rounded-2xl bg-green-100/80 dark:bg-green-900/40 text-green-600 dark:text-green-400 transition-all duration-200 font-bold text-xl shadow-lg flex items-center justify-center">
+                            <Plus className="w-6 h-6" />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                          <span>10%</span>
+                          <span>100%</span>
+                          <span>300%</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                          Scale Factor
-                        </span>
-                        <span className="text-2xl font-bold text-[#906140] dark:text-[#b8835a]">
-                          {Math.round(standaloneFontMultiplier * 100)}%
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-center gap-4">
-                        <div
-                          onClick={() =>
-                            handleFontMultiplierChange(
-                              Math.max(0.1, standaloneFontMultiplier - 0.1)
-                            )
-                          }
-                          className="w-14 h-14 rounded-2xl bg-red-100/80 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/60 transition-all duration-200 font-bold text-xl shadow-lg flex items-center justify-center "
-                        >
-                          <Minus className="w-6 h-6" />
+                    {/* Disabled Overlay */}
+                    <div className="absolute inset-0 bg-gray-500/30 dark:bg-gray-700/30 rounded-3xl flex items-center justify-center pointer-events-all cursor-not-allowed">
+                      <div className="bg-white/90 dark:bg-black/80 rounded-2xl px-4 py-2 shadow-lg border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                            Feature Disabled
+                          </span>
                         </div>
-
-                        <div className="flex-1">
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="3.0"
-                            step="0.1"
-                            value={standaloneFontMultiplier}
-                            onChange={(e) =>
-                              handleFontMultiplierChange(
-                                parseFloat(e.target.value)
-                              )
-                            }
-                            className="w-full h-3 bg-gray-200 dark:bg-bgray rounded-2xl appearance-none cursor-pointer 
-                                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 
-                                     [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-[#906140] [&::-webkit-slider-thumb]:to-[#7d5439] 
-                                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                                     [&::-webkit-slider-thumb]:shadow-xl [&::-webkit-slider-thumb]:border-0"
-                          />
-                        </div>
-
-                        <div
-                          onClick={() =>
-                            handleFontMultiplierChange(
-                              Math.min(3.0, standaloneFontMultiplier + 0.1)
-                            )
-                          }
-                          className="w-14 h-14 rounded-2xl bg-green-100/80 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60 transition-all duration-200 font-bold text-xl shadow-lg flex items-center justify-center"
-                        >
-                          <Plus className="w-6 h-6" />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-                        <span>10%</span>
-                        <span>100%</span>
-                        <span>300%</span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                          Use Font Size instead
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -729,24 +844,48 @@ export const BibleProjectionControlRoom: React.FC<
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             Choose a background image for your presentation
                           </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              {imagePreloadCache.size} preloaded
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              • {bibleBgs.length} total images
+                            </div>
+                            {imagePreloadCache.size < bibleBgs.length && (
+                              <div className="text-xs text-blue-600 dark:text-blue-400">
+                                • Optimizing...
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div
-                        onClick={loadBackgroundImages}
-                        className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#906140] to-[#7d5439] text-white hover:from-[#7d5439] hover:to-[#6b4931] disabled:opacity-50 transition-all duration-200 font-medium shadow-md cursor-pointer text-sm"
-                      >
-                        {isLoadingImages ? "Loading..." : "Refresh"}
+                      <div className="flex items-center gap-2">
+                        <div
+                          onClick={loadBackgroundImages}
+                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#906140] to-[#7d5439] text-white hover:from-[#7d5439] hover:to-[#6b4931] disabled:opacity-50 transition-all duration-200 font-medium shadow-md cursor-pointer text-sm"
+                        >
+                          {isLoadingImages ? "Loading..." : "Refresh"}
+                        </div>
+
+                        {/* Background Change Status */}
+                        {Object.values(imageLoadingStates).some(Boolean) && (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 text-sm">
+                            <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Setting Background...</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Clear Background Option */}
                     <div
                       onClick={() => handleBackgroundImageChange("")}
-                      className={`w-40 p-3 rounded-xl border border-dashed transition-all mb-3 cursor-pointer ${
+                      className={`w-40 p-3 rounded-xl border border-dashed transition-all mb-3 cursor-pointer relative ${
                         projectionBackgroundImage === ""
                           ? "border-[#906140] bg-[#906140]/10 text-[#906140]"
                           : "border-white/30 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
-                      }`}
+                      } ${imageLoadingStates[""] ? "opacity-70" : ""}`}
                     >
                       <div className="text-center">
                         <div className="w-10 h-10 rounded-full bg-white/60 dark:bg-black/20 mx-auto mb-2 flex items-center justify-center">
@@ -756,28 +895,66 @@ export const BibleProjectionControlRoom: React.FC<
                           No Background Image
                         </span>
                       </div>
+
+                      {/* Loading Overlay for Clear Background */}
+                      {imageLoadingStates[""] && (
+                        <div className="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-[#906140] border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Image Grid */}
                     <div className="grid grid-cols-10 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                      {bibleBgs.map((imagePath, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleBackgroundImageChange(imagePath)}
-                          className={`aspect-video rounded-2xl overflow-hidden border transition-all hover:scale-105 shadow-md cursor-pointer ${
-                            projectionBackgroundImage === imagePath
-                              ? "border-[#906140] ring-1 ring-[#906140]/30"
-                              : "border-white/30 dark:border-white/10 hover:border-gray-300 dark:hover:border-gray-500"
-                          }`}
-                        >
-                          <img
-                            src={imagePath}
-                            alt={`Background ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                      ))}
+                      {bibleBgs.map((imagePath, index) => {
+                        const isLoading = imageLoadingStates[imagePath];
+                        const isPreloaded = imagePreloadCache.has(imagePath);
+
+                        return (
+                          <div
+                            key={index}
+                            onClick={() =>
+                              handleBackgroundImageChange(imagePath)
+                            }
+                            className={`aspect-video rounded-2xl overflow-hidden border transition-all hover:scale-105 shadow-md cursor-pointer relative ${
+                              projectionBackgroundImage === imagePath
+                                ? "border-[#906140] ring-1 ring-[#906140]/30"
+                                : "border-white/30 dark:border-white/10 hover:border-gray-300 dark:hover:border-gray-500"
+                            } ${isLoading ? "opacity-70" : ""}`}
+                            title={`${isPreloaded ? "✓ " : ""}Background ${
+                              index + 1
+                            }`}
+                          >
+                            <img
+                              src={imagePath}
+                              alt={`Background ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+
+                            {/* Loading Overlay */}
+                            {isLoading && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
+
+                            {/* Preloaded Indicator */}
+                            {isPreloaded && !isLoading && (
+                              <div className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                            )}
+
+                            {/* Selected Indicator */}
+                            {projectionBackgroundImage === imagePath && (
+                              <div className="absolute inset-0 bg-[#906140]/20 flex items-center justify-center">
+                                <div className="w-6 h-6 bg-[#906140] rounded-full flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
