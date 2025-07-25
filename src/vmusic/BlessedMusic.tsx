@@ -5,6 +5,7 @@ import DeletePopup from "./DeletePopup";
 import HeaderControls from "./components/songlist/HeaderControls";
 import VirtualSongList from "./components/songlist/VirtualSongList";
 import LoadingError from "./components/songlist/LoadingError";
+import SongProjectionControls from "./components/SongProjectionControls";
 import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { useTheme } from "@/Provider/Theme";
 import { Song } from "@/types";
@@ -182,36 +183,39 @@ const BlessedMusic = () => {
       }
 
       // Get current songs list based on active tab
-      const currentSongs = activeTab === "favorites" ? favorites : filteredSongs;
-      
+      const currentSongs =
+        activeTab === "favorites" ? favorites : filteredSongs;
+
       // Arrow key navigation
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault(); // Prevent default scrolling behavior
-        
+
         if (currentSongs.length === 0) return;
-        
+
         let newIndex = 0;
-        
+
         if (selectedSong) {
           // Find current selected song index
-          const currentIndex = currentSongs.findIndex(song => song.id === selectedSong.id);
-          
+          const currentIndex = currentSongs.findIndex(
+            (song) => song.id === selectedSong.id
+          );
+
           if (e.key === "ArrowDown") {
             // Move to next song (with wrap around)
-            newIndex = currentIndex >= 0 && currentIndex < currentSongs.length - 1 
-              ? currentIndex + 1 
-              : 0; // Wrap to first song
+            newIndex =
+              currentIndex >= 0 && currentIndex < currentSongs.length - 1
+                ? currentIndex + 1
+                : 0; // Wrap to first song
           } else if (e.key === "ArrowUp") {
             // Move to previous song (with wrap around)
-            newIndex = currentIndex > 0 
-              ? currentIndex - 1 
-              : currentSongs.length - 1; // Wrap to last song
+            newIndex =
+              currentIndex > 0 ? currentIndex - 1 : currentSongs.length - 1; // Wrap to last song
           }
         } else {
           // No song selected, select first song
           newIndex = 0;
         }
-        
+
         // Select the new song
         if (currentSongs[newIndex]) {
           selectSong(currentSongs[newIndex]);
@@ -295,13 +299,14 @@ const BlessedMusic = () => {
       >
         <TitleBar />
 
-        <div className="flex h-[calc(100vh-2rem)] overflow-hidden">
+        <div className="flex h-[100vh] overflow-hidden">
           {/* Sidebar with smooth toggle animation */}
           <div
-            className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+            className={`transition-[width,opacity] duration-300 ease-in-out flex-shrink-0 ${
               sidebarVisible ? "w-72 opacity-100" : "w-0 opacity-0"
             } overflow-hidden`}
             data-tour="sidebar"
+            style={{ transform: "none" }}
           >
             <Sidebar
               activeTab={activeTab}
@@ -386,6 +391,9 @@ const BlessedMusic = () => {
             deleteSong={deleteSelectedSong}
           />
         )}
+
+        {/* Song Projection Navigation Controls */}
+        <SongProjectionControls />
       </div>
     </AppTour>
   );

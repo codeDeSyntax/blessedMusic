@@ -102,5 +102,19 @@ interface Window {
       filePath?: string;
       error?: string;
     }>;
+    sendToSongProjection: (data: {
+      type: string;
+      command?: string;
+      fontSize?: number;
+      data?: any;
+    }) => Promise<{ success: boolean; error?: string }>;
+    onSongProjectionUpdate: (callback: (data: any) => void) => () => void;
+    sendToMainWindow: (data: {
+      type: string;
+      data?: any;
+    }) => Promise<{ success: boolean; error?: string }>;
+    onSongProjectionCommand: (callback: (data: any) => void) => () => void;
+    onFontSizeUpdate: (callback: (fontSize: number) => void) => () => void;
+    onMainWindowMessage: (callback: (data: any) => void) => () => void;
   };
 }

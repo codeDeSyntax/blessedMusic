@@ -7,6 +7,12 @@ import {
   Pause,
   Volume2,
   Info,
+  Sparkles,
+  Star,
+  Zap,
+  Music,
+  Heart,
+  Wand2,
 } from "lucide-react";
 import TitleBar from "../shared/TitleBar";
 
@@ -91,76 +97,97 @@ const instruments: Instrument[] = [
 ];
 
 const InstrumentShowroom: React.FC = () => {
-  // Duplicating the instruments array to create a seamless loop
-  const duplicatedInstruments = [
-    ...instruments,
-    ...instruments,
-    ...instruments,
-  ];
-
-  const [currentIndex, setCurrentIndex] = useState(instruments.length);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [selectedInstrument, setSelectedInstrument] = useState<Instrument>(
+    instruments[0]
+  );
+  const [hoveredInstrument, setHoveredInstrument] = useState<Instrument | null>(
+    null
+  );
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
-  const [autoScrollSpeed, setAutoScrollSpeed] = useState(20); // seconds for one complete cycle
+  const [showDetails, setShowDetails] = useState(false);
+  const [currentView, setCurrentView] = useState<"gallery" | "showcase">(
+    "gallery"
+  );
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const carouselControls = useAnimation();
 
-  const currentInstrument = instruments[currentIndex % instruments.length];
+  // Get local theme
+  const [localTheme, setLocalTheme] = useState(
+    localStorage.getItem("bmusictheme") || "white"
+  );
 
-  // Function to start the continuous animation
-  const startContinuousScroll = () => {
-    const containerWidth = containerRef.current?.scrollWidth || 0;
-
-    carouselControls.start({
-      x: [-containerWidth / 3, (-containerWidth * 2) / 3],
-      transition: {
-        x: {
-          duration: autoScrollSpeed,
-          ease: "linear",
-          repeat: Infinity,
-          repeatType: "loop",
-        },
-      },
-    });
-  };
-
-  // Start or pause the animation
   useEffect(() => {
-    if (isPlaying) {
-      startContinuousScroll();
-    } else {
-      carouselControls.stop();
+    const savedTheme = localStorage.getItem("bmusictheme");
+    if (savedTheme) {
+      setLocalTheme(savedTheme);
     }
-  }, [isPlaying, autoScrollSpeed]);
 
-  // Ensure we update current index based on visible instruments
-  useEffect(() => {
-    if (isPlaying) {
-      const indexInterval = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % duplicatedInstruments.length);
-      }, (autoScrollSpeed * 1000) / instruments.length);
+    const handleCustomStorageChange = (e: CustomEvent) => {
+      if (e.detail.key === "bmusictheme") {
+        setLocalTheme(e.detail.newValue);
+      }
+    };
 
-      return () => clearInterval(indexInterval);
-    }
-  }, [isPlaying, autoScrollSpeed]);
+    window.addEventListener(
+      "localStorageChange",
+      handleCustomStorageChange as EventListener
+    );
 
-  // Toggle slideshow play/pause
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    return () => {
+      window.removeEventListener(
+        "localStorageChange",
+        handleCustomStorageChange as EventListener
+      );
+    };
+  }, []);
+
+  // Theme-based colors
+  const themeColors = {
+    primary: localTheme === "creamy" ? "#9a674a" : "#4a5568",
+    secondary: localTheme === "creamy" ? "#d4af37" : "#e2e8f0",
+    accent: localTheme === "creamy" ? "#f4e4bc" : "#f7fafc",
+    background: localTheme === "creamy" ? "#fdf4d0" : "#ffffff",
+    text: localTheme === "creamy" ? "#654321" : "#2d3748",
+    muted: localTheme === "creamy" ? "#c8a882" : "#a0aec0",
   };
 
-  // Change speed
-  const increaseSpeed = () => {
-    setAutoScrollSpeed((prev) => Math.max(10, prev - 5));
+  // Floating particles animation
+  const FloatingParticles = () => {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            initial={{
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+              opacity: 0,
+            }}
+            animate={{
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+              opacity: [0, 0.7, 0],
+              scale: [0.5, 1.5, 0.5],
+            }}
+            transition={{
+              duration: 8 + Math.random() * 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+              delay: Math.random() * 5,
+            }}
+          >
+            {i % 4 === 0 && <Sparkles className="w-3 h-3 text-yellow-400" />}
+            {i % 4 === 1 && <Star className="w-2 h-2 text-purple-400" />}
+            {i % 4 === 2 && <Zap className="w-3 h-3 text-blue-400" />}
+            {i % 4 === 3 && <Heart className="w-2 h-2 text-pink-400" />}
+          </motion.div>
+        ))}
+      </div>
+    );
   };
 
-  const decreaseSpeed = () => {
-    setAutoScrollSpeed((prev) => Math.min(40, prev + 5));
-  };
-
-  // Toggle audio play/pause
+  // Toggle audio
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isAudioPlaying) {
@@ -172,267 +199,438 @@ const InstrumentShowroom: React.FC = () => {
     }
   };
 
-  // Toggle info display
-  const toggleInfo = () => {
-    setShowInfo(!showInfo);
-  };
-
-  // Reset audio when changing instruments
-  useEffect(() => {
-    setIsAudioPlaying(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, [currentIndex]);
-
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-[#faeed1] to-[#f5e8c1] flex flex-col items-center justify-center relative overflow-hidden">
+    <div
+      className="min-h-screen w-full relative overflow-hidden"
+      style={{
+        background:
+          localTheme === "creamy"
+            ? "linear-gradient(135deg, #fdf4d0 0%, #f4e4bc 25%, #e6d196 75%, #d4af37 100%)"
+            : "linear-gradient(135deg, #f7fafc 0%, #edf2f7 25%, #e2e8f0 75%, #cbd5e0 100%)",
+      }}
+    >
       <TitleBar />
+      <FloatingParticles />
+
       {/* Hidden audio element */}
       <audio
         ref={audioRef}
-        src={currentInstrument.audioSample}
+        src={selectedInstrument?.audioSample}
         onEnded={() => setIsAudioPlaying(false)}
       />
 
-      {/* Main showcase area - carousel container */}
-      <div
-        ref={containerRef}
-        className="w-full h-3/4 flex items-center justify-center overflow-hidden relative"
-      >
+      {/* Magical Gallery Layout */}
+      <div className="pt-16 pb-8 px-8 min-h-screen">
+        {/* Header Section */}
         <motion.div
-          className="flex items-center absolute"
-          animate={carouselControls}
-          initial={{ x: -(containerRef.current?.scrollWidth ?? 0) / 3 }}
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          className="text-center mb-12"
         >
-          {duplicatedInstruments.map((instrument, idx) => (
-            <motion.div
-              key={`${instrument.id}-${idx}`}
-              className={`mx-6 relative flex-shrink-0 ${
-                idx % instruments.length === currentIndex % instruments.length
-                  ? "scale-110 z-10"
-                  : "scale-90 opacity-70"
-              } transition-all duration-1000`}
-              whileHover={{
-                scale: 1.15,
-                opacity: 1,
-                zIndex: 20,
-                transition: { duration: 0.3 },
-              }}
-            >
+          <motion.div
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className="inline-block mb-4"
+          >
+            <Wand2
+              className="w-12 h-12 mx-auto"
+              style={{ color: themeColors.primary }}
+            />
+          </motion.div>
+          <h1
+            className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent"
+            style={{ fontFamily: "'Georgia', serif" }}
+          >
+            Enchanted Instrument Gallery
+          </h1>
+          <p className="text-lg" style={{ color: themeColors.muted }}>
+            Discover the magic of musical mastery
+          </p>
+        </motion.div>
+
+        {/* Main Gallery Grid - Hexagonal Layout */}
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 place-items-center">
+            {instruments.map((instrument, index) => (
               <motion.div
-                className="relative group overflow-hidden rounded-2xl"
-                whileHover={{ y: -10 }}
+                key={instrument.id}
+                initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{
+                  delay: index * 0.1,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20,
+                }}
+                className="relative group cursor-pointer"
+                onMouseEnter={() => setHoveredInstrument(instrument)}
+                onMouseLeave={() => setHoveredInstrument(null)}
+                onClick={() => {
+                  setSelectedInstrument(instrument);
+                  setCurrentView("showcase");
+                }}
+                whileHover={{ scale: 1.05, y: -10 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <motion.img
-                  src={instrument.imageUrl}
-                  alt={instrument.name}
-                  className="h-64 w-64 object-contain p-4 rounded-2xl shadow-xl 
-                            bg-gradient-to-b from-[#fbf5e6]/90 to-[#f0e4c3]/90 backdrop-blur-sm
-                            group-hover:shadow-2xl transition-all duration-500"
-                  whileHover={{
-                    rotate: [0, -1, 1, 0],
-                    filter: "brightness(1.1) contrast(1.05)",
-                  }}
-                />
-
-                {/* Image shine effect overlay */}
-                <motion.div
-                  className="absolute inset-0 bg-white opacity-0 rounded-2xl pointer-events-none"
-                  initial={{ opacity: 0 }}
-                  whileHover={{
-                    opacity: [0, 0.2, 0],
-                    x: ["-100%", "100%"],
-                    transition: {
-                      duration: 1.5,
-                      ease: "easeInOut",
-                    },
-                  }}
-                />
-
-                {/* Subtle floating particles */}
-                {Array.from({ length: 5 }).map((_, i) => (
+                {/* Hexagonal Card Container */}
+                <div className="relative w-64 h-64">
+                  {/* Glowing background ring */}
                   <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 rounded-full bg-[#f0e4c3]/40 pointer-events-none"
-                    initial={{
-                      x: Math.random() * 100 - 50,
-                      y: Math.random() * 100 - 50,
-                      opacity: 0,
+                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: `radial-gradient(circle, ${themeColors.primary}20 0%, transparent 70%)`,
                     }}
                     animate={{
-                      x: Math.random() * 200 - 100,
-                      y: Math.random() * 200 - 100,
-                      opacity: [0, 0.7, 0],
-                      scale: [0.8, 1.2, 0.8],
+                      scale:
+                        hoveredInstrument?.id === instrument.id
+                          ? [1, 1.2, 1]
+                          : 1,
                     }}
-                    transition={{
-                      duration: 4 + Math.random() * 3,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
                   />
-                ))}
 
-                {/* Instrument name badge */}
-                <motion.div
-                  className="absolute -bottom-10 left-0 right-0 bg-[#e9dbb4]/80 backdrop-blur-sm 
-                            px-3 py-2 rounded-b-2xl shadow-inner opacity-0 group-hover:opacity-100
-                            group-hover:bottom-0 transition-all duration-300"
-                >
-                  <h3 className="text-sm font-bold text-[#8b7e66] truncate">
-                    {instrument.name}
-                  </h3>
-                  <p className="text-[#a89b7e] text-xs">{instrument.type}</p>
-                </motion.div>
+                  {/* Main card */}
+                  <motion.div
+                    className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl"
+                    style={{
+                      background:
+                        localTheme === "creamy"
+                          ? "linear-gradient(135deg, #faf5e6 0%, #f0e4c3 50%, #e6d196 100%)"
+                          : "linear-gradient(135deg, #ffffff 0%, #f7fafc 50%, #edf2f7 100%)",
+                      border: `2px solid ${themeColors.secondary}40`,
+                    }}
+                    whileHover={{
+                      boxShadow: `0 25px 50px -12px ${themeColors.primary}40`,
+                    }}
+                  >
+                    {/* Magical shimmer overlay */}
+                    <motion.div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                      style={{
+                        background: `linear-gradient(45deg, transparent 30%, ${themeColors.secondary}20 50%, transparent 70%)`,
+                      }}
+                      animate={{
+                        x:
+                          hoveredInstrument?.id === instrument.id
+                            ? [-100, 400]
+                            : -100,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+
+                    {/* Instrument Image */}
+                    <div className="relative p-6 h-full flex items-center justify-center">
+                      <motion.img
+                        src={instrument.imageUrl}
+                        alt={instrument.name}
+                        className="max-w-full max-h-48 object-contain drop-shadow-lg"
+                        whileHover={{
+                          filter: "brightness(1.1) saturate(1.2)",
+                          rotate: [0, 3, -3, 0],
+                        }}
+                        transition={{ duration: 0.5 }}
+                      />
+
+                      {/* Floating musical notes */}
+                      {hoveredInstrument?.id === instrument.id && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="absolute"
+                              initial={{
+                                x: Math.random() * 200,
+                                y: Math.random() * 200,
+                                opacity: 0,
+                                scale: 0,
+                              }}
+                              animate={{
+                                y: -50,
+                                opacity: [0, 1, 0],
+                                scale: [0, 1, 0],
+                                rotate: [0, 360],
+                              }}
+                              transition={{
+                                duration: 2,
+                                delay: i * 0.2,
+                                repeat: Infinity,
+                                repeatDelay: 1,
+                              }}
+                            >
+                              <Music
+                                className="w-4 h-4"
+                                style={{ color: themeColors.primary }}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info badge */}
+                    <motion.div
+                      className="absolute bottom-0 left-0 right-0 p-4"
+                      style={{
+                        background: `linear-gradient(to top, ${themeColors.accent}95, transparent)`,
+                      }}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{
+                        y: hoveredInstrument?.id === instrument.id ? 0 : 20,
+                        opacity:
+                          hoveredInstrument?.id === instrument.id ? 1 : 0,
+                      }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <h3
+                        className="font-bold text-lg mb-1"
+                        style={{ color: themeColors.text }}
+                      >
+                        {instrument.name}
+                      </h3>
+                      <p
+                        className="text-sm"
+                        style={{ color: themeColors.muted }}
+                      >
+                        {instrument.type}
+                      </p>
+                    </motion.div>
+
+                    {/* Magic sparkle corners */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Sparkles className="w-6 h-6 text-yellow-400" />
+                    </div>
+                    <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Star className="w-5 h-5 text-blue-400" />
+                    </div>
+                  </motion.div>
+                </div>
               </motion.div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* Floating Action Controls */}
+        <motion.div
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1, duration: 0.8 }}
+          className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
+        >
+          <div
+            className="flex items-center space-x-4 px-6 py-3 rounded-full backdrop-blur-md shadow-2xl border"
+            style={{
+              background: `${themeColors.accent}95`,
+              borderColor: `${themeColors.secondary}60`,
+            }}
+          >
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowDetails(!showDetails)}
+              className="p-3 rounded-full shadow-lg transition-all duration-300"
+              style={{
+                backgroundColor: showDetails
+                  ? themeColors.primary
+                  : themeColors.secondary,
+                color: showDetails ? "white" : themeColors.text,
+              }}
+            >
+              <Info size={20} />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleAudio}
+              className="p-3 rounded-full shadow-lg transition-all duration-300"
+              style={{
+                backgroundColor: isAudioPlaying
+                  ? themeColors.primary
+                  : themeColors.secondary,
+                color: isAudioPlaying ? "white" : themeColors.text,
+              }}
+            >
+              <Volume2 size={20} />
+              {isAudioPlaying && (
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2"
+                  style={{ borderColor: themeColors.primary }}
+                  animate={{
+                    scale: [1, 1.5, 1],
+                    opacity: [1, 0, 1],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                  }}
+                />
+              )}
+            </motion.button>
+
+            <div
+              className="text-sm font-medium px-3"
+              style={{ color: themeColors.text }}
+            >
+              {hoveredInstrument ? hoveredInstrument.name : "Hover to preview"}
+            </div>
+          </div>
         </motion.div>
       </div>
 
-      {/* Detailed information panel */}
+      {/* Detailed Showcase Modal */}
       <AnimatePresence>
-        {showInfo && (
+        {currentView === "showcase" && (
           <motion.div
-            initial={{ opacity: 0, y: 30, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: 30, height: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 500 }}
-            className="absolute bottom-24 left-1/2 transform -translate-x-1/2 
-                      bg-[#f5e8c1]/90 backdrop-blur-md p-6 rounded-xl
-                      max-w-md shadow-lg text-center border border-[#e9dbb4]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-8"
+            style={{ backgroundColor: `${themeColors.background}95` }}
+            onClick={() => setCurrentView("gallery")}
           >
-            <motion.h2
-              className="text-2xl font-bold text-[#7d6e56] mb-2"
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              {currentInstrument.name}
-            </motion.h2>
             <motion.div
-              className="w-16 h-1 bg-[#a89b7e] mx-auto mb-3 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: 64 }}
-              transition={{ delay: 0.2 }}
-            />
-            <motion.p
-              className="text-[#8b7e66] text-sm mb-3 font-medium"
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 0.5, opacity: 0, rotate: 10 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="relative max-w-4xl w-full rounded-3xl overflow-hidden shadow-3xl"
+              style={{ backgroundColor: themeColors.accent }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {currentInstrument.type}
-            </motion.p>
-            <motion.p
-              className="text-[#a89b7e] leading-relaxed"
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              {currentInstrument.description}
-            </motion.p>
+              {/* Close button */}
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setCurrentView("gallery")}
+                className="absolute top-6 right-6 z-10 p-2 rounded-full backdrop-blur-md"
+                style={{ backgroundColor: `${themeColors.secondary}80` }}
+              >
+                <Zap
+                  className="w-6 h-6"
+                  style={{ color: themeColors.primary }}
+                />
+              </motion.button>
+
+              <div className="flex flex-col lg:flex-row h-full min-h-[500px]">
+                {/* Image Section */}
+                <div className="lg:w-1/2 p-8 flex items-center justify-center">
+                  <motion.div
+                    className="relative"
+                    animate={{
+                      y: [0, -10, 0],
+                      rotate: [0, 1, -1, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <img
+                      src={selectedInstrument.imageUrl}
+                      alt={selectedInstrument.name}
+                      className="max-w-full max-h-96 object-contain drop-shadow-2xl"
+                    />
+
+                    {/* Magical aura */}
+                    <motion.div
+                      className="absolute inset-0 rounded-full opacity-30"
+                      style={{
+                        background: `radial-gradient(circle, ${themeColors.primary}20 0%, transparent 70%)`,
+                      }}
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.6, 0.3],
+                      }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    />
+                  </motion.div>
+                </div>
+
+                {/* Details Section */}
+                <div className="lg:w-1/2 p-8 flex flex-col justify-center">
+                  <motion.h2
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-4xl font-bold mb-4"
+                    style={{
+                      color: themeColors.text,
+                      fontFamily: "'Georgia', serif",
+                    }}
+                  >
+                    {selectedInstrument.name}
+                  </motion.h2>
+
+                  <motion.div
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center mb-6"
+                  >
+                    <span
+                      className="px-4 py-2 rounded-full text-sm font-semibold"
+                      style={{
+                        backgroundColor: `${themeColors.primary}20`,
+                        color: themeColors.primary,
+                      }}
+                    >
+                      {selectedInstrument.type}
+                    </span>
+                  </motion.div>
+
+                  <motion.p
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-lg leading-relaxed mb-8"
+                    style={{ color: themeColors.muted }}
+                  >
+                    {selectedInstrument.description}
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="flex space-x-4"
+                  >
+                    <motion.button
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={toggleAudio}
+                      className="flex items-center space-x-2 px-6 py-3 rounded-full font-semibold shadow-lg transition-all"
+                      style={{
+                        backgroundColor: themeColors.primary,
+                        color: "white",
+                      }}
+                    >
+                      <Volume2 size={20} />
+                      <span>
+                        {isAudioPlaying ? "Stop Sample" : "Play Sample"}
+                      </span>
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center space-x-2 px-6 py-3 rounded-full font-semibold shadow-lg transition-all"
+                      style={{
+                        backgroundColor: themeColors.secondary,
+                        color: themeColors.text,
+                      }}
+                    >
+                      <Heart size={20} />
+                      <span>Add to Favorites</span>
+                    </motion.button>
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Navigation and controls */}
-      <div
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 
-                    flex items-center p-4 bg-[#f5e8c1]/80 backdrop-blur-md rounded-full
-                    shadow-lg border border-[#e9dbb4] space-x-5"
-      >
-        {/* Info toggle button */}
-        <motion.button
-          whileHover={{ scale: 1.15, rotate: [0, 10, -10, 0] }}
-          whileTap={{ scale: 0.9 }}
-          onClick={toggleInfo}
-          className={`p-3 rounded-full ${
-            showInfo ? "bg-[#cebf95]" : "bg-[#e9dbb4]"
-          } text-[#7d6e56] shadow-md flex items-center justify-center`}
-        >
-          <Info size={18} />
-        </motion.button>
-
-        {/* Speed controls */}
-        <div className="flex items-center space-x-2">
-          <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={increaseSpeed}
-            className="p-2 rounded-full bg-[#e9dbb4] hover:bg-[#d9c89e] text-[#7d6e56] shadow-sm"
-          >
-            <ChevronLeft size={16} />
-            <ChevronLeft size={16} className="-ml-3" />
-          </motion.button>
-
-          {/* Play/Pause control */}
-          <motion.button
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={togglePlayPause}
-            className="p-4 rounded-full bg-[#d9c89e] hover:bg-[#cebf95] text-[#7d6e56] shadow-md
-                      flex items-center justify-center"
-          >
-            {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={decreaseSpeed}
-            className="p-2 rounded-full bg-[#e9dbb4] hover:bg-[#d9c89e] text-[#7d6e56] shadow-sm"
-          >
-            <ChevronRight size={16} />
-            <ChevronRight size={16} className="-ml-3" />
-          </motion.button>
-        </div>
-
-        {/* Audio control */}
-        {currentInstrument.audioSample && (
-          <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={toggleAudio}
-            className={`p-3 rounded-full ${
-              isAudioPlaying ? "bg-[#cebf95]" : "bg-[#e9dbb4]"
-            } text-[#7d6e56] shadow-md flex items-center justify-center`}
-          >
-            <Volume2 size={18} />
-            {isAudioPlaying && (
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-[#7d6e56]"
-                animate={{
-                  scale: [1, 1.4, 1],
-                  opacity: [1, 0, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "loop",
-                }}
-              />
-            )}
-          </motion.button>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      <motion.div
-        className="absolute bottom-0 left-0 h-1 bg-[#d9c89e]"
-        initial={{ width: 0 }}
-        animate={{
-          width: isPlaying ? ["0%", "100%"] : "0%",
-        }}
-        transition={{
-          duration: autoScrollSpeed / instruments.length,
-          ease: "linear",
-          repeat: isPlaying ? Infinity : 0,
-          repeatType: "loop",
-        }}
-      />
     </div>
   );
 };

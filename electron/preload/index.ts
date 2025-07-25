@@ -111,6 +111,52 @@ contextBridge.exposeInMainWorld("api", {
   getSecretLogs: () => ipcRenderer.invoke("get-secret-logs"),
   clearSecretLogs: () => ipcRenderer.invoke("clear-secret-logs"),
   exportSecretLogs: () => ipcRenderer.invoke("export-secret-logs"),
+
+  // Song Projection Navigation and Font Size API
+  sendToSongProjection: (data: {
+    command?: string;
+    data?: any;
+    fontSize?: number;
+  }) => ipcRenderer.invoke("send-to-song-projection", data),
+  sendToMainWindow: (data: { type: string; data: any }) =>
+    ipcRenderer.invoke("send-to-main-window", data),
+  onSongProjectionCommand: (
+    callback: (event: { command: string; data?: any }) => void
+  ) => {
+    const listener = (
+      event: Electron.IpcRendererEvent,
+      data: { command: string; data?: any }
+    ) => {
+      callback(data);
+    };
+    ipcRenderer.on("song-projection-command", listener);
+    return () => {
+      ipcRenderer.removeListener("song-projection-command", listener);
+    };
+  },
+  onFontSizeUpdate: (callback: (fontSize: number) => void) => {
+    const listener = (event: Electron.IpcRendererEvent, fontSize: number) => {
+      callback(fontSize);
+    };
+    ipcRenderer.on("font-size-update", listener);
+    return () => {
+      ipcRenderer.removeListener("font-size-update", listener);
+    };
+  },
+  onMainWindowMessage: (
+    callback: (event: { type: string; data: any }) => void
+  ) => {
+    const listener = (
+      event: Electron.IpcRendererEvent,
+      data: { type: string; data: any }
+    ) => {
+      callback(data);
+    };
+    ipcRenderer.on("main-window-message", listener);
+    return () => {
+      ipcRenderer.removeListener("main-window-message", listener);
+    };
+  },
 });
 
 // --------- Preload scripts loading ---------

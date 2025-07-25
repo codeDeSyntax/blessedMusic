@@ -179,13 +179,13 @@ const VirtualSongList = React.memo(
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    className={`w-8 h-8 rounded-full flex items-center shadow justify-center ${
                       localTheme === "creamy"
                         ? "bg-gradient-to-r from-[#9a674a] to-[#9a674a]"
-                        : "bg-gradient-to-r from-[#9a674a] to-[#9a674a"
+                        : "bg-gradient-to-r from-[#faeed1] to-[#faeed1"
                     }`}
                   >
-                    <Music className="w-4 h-4 text-white" />
+                    <img src="./music1.png" className="w-4 h-4" alt="PDF icon" />
                   </div>
                   <div>
                     <h3

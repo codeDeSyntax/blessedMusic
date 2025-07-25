@@ -611,6 +611,66 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
     }
   }, [handleSongData, initialSong]);
 
+  // Listen for navigation commands from main window
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.api?.onSongProjectionCommand) {
+      const cleanup = window.api.onSongProjectionCommand((data: any) => {
+        console.log("SongPresentationDisplay received command:", data);
+        if (data.command === "next") {
+          goToNext();
+        } else if (data.command === "previous") {
+          goToPrevious();
+        }
+      });
+
+      return cleanup;
+    }
+  }, [goToNext, goToPrevious]);
+
+  // Listen for font size updates from main window
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.api?.onFontSizeUpdate) {
+      const cleanup = window.api.onFontSizeUpdate((fontSize: number) => {
+        console.log(
+          "SongPresentationDisplay received font size update:",
+          fontSize
+        );
+        // Convert font size to multiplier relative to base size
+        const multiplier = fontSize / baseFontSize;
+        setFontSizeMultiplier(multiplier);
+      });
+
+      return cleanup;
+    }
+  }, [baseFontSize]);
+
+  // Send updates back to main window when navigation changes
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.api?.sendToMainWindow &&
+      songSections.length > 0
+    ) {
+      window.api
+        .sendToMainWindow({
+          type: "SONG_PROJECTION_UPDATE",
+          data: {
+            type: "PAGE_CHANGE",
+            currentPage: currentIndex,
+            totalPages: songSections.length,
+            currentSection: songSections[currentIndex]?.type || "Unknown",
+            sectionNumber: songSections[currentIndex]?.number || null,
+          },
+        })
+        .catch((error) => {
+          console.error(
+            "Failed to send projection update to main window:",
+            error
+          );
+        });
+    }
+  }, [currentIndex, songSections]);
+
   const currentSection = songSections[currentIndex];
   const optimalFontSize =
     contentRef.current && currentSection
@@ -927,7 +987,7 @@ const SongPresentationDisplay: React.FC<SongPresentationDisplayProps> = ({
                       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                       transition={{
                         delay: index * 0.15 + 0.3,
-                        duration: 0.6,
+                        duration: 0.2,
                         ease: [0.25, 0.46, 0.45, 0.94],
                       }}
                       onClick={handleTextClick}

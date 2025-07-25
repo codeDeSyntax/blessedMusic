@@ -1710,6 +1710,74 @@ ipcMain.handle("create-song-projection-window", async (event, data) => {
   }
 });
 
+// Song projection navigation and font size IPC handlers
+ipcMain.handle(
+  "send-to-song-projection",
+  async (event, { command, data, fontSize }) => {
+    try {
+      console.log("🎵 Main process received song projection command:", {
+        command,
+        data,
+        fontSize,
+      });
+
+      if (!songPresentationWin || songPresentationWin.isDestroyed()) {
+        console.log("❌ Song projection window not available");
+        return { success: false, error: "No projection window available" };
+      }
+
+      // Send command to the song presentation window
+      if (command) {
+        console.log("📤 Sending command to projection window:", {
+          command,
+          data,
+        });
+        songPresentationWin.webContents.send("song-projection-command", {
+          command,
+          data,
+        });
+      }
+
+      // Send font size update if provided
+      if (fontSize !== undefined) {
+        console.log(
+          "📤 Sending font size update to projection window:",
+          fontSize
+        );
+        songPresentationWin.webContents.send("font-size-update", fontSize);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("❌ Error sending to song projection:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
+ipcMain.handle("send-to-main-window", async (event, { type, data }) => {
+  try {
+    if (!mainWin || mainWin.isDestroyed()) {
+      console.log("Main window not available");
+      return { success: false, error: "No main window available" };
+    }
+
+    // Send message to the main window
+    mainWin.webContents.send("main-window-message", { type, data });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending to main window:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
 // Register custom protocol for local images
 app.whenReady().then(() => {
   // Register custom protocol to serve local images

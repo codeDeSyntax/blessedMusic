@@ -135,8 +135,15 @@ export const EvPresenterThemeProvider: React.FC<
   }, [isDarkMode]);
 
   const toggleDarkMode = () => {
-    setIsDarkMode((prev) => !prev);
-    localStorage.setItem("evPresenterDarkMode", (!isDarkMode).toString());
+    console.log('toggleDarkMode called, current state:', isDarkMode);
+    setIsDarkMode((prev) => {
+      const newValue = !prev;
+      console.log('Setting isDarkMode from', prev, 'to', newValue);
+      // Store the new value immediately
+      localStorage.setItem("evPresenterDarkMode", String(newValue));
+      console.log('Stored in localStorage:', String(newValue));
+      return newValue;
+    });
   };
 
   const toggleActiveFeature = (feature: string | null) => {

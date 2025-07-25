@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { PresentationLayout } from "./PresentationLayout";
 import { PresentationList } from "./PList";
 import { SermonForm } from "./PresentationForm";
-import { PresentationSlideshow } from "./PresentationSlideShow";
+import { PresentationSlideshowRefactored } from "./PresentationSlideshowRefactoredNew";
 import { Presentation } from "@/types";
 import { PresentationDetail } from "./PresentationDetail";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -150,7 +150,7 @@ const PresentationMasterPage: React.FC = () => {
 
       case "mpresenter":
         return (
-          <PresentationSlideshow
+          <PresentationSlideshowRefactored
             onBack={() =>
               setViewState({ type: "list", category: selectedCategory })
             }
@@ -178,7 +178,9 @@ const PresentationMasterPage: React.FC = () => {
 
   return (
     <PresentationLayout title={getTitle()} onBackClick={handleBack}>
-      {renderContent()}
+      <div className="overflow-hidden h-full bg-[#30261d]">
+        {renderContent()}
+      </div>
     </PresentationLayout>
   );
 };

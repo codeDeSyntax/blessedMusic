@@ -550,20 +550,49 @@ const SongPresentation = () => {
     convertSectionsToPages,
   ]);
 
+  // Send projection updates to main window
+  const sendProjectionUpdate = useCallback((type: string, data: any) => {
+    try {
+      window.api.sendToMainWindow?.({
+        type: "SONG_PROJECTION_UPDATE",
+        data: {
+          type,
+          ...data,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send projection update:", error);
+    }
+  }, []);
+
   // Navigation handlers
   const handleNext = useCallback(() => {
     if (currentIndex < songPages.length - 1) {
       setDirection(1);
-      setCurrentIndex(currentIndex + 1);
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+
+      // Send update to main window
+      sendProjectionUpdate("PAGE_CHANGE", {
+        currentPage: newIndex,
+        totalPages: songPages.length,
+      });
     }
-  }, [currentIndex, songPages.length]);
+  }, [currentIndex, songPages.length, sendProjectionUpdate]);
 
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       setDirection(-1);
-      setCurrentIndex(currentIndex - 1);
+      const newIndex = currentIndex - 1;
+      setCurrentIndex(newIndex);
+
+      // Send update to main window
+      sendProjectionUpdate("PAGE_CHANGE", {
+        currentPage: newIndex,
+        totalPages: songPages.length,
+      });
     }
-  }, [currentIndex]);
+  }, [currentIndex, sendProjectionUpdate]);
 
   // Keyboard navigation with font controls
   useEffect(() => {
@@ -620,6 +649,38 @@ const SongPresentation = () => {
     showColorPicker,
     closeColorPicker,
   ]);
+
+  // Listen for navigation commands from main window
+  useEffect(() => {
+    const cleanup = window.api.onSongProjectionCommand?.((data: any) => {
+      if (data.command === "next") {
+        handleNext();
+      } else if (data.command === "previous") {
+        handlePrev();
+      }
+    });
+
+    return cleanup;
+  }, [handleNext, handlePrev]);
+
+  // Listen for font size updates from main window
+  useEffect(() => {
+    const cleanup = window.api.onFontSizeUpdate?.((fontSize: number) => {
+      setFontSize(fontSize.toString());
+    });
+
+    return cleanup;
+  }, []);
+
+  // Send initial page info when component mounts or pages change
+  useEffect(() => {
+    if (songPages.length > 0) {
+      sendProjectionUpdate("PAGE_CHANGE", {
+        currentPage: currentIndex,
+        totalPages: songPages.length,
+      });
+    }
+  }, [songPages.length, currentIndex, sendProjectionUpdate]);
 
   // Loading state
   if (!selectedSong || songPages.length === 0) {
@@ -746,7 +807,7 @@ const SongPresentation = () => {
 
       {/* Main Content Container */}
       <div className="relative z-20 h-full flex flex-col">
-        <InteractiveBackground/>
+        <InteractiveBackground />
         {/* Content Container */}
         <div
           className="relative h-screen flex flex-col text-white content-container"

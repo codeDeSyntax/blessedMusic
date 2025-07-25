@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation, Scripture, MessagePoint, Quote } from "@/types";
-import { useEvPresenterTheme } from "@/Provider/EvPresenterTheme";
 import { useBibleOperations } from "@/features/bible/hooks/useBibleOperations";
 
 interface SermonFormProps {
@@ -44,7 +43,6 @@ export const SermonForm: React.FC<SermonFormProps> = ({
 
   // Local path management
   const selectedPath = localStorage.getItem("evpresenterfilespath") || "";
-  const { isDarkMode } = useEvPresenterTheme();
 
   const [title, setTitle] = useState(initialData?.title || "");
   const [preacher, setPreacher] = useState(
@@ -417,84 +415,6 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Background Image Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-[#9a674a] mb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <ImageIcon size={16} className="mr-1" />
-                    <span>Background Image</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSelectImagesDirectory}
-                    className="flex items-center px-3 py-1.5 text-xs rounded-lg bg-[#9a674a]/10 text-[#9a674a] hover:bg-[#9a674a]/20 transition-colors"
-                  >
-                    <FolderUp size={14} className="mr-1.5" />
-                    Select Folder
-                  </button>
-                </div>
-              </label>
-
-              {/* Image Grid with Overlapping Cards */}
-              <div className="relative p-2">
-                <div className="flex overflow-x-auto no-scrollbar py-4 px-2">
-                  <div className="flex space-x-[-20px]">
-                    {availableImages.length > 0 ? (
-                      availableImages.map((img, index) => (
-                        <div
-                          key={index}
-                          onClick={() => setBackgroundImage(img)}
-                          className={`relative w-16 h-16 rounded-full overflow-hidden hover:translate-y-[-4px] transform transition-all duration-200 cursor-pointer ${
-                            backgroundImage === img
-                              ? "ring-2 ring-[#9a674a] translate-y-[-4px] z-10"
-                              : "hover:z-10"
-                          }`}
-                          style={{
-                            boxShadow:
-                              backgroundImage === img
-                                ? "0 4px 12px rgba(154, 103, 74, 0.2)"
-                                : "0 2px 8px rgba(0, 0, 0, 0.1)",
-                          }}
-                        >
-                          <img
-                            src={img}
-                            alt={`Background ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {backgroundImage === img && (
-                            <div className="absolute inset-0 bg-[#9a674a]/10 border-2 border-[#9a674a]" />
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-sm text-[#9a674a]/70 w-full">
-                        No images available. Select a folder with images.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Selected Image Preview */}
-              {backgroundImage && (
-                <div className="relative inline-block">
-                  <img
-                    src={backgroundImage}
-                    alt="Selected background"
-                    className="w-16 h-16 object-cover rounded-full shadow-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setBackgroundImage("")}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >
-                    <XIcon size={12} />
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Main Message Points */}

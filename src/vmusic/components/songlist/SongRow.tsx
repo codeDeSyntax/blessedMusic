@@ -53,7 +53,7 @@ const SongRow = React.memo(
             className="px-4 py-2 flex items-center justify-center gap-2 text-stone-600 text-[11px] font-medium"
             style={{ fontFamily: "Georgia" }}
           >
-            <img src="./pdf.png" className="w-4 h-4" alt="PDF icon" />
+            <img src="./music1.png" className="w-4 h-4" alt="PDF icon" />
             {song.title.charAt(0).toUpperCase() +
               song.title.slice(1).toLowerCase()}
           </td>
@@ -125,15 +125,15 @@ const SongRow = React.memo(
                     background:
                       localTheme === "creamy"
                         ? "linear-gradient(135deg, #48330d 0%, #d97706 100%)"
-                        : "linear-gradient(135deg, #faeed1 0%, #9a674a 100%)",
+                        : "linear-gradient(135deg, #faeed1 0%, #fffcef 100%)",
                   }}
                 >
-                  <Music className="w-3 h-3 text-white" />
+                  <img src="./music1.png" className="w-4 h-4" alt="PDF icon" />
                 </div>
               </div>
 
               {/* Song Title - Properly constrained */}
-              <div className="flex-1 min-w-0">
+              <div className="flex1 min-w-0">
                 <h3
                   className="text-xs font-medium truncate group-hover:text-amber-700 transition-colors leading-tight"
                   style={{

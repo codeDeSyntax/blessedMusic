@@ -344,10 +344,10 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
     switch (activeTab) {
       case "Song":
         return (
-          <div className="flex items-start flex-col p-3">
-            <h3 className="text-lg text-left font-ThePriest underline text-stone-600 font-semibold">
+          <div className="flex items-start flex-col px-3">
+            {/* <h3 className="text-lg text-left font-ThePriest underline text-stone-600 font-semibold overflow-hidden mb-1">
               {selectedSong?.title}
-            </h3>
+            </h3> */}
             {/* clean song content with dangerously html*/}
             {/* dangerously rendered  html to clean code */}
 
@@ -355,15 +355,52 @@ const Sidebar = React.memo(({ activeTab, setActiveTab }: SideBarProps) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 * 0.1 }}
+              className="relative w-full overflow-hidden "
             >
-              <p
-                dangerouslySetInnerHTML={{
-                  __html: selectedSong?.content || "",
-                }}
-                className={`overflow-y-scroll no-scrollbar h-[50vh]  text-left text-[12px] ${
-                  !selectedSong && "hidden"
-                }`}
-              />
+              <div className="relative w-full h-[85vh] rounded-lg shadow-lg overflow-hidden">
+                {/* Fixed scroll background image - completely static */}
+                <div className="absolute inset-0 w-full h-full">
+                  <img
+                    src={`./${
+                      localTheme === "creamy"
+                        ? "creampaper.jpg"
+                        : "whitescroll.png"
+                    }`}
+                    alt="Scroll background"
+                    className="w-full h-full object-cover object-center"
+                    style={{ position: "sticky", top: 0 }}
+                  />
+                </div>
+
+                {/* Fixed positioned text overlay that doesn't move with scroll */}
+                <div className="absolute inset-0 flex items-start justify-center pointer-events-none">
+                  <div className="w-[90%] h-[80%] relative pointer-events-auto">
+                    {/* Scrollable text content with proper boundaries */}
+                     <h3 className="text-lg text-left font-ThePriest underline text-stone-600 font-semibold overflow-hidden mb-1">
+              {selectedSong?.title}
+            </h3>
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: selectedSong?.content || "",
+                      }}
+                      className={`overflow-y-scroll no-scrollbar h-full w-full text-left text-[10px] px-3 leading-relaxed ${
+                        !selectedSong && "hidden"
+                      }`}
+                      style={{
+                        color: localTheme === "creamy" ? "#654321" : "#2D1810",
+                        backgroundColor: "transparent",
+                        textShadow: "none",
+                        lineHeight: "1.6",
+                        fontFamily: "'Georgia', serif",
+                        fontWeight: "500",
+                        maxHeight: "100%",
+                        overflowWrap: "break-word",
+                        wordWrap: "break-word",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             {/* <p>{selectedSong?.content}</p> */}

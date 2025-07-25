@@ -96,6 +96,9 @@ export type EvSermon = {
   createdAt: string;
   updatedAt: string;
   backgroundImage?: string;
+  // New template and theme properties
+  template?: string;
+  theme?: string;
 };
 
 export type Presentation = EvSermon;

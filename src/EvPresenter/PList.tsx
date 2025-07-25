@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
-import { useEvPresenterTheme } from "@/Provider/EvPresenterTheme";
 
 // Set of background images we'll use randomly for the cards
 const backgroundImages = [
@@ -47,10 +46,8 @@ const PresentationCard: React.FC<{
   onPresent: (presentation: PresentationType) => void;
   onOpenFile: (presentation: PresentationType) => void;
 }> = ({ presentation, onSelect, onEdit, onDelete, onPresent, onOpenFile }) => {
-  const { isDarkMode } = useEvPresenterTheme();
-  // Determine accent colors based on presentation type
-  // const accentColor = presentation.type === "sermon" && isDarkMode ? "9a674a" : "8b5a3c";
-  const backgroundImage = isDarkMode ? "./wood10.jpg" : "./wood11.jpg";
+  // Fixed dark theme background
+  const backgroundImage = "./wood10.jpg";
 
   // Format date nicely
   const formattedDate = new Date(presentation.updatedAt).toLocaleDateString(
@@ -75,11 +72,9 @@ const PresentationCard: React.FC<{
     <motion.div
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
-      className={`group flex flex-col rounded-lg shadow-lg hover:shadow-xl transition-all duration-500 h-full bg-[#faeed1] dark:bg-ltgray border border-[#9a674a]/20 dark:border-gray-800`}
+      className={`group flex flex-col rounded-lg shadow-lg hover:shadow-xl transition-all duration-500 h-full bg-[#30261d] border border-gray-800`}
       style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264.888-.14 1.652-1.1 2.782.14 3.68.14 1.074 0 2.14-.156 3.204-.156 1.23 0 2.46.156 3.7.156 1.326 0 2.4-.156 3.7-.156' stroke='%23${
-          isDarkMode ? "#555555" : "#9a674a"
-        }' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264.888-.14 1.652-1.1 2.782.14 3.68.14 1.074 0 2.14-.156 3.204-.156 1.23 0 2.46.156 3.7.156 1.326 0 2.4-.156 3.7-.156' stroke='%23555555' stroke-width='2' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E")`,
         backgroundPosition: "bottom center",
         backgroundRepeat: "repeat-x",
       }}
@@ -101,7 +96,7 @@ const PresentationCard: React.FC<{
 
         {/* Receipt Title Bar */}
         <div className="absolute rounded-t-lg inset-x-0 top-0 h-12 bg-[#ecb129]/30 dark:bg-[#78716c]/30 backdrop-blur- flex items-center justify-between px-4">
-          <h3 className="font-bitter text-[#9a674a] dark:text-gray-50 text-[12px] font-medium truncate max-w-[80%]">
+          <h3 className="font-bitter text-gray-50 text-[12px] font-medium truncate max-w-[80%]">
             {presentation.title}
           </h3>
 
@@ -128,7 +123,7 @@ const PresentationCard: React.FC<{
         {/* Receipt Details */}
         <div className="space-y-3 mb-4">
           {/* Date and Time - Receipt Style */}
-          <div className="flex justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
+          <div className="flex justify-between text-xs text-gray-400 border-b border-dashed border-gray-700 pb-2 px-1">
             <div className="flex items-center">
               <Calendar size={12} className="mr-1" />
               <span>{formattedDate}</span>
@@ -141,18 +136,18 @@ const PresentationCard: React.FC<{
 
           {/* Preacher Info */}
           {presentation.type === "sermon" && (
-            <div className="flex items-center justify-between text-xs text-[#9a674a] dark:text-gray-400 border-b border-dashed border-[#9a674a]/30 dark:border-gray-700 pb-2 px-1">
+            <div className="flex items-center justify-between text-xs text-gray-400 border-b border-dashed border-gray-700 pb-2 px-1">
               <div className="flex items-center">
                 <User size={12} className="mr-1" />
                 <span>Preacher:</span>
               </div>
-              <div className="font-medium text-[#9a674a] dark:text-gray-300 flex items-center">
+              <div className="font-medium text-gray-300 flex items-center">
                 <div
                   className={`w-5 h-5 rounded-full bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] flex items-center justify-center text-[#faeed1] text-xs font-bold mr-1`}
                   style={{
                     borderWidth: 1,
                     borderStyle: "dashed",
-                    borderColor: isDarkMode ? "#800080" : "#9a674a",
+                    borderColor: "#800080",
                   }}
                 >
                   {((presentation as any).preacher || "")
@@ -294,7 +289,6 @@ export const PresentationList: React.FC<{
     isLoading,
     error,
   } = usePresenterOperations();
-  const { isDarkMode } = useEvPresenterTheme();
 
   // Local state for path management
   const [selectedPath, setSelectedPath] = useState(
@@ -396,20 +390,20 @@ export const PresentationList: React.FC<{
   };
 
   return (
-    <div className="flex flex-col h-[94%] bg-[#faeed1] dark:bg-black px-4 py-6 ">
+    <div className="flex flex-col h-screen bg-[#30261d] px-4 py-6 ">
       <div
-        className={`w-full max-w-6xl mx-auto rounded-3xl bg-[#faeed1]/70 dark:bg-bgray/60 shadow-xl p-6  relative overflow-hidden backdrop-blur-sm h-full border border-[#9a674a]/20`}
+        className={`w-full max-w-6xl mx-auto rounded-3xl bg-[#30261d]/70 shadow-xl p-6  relative overflow-y-scroll no-scrollbar backdrop-blur-sm h-full border border-gray-800`}
       >
         {/* Corner backdrop effects for magical feel */}
-        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-[#9a674a]/40 to-[#8b5a3c]/20 dark:from-[#8b5a3c]/20 dark:to-[#8b5a3c]/20 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute top-1/4 right-0 w-60 h-60 bg-gradient-to-bl from-[#8b5a3c]/40 to-[#9a674a]/20 dark:from-[#8b5a3c]/20 dark:to-[#8b5a3c]/20 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-0 left-1/4 w-36 h-36 bg-gradient-to-tr from-[#9a674a]/20 to-[#8b5a3c]/20 dark:from-[#8b5a3c]/20 dark:to-[#8b5a3c]/20 rounded-full blur-2xl"></div>
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-[#8b5a3c]/20 to-[#8b5a3c]/20 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute top-1/4 right-0 w-60 h-60 bg-gradient-to-bl from-[#8b5a3c]/20 to-[#8b5a3c]/20 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-0 left-1/4 w-36 h-36 bg-gradient-to-tr from-[#8b5a3c]/20 to-[#8b5a3c]/20 rounded-full blur-2xl"></div>
 
         <div className="relative z-10 flex flex-col h-full">
           {/* Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-2xl flex items-center justify-cen font-bold text-[#9a674a] dark:bg-gradient-to-r dark:from-[#8b5a3c] dark:to-purple-600 dark:bg-clip-text dark:text-transparent">
+              <h1 className="text-2xl flex items-center justify-cen font-bold bg-gradient-to-r from-[#8b5a3c] to-purple-600 bg-clip-text text-transparent">
                 <span>Sermons</span>
                 {selectedPath ? (
                   <span className="text-sm text-[#9a674a]/70 dark:text-gray-400 ml-2">
