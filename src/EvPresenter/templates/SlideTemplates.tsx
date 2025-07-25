@@ -25,78 +25,78 @@ export interface SlideProps {
 }
 
 // Template 1: Modern Minimal
-export const MinimalTemplate: React.FC<SlideProps> = ({ 
-  content, 
-  theme, 
+export const MinimalTemplate: React.FC<SlideProps> = ({
+  content,
+  theme,
   animation = "bouncing-text",
-  isVisible = true 
+  isVisible = true,
 }) => {
   const getAnimationVariants = () => {
     switch (animation) {
       case "bouncing-text":
         return {
           hidden: { opacity: 0, y: -50, scale: 0.8 },
-          visible: { 
-            opacity: 1, 
-            y: 0, 
+          visible: {
+            opacity: 1,
+            y: 0,
             scale: 1,
             transition: {
               type: "spring",
               damping: 20,
               stiffness: 300,
-              duration: 0.8
-            }
-          }
+              duration: 0.8,
+            },
+          },
         };
       case "gliding-sweep":
         return {
           hidden: { opacity: 0, x: -100 },
-          visible: { 
-            opacity: 1, 
+          visible: {
+            opacity: 1,
             x: 0,
             transition: {
               type: "tween",
               ease: "easeOut",
-              duration: 1.2
-            }
-          }
+              duration: 1.2,
+            },
+          },
         };
       default:
         return {
           hidden: { opacity: 0 },
-          visible: { opacity: 1, transition: { duration: 0.5 } }
+          visible: { opacity: 1, transition: { duration: 0.5 } },
         };
     }
   };
 
   return (
-    <div 
+    <div
       className="w-full h-full relative overflow-hidden"
-      style={{ 
+      style={{
         background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-        minHeight: "100vh"
+        minHeight: "100vh",
       }}
     >
       {/* Geometric background elements */}
       <div className="absolute inset-0">
         {/* Primary geometric shape */}
-        <div 
+        <div
           className="absolute top-0 right-0 w-96 h-96 opacity-10 transform rotate-45"
           style={{ backgroundColor: theme.accent }}
         />
-        
+
         {/* Secondary shape */}
-        <div 
+        <div
           className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-5"
           style={{ backgroundColor: theme.text }}
         />
-        
+
         {/* Accent lines */}
-        <div 
+        <div
           className="absolute top-1/3 left-0 w-full h-px opacity-20"
           style={{ backgroundColor: theme.accent }}
         />
-        <div 
+        <div
           className="absolute top-2/3 left-0 w-full h-px opacity-20"
           style={{ backgroundColor: theme.accent }}
         />
@@ -115,10 +115,10 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
             {content.title && (
               <motion.h1
                 className="text-6xl md:text-7xl font-bold leading-tight"
-                style={{ 
+                style={{
                   color: theme.text,
                   fontFamily: "'Inter', sans-serif",
-                  textShadow: "0 4px 20px rgba(0,0,0,0.2)"
+                  textShadow: "0 4px 20px rgba(0,0,0,0.2)",
                 }}
               >
                 {content.title}
@@ -146,14 +146,14 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                <blockquote 
+                <blockquote
                   className="text-xl md:text-2xl italic font-light leading-relaxed"
                   style={{ color: theme.text }}
                 >
                   "{content.scripture}"
                 </blockquote>
                 {content.reference && (
-                  <cite 
+                  <cite
                     className="block mt-4 text-lg font-medium"
                     style={{ color: theme.accent }}
                   >
@@ -171,20 +171,20 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <div 
+                <div
                   className="absolute -top-4 -left-4 text-6xl opacity-30"
                   style={{ color: theme.accent }}
                 >
                   "
                 </div>
-                <p 
+                <p
                   className="text-xl md:text-2xl italic leading-relaxed pl-8"
                   style={{ color: theme.text }}
                 >
                   {content.quote}
                 </p>
                 {content.author && (
-                  <p 
+                  <p
                     className="mt-4 text-lg font-semibold"
                     style={{ color: theme.accent }}
                   >
@@ -202,7 +202,7 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <p 
+                <p
                   className="text-2xl md:text-3xl font-medium leading-relaxed"
                   style={{ color: theme.text }}
                 >
@@ -227,11 +227,11 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + index * 0.1 }}
                   >
-                    <div 
+                    <div
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: theme.accent }}
                     />
-                    <p 
+                    <p
                       className="text-xl font-medium"
                       style={{ color: theme.text }}
                     >
@@ -246,7 +246,7 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
       </div>
 
       {/* Bottom accent bar */}
-      <div 
+      <div
         className="absolute bottom-0 left-0 w-full h-2"
         style={{ backgroundColor: theme.accent }}
       />
@@ -255,71 +255,71 @@ export const MinimalTemplate: React.FC<SlideProps> = ({
 };
 
 // Template 2: Corporate Professional
-export const CorporateTemplate: React.FC<SlideProps> = ({ 
-  content, 
-  theme, 
+export const CorporateTemplate: React.FC<SlideProps> = ({
+  content,
+  theme,
   animation = "gliding-sweep",
-  isVisible = true 
+  isVisible = true,
 }) => {
   const getAnimationVariants = () => {
     switch (animation) {
       case "gliding-sweep":
         return {
           hidden: { opacity: 0, x: -100 },
-          visible: { 
-            opacity: 1, 
+          visible: {
+            opacity: 1,
             x: 0,
             transition: {
               type: "tween",
               ease: "easeOut",
-              duration: 1.0
-            }
-          }
+              duration: 1.0,
+            },
+          },
         };
       case "explosive-zoom":
         return {
           hidden: { opacity: 0, scale: 0.3 },
-          visible: { 
-            opacity: 1, 
+          visible: {
+            opacity: 1,
             scale: 1,
             transition: {
               type: "spring",
               damping: 15,
-              stiffness: 400
-            }
-          }
+              stiffness: 400,
+            },
+          },
         };
       default:
         return {
           hidden: { opacity: 0 },
-          visible: { opacity: 1, transition: { duration: 0.5 } }
+          visible: { opacity: 1, transition: { duration: 0.5 } },
         };
     }
   };
 
   return (
-    <div 
+    <div
       className="w-full h-full relative overflow-hidden"
-      style={{ 
+      style={{
         background: `linear-gradient(45deg, ${theme.primary} 0%, ${theme.secondary} 50%, ${theme.primary} 100%)`,
-        minHeight: "100vh"
+        minHeight: "100vh",
       }}
     >
       {/* Header section with accent */}
-      <div 
+      <div
         className="absolute top-0 left-0 w-full h-24"
-        style={{ 
+        style={{
           background: `linear-gradient(90deg, ${theme.accent} 0%, transparent 100%)`,
-          opacity: 0.3
+          opacity: 0.3,
         }}
       />
 
       {/* Side panel design */}
-      <div 
+      <div
         className="absolute top-0 right-0 w-32 h-full opacity-20"
         style={{ backgroundColor: theme.accent }}
       />
-      
+
       {/* Main content area */}
       <div className="relative z-10 flex items-center justify-start h-full pl-16 pr-48">
         <div className="max-w-4xl">
@@ -331,17 +331,20 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
           >
             {/* Title section */}
             {content.title && (
-              <div className="border-l-8 pl-8" style={{ borderColor: theme.accent }}>
+              <div
+                className="border-l-8 pl-8"
+                style={{ borderColor: theme.accent }}
+              >
                 <motion.h1
                   className="text-5xl md:text-6xl font-bold leading-tight"
-                  style={{ 
+                  style={{
                     color: theme.text,
-                    fontFamily: "'Roboto', sans-serif"
+                    fontFamily: "'Roboto', sans-serif",
                   }}
                 >
                   {content.title}
                 </motion.h1>
-                
+
                 {content.subtitle && (
                   <motion.p
                     className="text-xl md:text-2xl mt-4 font-light"
@@ -364,19 +367,19 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <div 
+                <div
                   className="absolute -left-4 top-0 w-1 h-full rounded-full"
                   style={{ backgroundColor: theme.accent }}
                 />
                 <div className="bg-white/15 backdrop-blur-md rounded-xl p-8 shadow-2xl">
-                  <p 
+                  <p
                     className="text-xl md:text-2xl font-medium leading-relaxed"
                     style={{ color: theme.text }}
                   >
                     {content.scripture}
                   </p>
                   {content.reference && (
-                    <p 
+                    <p
                       className="mt-6 text-lg font-semibold text-right"
                       style={{ color: theme.accent }}
                     >
@@ -395,20 +398,20 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <div 
+                <div
                   className="absolute left-0 top-0 text-8xl opacity-20 leading-none"
                   style={{ color: theme.accent }}
                 >
                   "
                 </div>
-                <blockquote 
+                <blockquote
                   className="text-xl md:text-2xl italic leading-relaxed"
                   style={{ color: theme.text }}
                 >
                   {content.quote}
                 </blockquote>
                 {content.author && (
-                  <footer 
+                  <footer
                     className="mt-4 text-lg font-medium"
                     style={{ color: theme.accent }}
                   >
@@ -426,13 +429,13 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <h2 
+                <h2
                   className="text-2xl md:text-3xl font-bold mb-4"
                   style={{ color: theme.accent }}
                 >
                   Key Message
                 </h2>
-                <p 
+                <p
                   className="text-xl md:text-2xl leading-relaxed"
                   style={{ color: theme.text }}
                 >
@@ -449,7 +452,7 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
               >
-                <h3 
+                <h3
                   className="text-2xl font-bold mb-6"
                   style={{ color: theme.accent }}
                 >
@@ -463,7 +466,7 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + index * 0.1 }}
                   >
-                    <div 
+                    <div
                       className="mt-2 w-4 h-4 rounded-sm flex-shrink-0 flex items-center justify-center"
                       style={{ backgroundColor: theme.accent }}
                     >
@@ -471,7 +474,7 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
                         {index + 1}
                       </span>
                     </div>
-                    <p 
+                    <p
                       className="text-lg md:text-xl leading-relaxed"
                       style={{ color: theme.text }}
                     >
@@ -490,7 +493,7 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
         <div className="absolute bottom-0 left-0 w-full p-6">
           <div className="flex justify-between items-center">
             {content.preacher && (
-              <p 
+              <p
                 className="text-lg font-medium"
                 style={{ color: theme.textSecondary }}
               >
@@ -498,10 +501,7 @@ export const CorporateTemplate: React.FC<SlideProps> = ({
               </p>
             )}
             {content.date && (
-              <p 
-                className="text-lg"
-                style={{ color: theme.textSecondary }}
-              >
+              <p className="text-lg" style={{ color: theme.textSecondary }}>
                 {content.date}
               </p>
             )}

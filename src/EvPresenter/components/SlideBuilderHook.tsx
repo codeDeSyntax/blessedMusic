@@ -554,7 +554,6 @@ export const useSlideBuilder = ({
                                 zIndex: 1,
                                 animationFillMode: "both",
                                 visibility: "hidden",
-                                display: "none"
                               }}
                             >
                               {/* SCRIPTURE CONTENT - REFERENCE AT TOP */}
@@ -672,19 +671,17 @@ export const useSlideBuilder = ({
                 }
 
                 @keyframes slideInOut {
-                  0%, 83%, 100% { 
+                  0%, 85%, 100% { 
                     opacity: 0; 
                     transform: translateX(-100px) scale(0.8); 
                     visibility: hidden;
                     z-index: 1;
-                    display: none;
                   }
-                  17%, 66% { 
+                  15%, 75% { 
                     opacity: 1; 
                     transform: translateX(0) scale(1); 
                     visibility: visible;
                     z-index: 10;
-                    display: block;
                   }
                 }
 
@@ -709,7 +706,7 @@ export const useSlideBuilder = ({
 
                 .scripture-card {
                   will-change: opacity, transform, z-index, visibility;
-                  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                  transition: none;
                   backface-visibility: hidden;
                   pointer-events: none;
                 }

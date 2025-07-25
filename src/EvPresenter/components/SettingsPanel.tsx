@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Settings } from "lucide-react";
-
+import { BackgroundImage } from './BackgroundImage';
+// Assuming this is a component that renders each background image
 interface SettingsPanelProps {
   showSettings: boolean;
   settingsRef: React.RefObject<HTMLDivElement>;
