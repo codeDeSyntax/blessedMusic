@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ColorPicker } from "antd";
 import { AnimatedContent } from "./AnimatedContent";
@@ -88,14 +88,101 @@ export const useSlideBuilder = ({
     y: 0,
   });
 
+  // Scripture cycling state
+  const [currentScriptureIndex, setCurrentScriptureIndex] = useState(0);
+
+  // Title slide image switching state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const titleSlideImages = ["./churchages.png", "./pyramid.png"]; // Add your two images here
+
+  // Main message points cycling state
+  const [currentMessagePointIndex, setCurrentMessagePointIndex] = useState(0);
+
   // Font family options
   const fontFamilyOptions = [
     { value: "Bitter Thin, serif", label: "Bitter" },
     { label: "Impact", value: "Impact" },
     { label: "Arial", value: "Arial black, sans-serif" },
     { label: "Garamond", value: "garamond, serif" },
-    { label: "Roboto", value: "Roboto, sans-serif" },
   ];
+
+  // Auto-cycle scriptures every 5 seconds
+  useEffect(() => {
+    const scriptures = currentPresentation?.scriptures;
+    if (!scriptures || scriptures.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentScriptureIndex((prevIndex) => {
+        // Re-check length inside the callback to avoid stale closure
+        const currentScriptures = currentPresentation?.scriptures;
+        if (!currentScriptures || currentScriptures.length <= 1)
+          return prevIndex;
+
+        return (prevIndex + 1) % currentScriptures.length;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [currentPresentation?.scriptures?.length]);
+
+  // Auto-cycle title slide images every 1 minute (60 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % titleSlideImages.length
+      );
+    }, 60000); // 60 seconds = 1 minute
+
+    return () => clearInterval(interval);
+  }, [titleSlideImages.length]);
+
+  // Auto-cycle through main message points
+  useEffect(() => {
+    if (currentPresentation?.mainMessagePoints?.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentMessagePointIndex(
+          (prev) => (prev + 1) % currentPresentation.mainMessagePoints.length
+        );
+      }, 8000); // 8 seconds per point
+
+      return () => clearInterval(interval);
+    }
+  }, [currentPresentation?.mainMessagePoints]);
+
+  useEffect(() => {
+    console.log("Scripture effect running:", {
+      scripturesLength: currentPresentation?.scriptures?.length,
+      presentationId: currentPresentation?.id,
+      currentIndex: currentScriptureIndex,
+    });
+
+    // ... rest of your effect
+  }, [currentPresentation?.scriptures, currentPresentation?.id]);
+
+  // Manual scripture navigation functions
+  const goToNextScripture = () => {
+    if (
+      currentPresentation?.scriptures &&
+      currentPresentation.scriptures.length > 1
+    ) {
+      setCurrentScriptureIndex(
+        (prevIndex) => (prevIndex + 1) % currentPresentation.scriptures.length
+      );
+    }
+  };
+
+  const goToPreviousScripture = () => {
+    if (
+      currentPresentation?.scriptures &&
+      currentPresentation.scriptures.length > 1
+    ) {
+      setCurrentScriptureIndex((prevIndex) =>
+        prevIndex === 0
+          ? currentPresentation.scriptures.length - 1
+          : prevIndex - 1
+      );
+    }
+  };
 
   // Close all color pickers
   const closeAllColorPickers = () => {
@@ -243,12 +330,13 @@ export const useSlideBuilder = ({
     newSlides.push(
       <div key="title-slide" className="w-full h-full relative overflow-hidden">
         {/* Overall background image with blur */}
+
         <div
           className="absolute inset-0 w-full h-full"
           style={{
             backgroundImage: backgroundImage
               ? `url(${backgroundImage})`
-              : "linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #654321 100%)",
+              : "url('./evdefault.jpg')", // Default local image
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
@@ -256,7 +344,13 @@ export const useSlideBuilder = ({
         />
 
         {/* Backdrop blur overlay */}
-        <div className="absolute inset-0 backdrop-blur-sm bg-black/20"></div>
+        <div className="absolute inset-0 backdrop-blur-sm bg-black/20">
+          {/* <img
+          src={"./churchages.png"}
+          alt="Presentation"
+          className="w-full  h-full object-contain opacity-30 rounded-lg mb-2"
+        /> */}
+        </div>
 
         {/* Horizontal brown section spanning full width */}
         <div className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 h-64">
@@ -265,7 +359,7 @@ export const useSlideBuilder = ({
             style={{
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
-                : "linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #654321 100%)",
+                : "url('./evdefault.jpg')", // Default local image
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
@@ -276,8 +370,9 @@ export const useSlideBuilder = ({
 
             {/* Right Side - Main Title Area (positioned within brown section) */}
             <div className="absolute right-16 top-1/2 transform -translate-y-1/2 z-20">
-              <div className="text-right max-w-3xl">
+              <div className="text-right max-w-3xl relative">
                 {/* Main Title */}
+
                 <AnimatedContent animation={selectedAnimation} isVisible={true}>
                   <h1
                     className={`${getTitleFontClass()} font-bold leading-tight cursor-pointer hover:opacity-90 transition-all duration-300 text-right mb-4`}
@@ -303,16 +398,21 @@ export const useSlideBuilder = ({
         </div>
 
         {/* Tall vertical frame on the left - overlaying both sections */}
-        <div className="absolute left-16 top-16 bottom-16 w-80 z-30">
+        <div className="absolute left-16 top-8 bottom-20 w-80 z-30">
           {/* White frame border */}
-          <div className="w-full h-full bg-white rounded-xl shadow-2xl border-8 border-white p-2">
+          <div
+            className="w-full h-[98%] bg-white rounded-xl shadow-2xl border-2 border-white py-2"
+            style={{
+              borderStyle: "dashed",
+            }}
+          >
             {/* Frame inner content with image background */}
             <div
               className="w-full h-full rounded-lg relative"
               style={{
                 backgroundImage: backgroundImage
                   ? `url(${backgroundImage})`
-                  : "linear-gradient(135deg, #8B4513 0%, #A0522D 100%)",
+                  : "url('./evdefault.jpg')", // Default local image
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 backgroundRepeat: "no-repeat",
@@ -324,7 +424,7 @@ export const useSlideBuilder = ({
               {/* Frame Content */}
               <div className="relative z-10 h-full flex flex-col justify-center items-center p-8 text-center">
                 {/* Decorative top star */}
-                <div className="text-4xl text-yellow-400 mb-8">✦</div>
+                {/* <div className="text-4xl text-yellow-400 mb-8">✦</div> */}
 
                 {/* Preacher Section */}
                 {currentPresentation.type === "sermon" &&
@@ -333,7 +433,7 @@ export const useSlideBuilder = ({
                       <div className="text-sm text-white/80 uppercase tracking-wider font-medium">
                         Preached by
                       </div>
-                      <div className="text-2xl font-bold text-white leading-tight">
+                      <div className="text-3xl font-bold text-white leading-tight">
                         {(currentPresentation as any).preacher}
                       </div>
                     </div>
@@ -345,17 +445,24 @@ export const useSlideBuilder = ({
                     Date
                   </div>
                   <div className="text-lg font-semibold text-white/90">
-                    {new Date().toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {(() => {
+                      // Use presentation date if available, otherwise createdAt, otherwise fallback to today
+                      const dateToUse =
+                        currentPresentation.date ||
+                        currentPresentation.createdAt ||
+                        new Date().toISOString();
+                      return new Date(dateToUse).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      });
+                    })()}
                   </div>
                 </div>
 
                 {/* Scripture Reference */}
-                {currentPresentation.type === "sermon" &&
+                {/* {currentPresentation.type === "sermon" &&
                   (currentPresentation as any).scriptures?.length > 0 && (
                     <div className="space-y-2 mb-8">
                       <div className="text-sm text-white/70 uppercase tracking-wider">
@@ -365,10 +472,46 @@ export const useSlideBuilder = ({
                         {(currentPresentation as any).scriptures[0].reference}
                       </div>
                     </div>
-                  )}
+                  )} */}
+
+                {/* Animated image switching section */}
+                <div className="relative w-full h-full flex-1 rounded-lg overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={`title-image-${currentImageIndex}`}
+                      src={titleSlideImages[currentImageIndex]}
+                      alt="Presentation"
+                      className="w-full h-full object-contain opacity-30 rounded-lg"
+                      initial={{ opacity: 0, scale: 0.8, rotateY: 90 }}
+                      animate={{ opacity: 0.3, scale: 1, rotateY: 0 }}
+                      exit={{ opacity: 0, scale: 1.1, rotateY: -90 }}
+                      transition={{
+                        duration: 1.2,
+                        ease: "easeInOut",
+                        opacity: { duration: 0.8 },
+                        scale: { duration: 1.0 },
+                        rotateY: { duration: 1.2 },
+                      }}
+                    />
+                  </AnimatePresence>
+
+                  {/* Image indicator dots */}
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                    {titleSlideImages.map((_, index) => (
+                      <div
+                        key={`indicator-${index}`}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          index === currentImageIndex
+                            ? "bg-white/60 scale-125"
+                            : "bg-white/30 scale-100"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
 
                 {/* Bottom decorative star */}
-                <div className="text-3xl text-yellow-400 mt-auto">✦</div>
+                {/* <div className="text-3xl text-yellow-400 mt-auto">✦</div> */}
               </div>
             </div>
           </div>
@@ -450,7 +593,7 @@ export const useSlideBuilder = ({
             style={{
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
-                : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                : "url('./evdefault.jpg')", // Default local image
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
@@ -497,7 +640,7 @@ export const useSlideBuilder = ({
                   style={{
                     backgroundImage: backgroundImage
                       ? `url(${backgroundImage})`
-                      : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      : "url('./evdefault.jpg')", // Default local image
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
@@ -520,121 +663,169 @@ export const useSlideBuilder = ({
                     </div>
                   </div>
 
-                  {/* AUTO-FLIPPING SCRIPTURE DISPLAY (ONLY INNER CONTENT CHANGED) */}
+                  {/* SINGLE SCRIPTURE DISPLAY - ONE AT A TIME */}
                   <div className="h-[calc(100%-5rem)] overflow-hidden">
                     <div className="h-full relative">
-                      {/* Scripture slider container */}
-                      <div
-                        className="scripture-slider w-full h-full flex items-center justify-center"
-                        style={{
-                          animation: `scriptureSlide ${
-                            scriptureCount * 6
-                          }s infinite linear`,
-                        }}
-                      >
-                        {scriptures.map((scripture: any, index: number) => {
-                          const scriptureData = lookupScripture
-                            ? lookupScripture(
-                                scripture.text ||
-                                  `${scripture.book} ${scripture.chapter}:${scripture.verse}`
-                              )
-                            : null;
+                      {/* Current scripture display */}
+                      {scriptures.length > 0 && (
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={`scripture-${currentScriptureIndex}`}
+                            initial={{ opacity: 0, x: 100 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -100 }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute inset-0 flex items-start justify-center px-8"
+                          >
+                            {(() => {
+                              const scripture =
+                                scriptures[currentScriptureIndex];
+                              const scriptureData = lookupScripture
+                                ? lookupScripture(
+                                    scripture.text ||
+                                      `${scripture.book} ${scripture.chapter}:${scripture.verse}`
+                                  )
+                                : null;
 
-                          return (
-                            <div
-                              key={`scripture-${index}`}
-                              className="scripture-card absolute inset-0 flex items-center justify-center p-8"
-                              style={{
-                                opacity: 0,
-                                transform: "translateX(-100px) scale(0.8)",
-                                animation: `slideInOut ${
-                                  scriptureCount * 6
-                                }s infinite`,
-                                animationDelay: `${index * 6}s`,
-                                zIndex: 1,
-                                animationFillMode: "both",
-                                visibility: "hidden",
-                              }}
-                            >
-                              {/* SCRIPTURE CONTENT - REFERENCE AT TOP */}
-                              <div className="w-full max-w-4xl text-center">
-                                {/* Scripture Reference - AT THE VERY TOP */}
-                                {(scripture.reference || scripture.book) && (
-                                  <div className="mb-12">
-                                    <div className="bg-yellow-400/40 backdrop-blur-md rounded-2xl px-10 py-8 border-3 border-yellow-400/70 inline-block shadow-2xl">
-                                      <h2 className="text-yellow-100 text-4xl font-bold tracking-wide drop-shadow-xl">
-                                        {scripture.reference ||
-                                          `${scripture.book} ${scripture.chapter}:${scripture.verse}`}
-                                      </h2>
+                              return (
+                                <div className="w-full max-w-4xl text-center">
+                                  {/* Scripture Reference - AT THE VERY TOP */}
+                                  <div className="">
+                                    <div className="  inline-block shadow-2xl">
+                                      <span className=" text-6xl font-bold tracking-wide drop-shadow-xl">
+                                        {/* Try multiple sources for the reference */}
+                                        {scriptureData?.reference ||
+                                          scripture.reference ||
+                                          (scripture.book &&
+                                            `${scripture.book} ${scripture.chapter}:${scripture.verse}`) ||
+                                          `Scripture ${
+                                            currentScriptureIndex + 1
+                                          }`}
+                                      </span>
                                     </div>
                                   </div>
-                                )}
 
-                                {/* Scripture text */}
-                                <div className="mb-8 relative z-20">
-                                  <p
-                                    className={`${getDynamicScriptureFontClass()} font-medium leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 relative z-20`}
-                                    style={{
-                                      color: scriptureColor,
-                                      lineHeight: 1.6,
-                                      textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-                                      fontFamily: scriptureFontFamily,
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      enhancedHandleTextClick(e, "scripture");
-                                    }}
-                                    title="Click to change color and font"
-                                  >
-                                    {scriptureData?.text ||
-                                      scripture.text ||
-                                      `${scripture.book} ${scripture.chapter}:${scripture.verse}`}
-                                  </p>
-                                </div>
+                                  {/* Scripture text */}
+                                  <div className="mb-8 relative z-20">
+                                    <p
+                                      className={`text-3xl font-medium leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 relative z-20`}
+                                      style={{
+                                        color: scriptureColor,
+                                        lineHeight: 1.6,
+                                        textShadow:
+                                          "2px 2px 4px rgba(0,0,0,0.8)",
+                                        fontFamily: scriptureFontFamily,
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        enhancedHandleTextClick(e, "scripture");
+                                      }}
+                                      title="Click to change color and font"
+                                    >
+                                      {scriptureData?.text ||
+                                        scripture.text ||
+                                        `${scripture.book} ${scripture.chapter}:${scripture.verse}`}
+                                    </p>
+                                  </div>
 
-                                {/* Decorative line */}
-                                <div className="flex justify-center items-center space-x-4">
-                                  <div
-                                    className="w-24 h-px"
-                                    style={{
-                                      background: `linear-gradient(90deg, transparent, ${scriptureColor}, transparent)`,
-                                    }}
-                                  />
-                                  <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{
-                                      backgroundColor: scriptureColor,
-                                    }}
-                                  />
-                                  <div
-                                    className="w-24 h-px"
-                                    style={{
-                                      background: `linear-gradient(90deg, transparent, ${scriptureColor}, transparent)`,
-                                    }}
-                                  />
+                                  {/* Decorative line */}
+                                  <div className="flex justify-center items-center space-x-4">
+                                    <div
+                                      className="w-24 h-px"
+                                      style={{
+                                        background: `linear-gradient(90deg, transparent, ${scriptureColor}, transparent)`,
+                                      }}
+                                    />
+                                    <div
+                                      className="w-2 h-2 rounded-full"
+                                      style={{
+                                        backgroundColor: scriptureColor,
+                                      }}
+                                    />
+                                    <div
+                                      className="w-24 h-px"
+                                      style={{
+                                        background: `linear-gradient(90deg, transparent, ${scriptureColor}, transparent)`,
+                                      }}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                              );
+                            })()}
+                          </motion.div>
+                        </AnimatePresence>
+                      )}
 
                       {/* Progress indicators */}
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                        {scriptures.map((_: any, index: number) => (
-                          <div
-                            key={`indicator-${index}`}
-                            className="w-2 h-2 rounded-full backdrop-blur-sm border border-white/20"
-                            style={{
-                              backgroundColor: "rgba(255, 255, 255, 0.3)",
-                              animation: `indicatorPulse ${
-                                scriptureCount * 6
-                              }s infinite`,
-                              animationDelay: `${index * 6}s`,
-                            }}
-                          />
-                        ))}
-                      </div>
+                      {/* {scriptures.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                          {scriptures.map((_: any, index: number) => (
+                            <div
+                              key={`indicator-${index}`}
+                              className={`w-3 h-3 rounded-full backdrop-blur-sm border border-white/20 transition-all duration-300 cursor-pointer hover:scale-110 ${
+                                index === currentScriptureIndex
+                                  ? "scale-125"
+                                  : "scale-100"
+                              }`}
+                              style={{
+                                backgroundColor:
+                                  index === currentScriptureIndex
+                                    ? scriptureColor ||
+                                      "rgba(255, 255, 255, 0.8)"
+                                    : "rgba(255, 255, 255, 0.3)",
+                              }}
+                              onClick={() => setCurrentScriptureIndex(index)}
+                            />
+                          ))}
+                        </div>
+                      )} */}
+
+                      {/* Navigation buttons - Small at bottom right corner */}
+                      {scriptures.length > 1 && (
+                        <div className="absolute bottom-8 right-8 flex space-x-2 z-30">
+                          {/* Previous button */}
+                          <button
+                            onClick={goToPreviousScripture}
+                            className="w-8 h-8 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20 shadow-lg group"
+                            title="Previous Scripture"
+                          >
+                            <svg
+                              className="w-4 h-4 text-white group-hover:text-yellow-300 transition-colors"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 19l-7-7 7-7"
+                              />
+                            </svg>
+                          </button>
+
+                          {/* Next button */}
+                          <button
+                            onClick={goToNextScripture}
+                            className="w-8 h-8 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20 shadow-lg group"
+                            title="Next Scripture"
+                          >
+                            <svg
+                              className="w-4 h-4 text-white group-hover:text-yellow-300 transition-colors"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -651,72 +842,16 @@ export const useSlideBuilder = ({
           </div>
 
           {/* Bottom progress indicator for multiple scriptures */}
-          {scriptureCount > 5 && (
+          {scriptureCount > 1 && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
               <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
                 <span className="text-white/70 text-xs">
-                  Auto-sliding scriptures
+                  Scripture {currentScriptureIndex + 1} of {scriptureCount} •
+                  Auto-sliding every 5s
                 </span>
               </div>
             </div>
           )}
-
-          {/* CSS animations for auto-sliding */}
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-                @keyframes scriptureSlide {
-                  0%, 100% { transform: scale(1); }
-                  50% { transform: scale(1.01); }
-                }
-
-                @keyframes slideInOut {
-                  0%, 85%, 100% { 
-                    opacity: 0; 
-                    transform: translateX(-100px) scale(0.8); 
-                    visibility: hidden;
-                    z-index: 1;
-                  }
-                  15%, 75% { 
-                    opacity: 1; 
-                    transform: translateX(0) scale(1); 
-                    visibility: visible;
-                    z-index: 10;
-                  }
-                }
-
-                @keyframes indicatorPulse {
-                  0%, 85%, 100% { 
-                    opacity: 0.3; 
-                    transform: scale(1);
-                    background-color: rgba(255, 255, 255, 0.3);
-                  }
-                  10%, 75% { 
-                    opacity: 1; 
-                    transform: scale(1.2);
-                    background-color: ${
-                      scriptureColor || "rgba(255, 255, 255, 0.8)"
-                    };
-                  }
-                }
-
-                .scripture-slider {
-                  perspective: 1000px;
-                }
-
-                .scripture-card {
-                  will-change: opacity, transform, z-index, visibility;
-                  transition: none;
-                  backface-visibility: hidden;
-                  pointer-events: none;
-                }
-                
-                .scripture-card[style*="z-index: 10"] {
-                  pointer-events: auto;
-                }
-              `,
-            }}
-          />
 
           {/* Custom scrollbar styles */}
           <style
@@ -757,7 +892,7 @@ export const useSlideBuilder = ({
                   style={{
                     backgroundImage: backgroundImage
                       ? `url(${backgroundImage})`
-                      : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      : "url('./evdefault.jpg')", // Default local image
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
@@ -815,7 +950,7 @@ export const useSlideBuilder = ({
                   style={{
                     backgroundImage: backgroundImage
                       ? `url(${backgroundImage})`
-                      : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      : "url('./evdefault.jpg')", // Default local image
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
@@ -913,133 +1048,193 @@ export const useSlideBuilder = ({
       );
     }
 
-    // Message points slides - FULL WIDTH with corner animations (exact original)
+    // Main Message points slides - SINGLE SLIDE with auto-cycling (like scripture slide)
     if (
-      currentPresentation.messagePoints &&
-      currentPresentation.messagePoints.length > 0
+      currentPresentation.mainMessagePoints &&
+      currentPresentation.mainMessagePoints.length > 0
     ) {
-      currentPresentation.messagePoints.forEach((point: any, index: number) => {
-        newSlides.push(
+      const currentPoint =
+        currentPresentation.mainMessagePoints[currentMessagePointIndex];
+
+      newSlides.push(
+        <div
+          key="main-message-points"
+          className="w-full h-full relative overflow-hidden"
+          style={{ minHeight: "100vh" }}
+        >
+          {/* Background image - FULL WIDTH */}
           <div
-            key={`message-${index}`}
-            className="w-full h-full relative overflow-hidden"
-            style={{ minHeight: "100vh" }}
-          >
-            {/* Background image - FULL WIDTH */}
-            <div
-              className="absolute inset-0 w-full h-full"
-              style={{
-                backgroundImage: backgroundImage
-                  ? `url(${backgroundImage})`
-                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }}
-            />
+            className="absolute inset-0 w-full h-full"
+            style={{
+              backgroundImage: backgroundImage
+                ? `url(${backgroundImage})`
+                : "url('./evdefault.jpg')", // Default local image
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
 
-            {/* Additional backdrop blur overlay */}
-            <div className="absolute inset-0 backdrop-blur-md bg-black/30"></div>
+          {/* Dynamic overlay with animated gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/50"></div>
 
-            {/* Overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-black/30 to-black/10"></div>
-
-            {/* Content container - FULL WIDTH */}
-            <div className="absolute inset-0 flex items-center justify-center p-12 z-10">
-              <div className="relative w-full max-w-6xl">
-                {/* Message Points with auto-scrolling */}
-                <div className="flex-1 overflow-hidden relative">
-                  {/* Corner blinking decorations */}
-                  <div className="absolute top-2 left-2 w-3 h-3 z-30">
-                    <div className="corner-blink-tl"></div>
-                  </div>
-                  <div className="absolute top-2 right-2 w-3 h-3 z-30">
-                    <div className="corner-blink-tr"></div>
-                  </div>
-                  <div className="absolute bottom-2 left-2 w-3 h-3 z-30">
-                    <div className="corner-blink-bl"></div>
-                  </div>
-                  <div className="absolute bottom-2 right-2 w-3 h-3 z-30">
-                    <div className="corner-blink-br"></div>
-                  </div>
-
-                  <div
-                    ref={messagePointsScrollRef}
-                    className="h-full overflow-y-auto no-scrollbar pr-4 max-h-[70vh]"
-                    style={{
-                      scrollBehavior: "smooth",
-                      scrollbarWidth: "none",
-                      msOverflowStyle: "none",
-                    }}
-                  >
-                    <div className="space-y-6 py-8">
-                      <AnimatedContent
-                        animation={selectedAnimation}
-                        isVisible={true}
-                      >
-                        <div className="group">
-                          <div className="flex items-start gap-6">
-                            {/* Animated bullet point */}
-                            <div
-                              className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold mt-1 hover:scale-110 transition-transform"
-                              style={{
-                                backgroundColor: mainMessageColor,
-                                color: "#ffffff",
-                                textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-                                border: `2px solid ${mainMessageColor}`,
-                              }}
-                            >
-                              <span className="font-impact">
-                                {String(index + 1).padStart(2, "0")}
-                              </span>
-                            </div>
-
-                            {/* Point content */}
-                            <div className="flex-1">
-                              <div
-                                className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 group-hover:translate-x-2 font-[garamond] hover:scale-105 hover:-translate-y-1`}
-                                style={{
-                                  color: mainMessageColor,
-                                  fontFamily: mainMessageFontFamily,
-                                  lineHeight: 1.3,
-                                  textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-                                }}
-                                onClick={(e) =>
-                                  enhancedHandleTextClick(e, "mainMessage")
-                                }
-                                title="Click to change color, font, and size"
-                              >
-                                {point.text}
-                              </div>
-
-                              {/* Decorative line under each point */}
-                              <div
-                                className="w-full h-px mt-4 opacity-50 transform origin-left scale-x-100 transition-transform duration-600"
-                                style={{
-                                  backgroundColor: mainMessageColor,
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </AnimatedContent>
-                    </div>
-                  </div>
+          {/* Content container - FULL WIDTH with dynamic layout */}
+          <div className="absolute inset-0 flex items-center justify-center p-12 z-10">
+            <div className="relative w-full max-w-7xl">
+              {/* Animated title label */}
+              <motion.div
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 z-30"
+              >
+                <div className="px-6 py-3 bg-white  rounded-full backdrop-blur-sm border border-amber-300/30">
+                  <span className="text-lg font-bold text-red-500 tracking-wider">
+                    Highlights
+                  </span>
                 </div>
+              </motion.div>
 
-                {/* Corner label */}
-                <div className="absolute top-20 left-[40%] z-20">
-                  <div className="px-4 py-2 bg-black/60 rounded-lg backdrop-blur-sm border border-white/20 opacity-100 transition-opacity duration-800">
-                    <span className="text-sm font-[garamond] font-bold text-white/90 tracking-wider">
-                      Message highlights
-                    </span>
-                  </div>
+              {/* Main content area with dynamic positioning */}
+              <div className="relative min-h-[60vh] flex items-center justify-center">
+                {/* Decorative elements */}
+                <div className="absolute top-4 left-4 w-16 h-16 border-l-4 border-t-4 border-amber-400/40 rounded-tl-xl"></div>
+                <div className="absolute top-4 right-4 w-16 h-16 border-r-4 border-t-4 border-amber-400/40 rounded-tr-xl"></div>
+                <div className="absolute bottom-4 left-4 w-16 h-16 border-l-4 border-b-4 border-amber-400/40 rounded-bl-xl"></div>
+                <div className="absolute bottom-4 right-4 w-16 h-16 border-r-4 border-b-4 border-amber-400/40 rounded-br-xl"></div>
+
+                {/* Central content area */}
+                <div className="w-full max-w-5xl relative">
+                  {/* Animated point number circle */}
+                  <motion.div
+                    key={currentMessagePointIndex}
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="absolute -top-8 left-8 z-20"
+                  >
+                    <div
+                      className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold border-4"
+                      style={{
+                        backgroundColor: mainMessageColor,
+                        borderColor: mainMessageColor,
+                        color: "#ffffff",
+                        textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+                        boxShadow:
+                          "0 0 30px rgba(0,0,0,0.5), 0 0 60px " +
+                          mainMessageColor +
+                          "40",
+                      }}
+                    >
+                      <span className="font-impact">
+                        {String(currentMessagePointIndex + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                  </motion.div>
+
+                  {/* Main message point content */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentMessagePointIndex}
+                      initial={{ opacity: 0, x: 100, scale: 0.9 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -100, scale: 0.9 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 150,
+                        damping: 20,
+                      }}
+                      className="bg-black/30 backdrop-blur-md rounded-3xl p-12 border border-white/20 relative overflow-hidden"
+                      style={{
+                        backgroundImage: backgroundImage
+                          ? `url(${backgroundImage})`
+                          : "url('./evdefault.jpg')", // Default local image
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        backgroundRepeat: "no-repeat",
+                      }}
+                    >
+                      {/* Animated background pattern */}
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full blur-3xl animate-pulse"></div>
+                        <div className="absolute bottom-8 left-8 w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full blur-2xl animate-pulse delay-1000"></div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="relative z-10">
+                        <AnimatedContent
+                          animation={selectedAnimation}
+                          isVisible={true}
+                        >
+                          <div
+                            className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-90 transition-all duration-500`}
+                            style={{
+                              color: mainMessageColor,
+                              fontFamily: mainMessageFontFamily,
+                              lineHeight: 1.4,
+                              textShadow: "2px 2px 6px rgba(0,0,0,0.7)",
+                            }}
+                            onClick={(e) =>
+                              enhancedHandleTextClick(e, "mainMessage")
+                            }
+                            title="Click to change color, font, and size"
+                          >
+                            {currentPoint.text}
+                          </div>
+                        </AnimatedContent>
+
+                        {/* Animated progress line */}
+                        <motion.div
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          transition={{ duration: 1, delay: 0.5 }}
+                          className="w-full h-1 mt-8 rounded-full origin-left"
+                          style={{ backgroundColor: mainMessageColor + "60" }}
+                        />
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Point indicators */}
+                  {currentPresentation.mainMessagePoints.length > 1 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.8 }}
+                      className="flex justify-center gap-4 mt-12"
+                    >
+                      {currentPresentation.mainMessagePoints.map(
+                        (_: any, idx: number) => (
+                          <motion.div
+                            key={idx}
+                            whileHover={{ scale: 1.2 }}
+                            className={`w-4 h-4 rounded-full transition-all duration-300 cursor-pointer ${
+                              idx === currentMessagePointIndex
+                                ? "scale-125 shadow-lg"
+                                : "scale-100 opacity-60 hover:opacity-80"
+                            }`}
+                            style={{
+                              backgroundColor:
+                                idx === currentMessagePointIndex
+                                  ? mainMessageColor
+                                  : mainMessageColor + "60",
+                              boxShadow:
+                                idx === currentMessagePointIndex
+                                  ? `0 0 20px ${mainMessageColor}80`
+                                  : "none",
+                            }}
+                            onClick={() => setCurrentMessagePointIndex(idx)}
+                          />
+                        )
+                      )}
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        );
-      });
+        </div>
+      );
     }
 
     return newSlides;
@@ -1067,6 +1262,10 @@ export const useSlideBuilder = ({
     getMainMessageFontClass,
     getDynamicScriptureFontClass,
     enhancedHandleTextClick,
+    currentScriptureIndex,
+    currentImageIndex,
+    currentMessagePointIndex,
+    titleSlideImages,
   ]);
 
   // Color picker components - Compact version
@@ -1497,7 +1696,13 @@ export const useSlideBuilder = ({
     </AnimatePresence>
   );
 
-  return { buildSlides, ColorPickerComponents };
+  return {
+    buildSlides,
+    ColorPickerComponents,
+    goToNextScripture,
+    goToPreviousScripture,
+    currentScriptureIndex,
+  };
 };
 
 export default useSlideBuilder;

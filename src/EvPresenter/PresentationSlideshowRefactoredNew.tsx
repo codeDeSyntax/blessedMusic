@@ -16,6 +16,9 @@ import { setCurrentScreen, CurrentScreen } from "../store/slices/appSlice";
 import { useSlideBuilder } from "./components/SlideBuilderHook";
 import SettingsPanel from "./components/SettingsPanel";
 import EnhancedNavigationControls from "./components/EnhancedNavigationControls";
+import VerticalActionPanel from "./components/VerticalActionPanel";
+import FrameModalSettings from "./components/FrameModalSettings";
+import FrameModalInfo from "./components/FrameModalInfo";
 import GridView from "./components/GridView";
 import CarouselView from "./components/CarouselView";
 import InfoPanel from "./components/InfoPanel";
@@ -482,7 +485,13 @@ export const PresentationSlideshowRefactored: React.FC<{
   );
 
   // Initialize slide builder
-  const { buildSlides, ColorPickerComponents } = useSlideBuilder({
+  const {
+    buildSlides,
+    ColorPickerComponents,
+    goToNextScripture,
+    goToPreviousScripture,
+    currentScriptureIndex,
+  } = useSlideBuilder({
     currentPresentation,
     backgroundImage,
     titleColor,
@@ -579,6 +588,7 @@ export const PresentationSlideshowRefactored: React.FC<{
     quoteFontSize,
     mainMessageFontSize,
     selectedAnimation,
+    currentScriptureIndex,
   ]);
 
   // Auto-play functionality
@@ -662,7 +672,7 @@ export const PresentationSlideshowRefactored: React.FC<{
       }`}
       onClick={closeAllColorPickers}
     >
-      {/* Navigation Controls */}
+      {/* Navigation Controls - Only in presentation mode */}
       <EnhancedNavigationControls
         currentSlide={currentSlide}
         slides={slides}
@@ -683,10 +693,31 @@ export const PresentationSlideshowRefactored: React.FC<{
         onBack={onBack}
       />
 
-      {/* Settings Panel */}
-      <SettingsPanel
+      {/* Vertical Action Panel - Only when not in presentation mode */}
+      <VerticalActionPanel
+        currentSlide={currentSlide}
+        slides={slides}
+        setCurrentSlide={setCurrentSlide}
+        setDirection={setDirection}
+        slideView={slideView}
+        setSlideView={setSlideView}
+        isAutoPlaying={isAutoPlaying}
+        setIsAutoPlaying={setIsAutoPlaying}
+        isPresentationMode={isPresentationMode}
+        setIsPresentationMode={setIsPresentationMode}
         showSettings={showSettings}
-        settingsRef={settingsRef}
+        toggleSettings={toggleSettings}
+        showInfo={showInfo}
+        setShowInfo={setShowInfo}
+        isFullscreen={isFullscreen}
+        toggleFullscreen={toggleFullscreen}
+        onBack={onBack}
+      />
+
+      {/* Frame Modal Settings */}
+      <FrameModalSettings
+        showSettings={showSettings}
+        onClose={() => setShowSettings(false)}
         autoPlayInterval={autoPlayInterval}
         handleIntervalChange={handleIntervalChange}
         selectedAnimation={selectedAnimation}
@@ -696,12 +727,14 @@ export const PresentationSlideshowRefactored: React.FC<{
         handleBackgroundChange={handleBackgroundChange}
       />
 
-      {/* Info Panel */}
-      <InfoPanel
+      {/* Frame Modal Info */}
+      <FrameModalInfo
         showInfo={showInfo}
+        onClose={() => setShowInfo(false)}
         currentPresentation={currentPresentation}
         currentSlide={currentSlide}
         totalSlides={slides.length}
+        backgroundImage={backgroundImage}
       />
 
       {/* Color Pickers from SlideBuilderHook */}

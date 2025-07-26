@@ -36,6 +36,16 @@ const TitleBar = () => {
   const currentScreen = useAppSelector((state) => state.app.currentScreen);
   const theme = useAppSelector((state) => state.app.theme);
 
+  // Hide title bar for presentation screens and when in presentation mode
+  const shouldHideTitleBar =
+    currentScreen === "mpresenter" ||
+    window.location.hash.includes("presentation-display");
+
+  // Don't render title bar if it should be hidden
+  if (shouldHideTitleBar) {
+    return null;
+  }
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("bmusictheme");
     if (savedTheme) {
