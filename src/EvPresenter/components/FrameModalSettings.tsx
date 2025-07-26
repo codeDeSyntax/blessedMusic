@@ -14,7 +14,7 @@ import {
   Atom,
   Rainbow,
 } from "lucide-react";
-import { BackgroundImage } from "./BackgroundImage";
+
 
 interface FrameModalSettingsProps {
   showSettings: boolean;

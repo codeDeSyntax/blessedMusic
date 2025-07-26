@@ -5,10 +5,12 @@ import DeletePopup from "./DeletePopup";
 import HeaderControls from "./components/songlist/HeaderControls";
 import VirtualSongList from "./components/songlist/VirtualSongList";
 import LoadingError from "./components/songlist/LoadingError";
+import SongListSkeleton from "./components/songlist/SongListSkeleton";
 import SongProjectionControls from "./components/SongProjectionControls";
 import { useSongOperations } from "@/features/songs/hooks/useSongOperations";
 import { useTheme } from "@/Provider/Theme";
 import { Song } from "@/types";
+import { Music } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { setCurrentScreen } from "@/store/slices/appSlice";
 import { ActiveTab } from "@/store/slices/songSlice";
@@ -347,13 +349,27 @@ const BlessedMusic = () => {
 
                 {/* Multi-Column Content with Virtual Scrolling - RESTORED ORIGINAL LAYOUT */}
                 <div className="w-full" data-tour="song-list">
-                  <LoadingError
-                    fetching={isLoading}
-                    fetchError={error}
-                    songsLength={songs.length}
-                  />
+                  {/* Show skeleton when loading */}
+                  {isLoading && (
+                    <SongListSkeleton
+                      viewMode={viewMode}
+                      localTheme={localTheme}
+                      containerHeight={window.innerHeight * 0.7}
+                      numberOfColumns={numberOfColumns}
+                    />
+                  )}
 
-                  {!isLoading && songs.length > 0 && (
+                  {/* Show error state when not loading but has error */}
+                  {!isLoading && error && (
+                    <LoadingError
+                      fetching={false}
+                      fetchError={error}
+                      songsLength={songs.length}
+                    />
+                  )}
+
+                  {/* Show songs when loaded successfully */}
+                  {!isLoading && !error && songs.length > 0 && (
                     <div
                       className={`flex gap-6 w-full h-[calc(100vh-12rem)] ${
                         numberOfColumns === 3 ? "grid-cols-3" : "grid-cols-2"
@@ -371,6 +387,22 @@ const BlessedMusic = () => {
                           />
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Show empty state when no songs and no error */}
+                  {!isLoading && !error && songs.length === 0 && (
+                    <div className="flex flex-col justify-center items-center h-96 w-full">
+                      <div className="text-center">
+                        <Music className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-700 mb-2">
+                          No songs found
+                        </h3>
+                        <p className="text-gray-500">
+                          Try changing your search criteria or add some songs to
+                          get started.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
