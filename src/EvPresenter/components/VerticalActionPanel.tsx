@@ -86,7 +86,7 @@ export const VerticalActionPanel: React.FC<VerticalActionPanelProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onBack}
-            className="flex items-center justify-center w-10 h-10 bg-[#9a674a]/80 hover:bg-[#8a5a3a] text-white rounded-xl transition-all duration-200 shadow-lg group"
+            className="flex items-center justify-center w-10 h-10 bg-[#404040]/80 hover:bg-[#505050] text-white rounded-xl transition-all duration-200 shadow-lg group"
             title="Back"
           >
             <ChevronLeft
@@ -104,7 +104,7 @@ export const VerticalActionPanel: React.FC<VerticalActionPanelProps> = ({
             }
             className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 shadow-lg ${
               slideView === "grid"
-                ? "bg-[#9a674a] text-white"
+                ? "bg-[#404040] text-white"
                 : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
             }`}
             title={
@@ -139,7 +139,7 @@ export const VerticalActionPanel: React.FC<VerticalActionPanelProps> = ({
             onClick={() => setShowInfo(!showInfo)}
             className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 shadow-lg ${
               showInfo
-                ? "bg-[#9a674a] text-white"
+                ? "bg-[#404040] text-white"
                 : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
             }`}
             title="Toggle Info Panel"
@@ -154,7 +154,7 @@ export const VerticalActionPanel: React.FC<VerticalActionPanelProps> = ({
             onClick={toggleSettings}
             className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 shadow-lg ${
               showSettings
-                ? "bg-[#9a674a] text-white"
+                ? "bg-[#404040] text-white"
                 : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
             }`}
             title="Toggle Settings"
@@ -181,7 +181,7 @@ export const VerticalActionPanel: React.FC<VerticalActionPanelProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsPresentationMode(true)}
-            className="flex items-center justify-center w-10 h-10 bg-[#9a674a] hover:bg-[#8a5a3a] text-white rounded-xl transition-all duration-200 shadow-lg font-medium text-xs"
+            className="flex items-center justify-center w-10 h-10 bg-[#404040] hover:bg-[#505050] text-white rounded-xl transition-all duration-200 shadow-lg font-medium text-xs"
             title="Start Presentation"
           >
             P

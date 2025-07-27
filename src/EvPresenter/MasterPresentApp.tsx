@@ -178,7 +178,7 @@ const PresentationMasterPage: React.FC = () => {
 
   return (
     <PresentationLayout title={getTitle()} onBackClick={handleBack}>
-      <div className="overflow-hidden h-full bg-[#30261d]">
+      <div className="overflow-hidden h-full bg-[#282828]">
         {renderContent()}
       </div>
     </PresentationLayout>

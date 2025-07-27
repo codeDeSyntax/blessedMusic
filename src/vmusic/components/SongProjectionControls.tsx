@@ -45,9 +45,9 @@ const SongProjectionControls: React.FC = () => {
               whileTap={{ scale: 0.95 }}
               onClick={goToPrevious}
               disabled={!canGoPrevious}
-              className={`w-12 h-12 rounded-full border-2 border-dashed border-[#713f12 ] flex items-center justify-center transition-all duration-200 ${
+              className={`w-12 h-12 rounded-2xl border-2  border-[#713f12 ] flex items-center justify-center transition-all duration-200 ${
                 canGoPrevious
-                  ? "bg-yellow-100 hover:bg-yellow-200 text-yellow-800 cursor-pointer shadow-lg hover:shadow-xl backdrop-blur-sm border border-yellow-200"
+                  ? "bg-[#faeed1] hover:bg-yellow-200 text-yellow-800 cursor-pointer shadow-lg hover:shadow-xl backdrop-blur-sm border border-yellow-200"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed backdrop-blur-sm border border-gray-200"
               }`}
               title="Previous slide (Left Arrow)"
@@ -121,11 +121,12 @@ const SongProjectionControls: React.FC = () => {
                           }
                           className="slider w-20 h-2 bg-yellow-100 rounded-full appearance-none cursor-pointer backdrop-blur-sm"
                           style={{
-                            background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${
+                            background: `linear-gradient(to right, #9a674a 0%, #9a674a ${
                               ((fontSize - 24) / (96 - 24)) * 100
                             }%, #fef3c7 ${
                               ((fontSize - 24) / (96 - 24)) * 100
                             }%, #fef3c7 100%)`,
+                            
                           }}
                         />
                         <span className="text-yellow-700 text-sm font-medium">
@@ -155,14 +156,14 @@ const SongProjectionControls: React.FC = () => {
             height: 18px;
             width: 18px;
             border-radius: 50%;
-            background: linear-gradient(145deg, #f59e0b, #d97706);
+            background: linear-gradient(145deg, #b57e5b, #b57e5b);
             cursor: pointer;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
             border: 2px solid #fef3c7;
             transition: all 0.2s ease;
           }
           .slider::-webkit-slider-thumb:hover {
-            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            background: linear-gradient(145deg, #b57e5b, #b57e5b);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15);
             transform: scale(1.1);
           }

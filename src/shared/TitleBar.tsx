@@ -5,7 +5,6 @@ import {
   GalleryHorizontal,
   GalleryThumbnails,
   Group,
-  Guitar,
   Minus,
   Square,
   SwitchCamera,
@@ -181,20 +180,10 @@ const TitleBar = () => {
             <GalleryHorizontal className="text-white z-20 size-3" />
           </div>
           <div
-            onClick={() => dispatch(setCurrentScreen("instRoom"))}
-            className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer  
-              items-center justify-center ${
-                currentScreen === "Songs" ? "flex" : "hidden"
-              }`}
-            title="Instrument showroom 🎸"
-          >
-            <Guitar className="text-white z-20 size-3" />
-          </div>
-          <div
             onClick={() => dispatch(setCurrentScreen("Songs"))}
             className={`w-4 h-4 rounded-full bg-gray-500 hover:bg-gray-600 hover:cursor-pointer  
               items-center justify-center ${
-                currentScreen === "instRoom" ? "flex" : "hidden"
+                currentScreen === "categorize" ? "flex" : "hidden"
               }`}
             title="back"
           >

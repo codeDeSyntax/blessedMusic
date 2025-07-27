@@ -102,6 +102,22 @@ interface Window {
       filePath?: string;
       error?: string;
     }>;
+    getLogSettings: () => Promise<{
+      success: boolean;
+      settings?: {
+        autoCleanup: boolean;
+        interval: number;
+        unit: "minutes" | "hours" | "days" | "weeks";
+        customInterval: number;
+      };
+      error?: string;
+    }>;
+    updateLogSettings: (settings: {
+      autoCleanup: boolean;
+      interval: number;
+      unit: "minutes" | "hours" | "days" | "weeks";
+      customInterval: number;
+    }) => Promise<{ success: boolean; error?: string }>;
     sendToSongProjection: (data: {
       type: string;
       command?: string;

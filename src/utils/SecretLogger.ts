@@ -20,10 +20,25 @@ export interface LogEntry {
   age?: string; // Human readable age like "2 minutes ago", "1 hour ago"
 }
 
+export interface LogCleanupSettings {
+  autoCleanup: boolean;
+  interval: number; // in milliseconds
+  unit: "minutes" | "hours" | "days" | "weeks";
+  customInterval: number; // user-defined number of units
+}
+
 class SecretLogger {
   private static instance: SecretLogger;
   private logsFilePath: string;
-  private maxLogAge = 21 * 24 * 60 * 60 * 1000; // 3 weeks in milliseconds
+  private settingsFilePath: string;
+  private maxLogAge = 21 * 24 * 60 * 60 * 1000; // Default: 3 weeks in milliseconds
+  private cleanupTimer: NodeJS.Timeout | null = null;
+  private defaultSettings: LogCleanupSettings = {
+    autoCleanup: true,
+    interval: 10 * 60 * 1000, // 10 minutes in milliseconds
+    unit: "minutes",
+    customInterval: 10,
+  };
 
   constructor() {
     // Store logs in app data directory for persistence
@@ -32,7 +47,11 @@ class SecretLogger {
       fs.mkdirSync(appDataPath, { recursive: true });
     }
     this.logsFilePath = path.join(appDataPath, ".system_logs.json");
+    this.settingsFilePath = path.join(appDataPath, ".log_settings.json");
+    
+    this.loadSettings();
     this.cleanOldLogs();
+    this.startAutoCleanup();
   }
 
   static getInstance(): SecretLogger {
@@ -40,6 +59,89 @@ class SecretLogger {
       SecretLogger.instance = new SecretLogger();
     }
     return SecretLogger.instance;
+  }
+
+  private loadSettings(): void {
+    try {
+      if (fs.existsSync(this.settingsFilePath)) {
+        const data = fs.readFileSync(this.settingsFilePath, "utf8");
+        const settings = JSON.parse(data) as LogCleanupSettings;
+        this.updateMaxLogAge(settings);
+      } else {
+        // Create default settings file
+        this.saveSettings(this.defaultSettings);
+        this.updateMaxLogAge(this.defaultSettings);
+      }
+    } catch (error) {
+      console.error("Failed to load log settings:", error);
+      this.updateMaxLogAge(this.defaultSettings);
+    }
+  }
+
+  private saveSettings(settings: LogCleanupSettings): void {
+    try {
+      fs.writeFileSync(this.settingsFilePath, JSON.stringify(settings, null, 2));
+    } catch (error) {
+      console.error("Failed to save log settings:", error);
+    }
+  }
+
+  private updateMaxLogAge(settings: LogCleanupSettings): void {
+    const unitMultipliers = {
+      minutes: 60 * 1000,
+      hours: 60 * 60 * 1000,
+      days: 24 * 60 * 60 * 1000,
+      weeks: 7 * 24 * 60 * 60 * 1000,
+    };
+    
+    this.maxLogAge = settings.customInterval * unitMultipliers[settings.unit];
+    this.restartAutoCleanup(settings);
+  }
+
+  private startAutoCleanup(): void {
+    const settings = this.getSettings();
+    if (settings.autoCleanup) {
+      this.cleanupTimer = setInterval(() => {
+        this.cleanOldLogs();
+      }, settings.interval);
+    }
+  }
+
+  private restartAutoCleanup(settings: LogCleanupSettings): void {
+    // Clear existing timer
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    
+    // Start new timer if auto cleanup is enabled
+    if (settings.autoCleanup) {
+      this.cleanupTimer = setInterval(() => {
+        this.cleanOldLogs();
+      }, settings.interval);
+    }
+  }
+
+  getSettings(): LogCleanupSettings {
+    try {
+      if (fs.existsSync(this.settingsFilePath)) {
+        const data = fs.readFileSync(this.settingsFilePath, "utf8");
+        return JSON.parse(data) as LogCleanupSettings;
+      }
+    } catch (error) {
+      console.error("Failed to get log settings:", error);
+    }
+    return this.defaultSettings;
+  }
+
+  updateSettings(newSettings: LogCleanupSettings): void {
+    this.saveSettings(newSettings);
+    this.updateMaxLogAge(newSettings);
+    this.log("SYSTEM", "INFO", "Log cleanup settings updated", {
+      autoCleanup: newSettings.autoCleanup,
+      interval: `${newSettings.customInterval} ${newSettings.unit}`,
+      nextCleanup: new Date(Date.now() + newSettings.interval).toISOString(),
+    });
   }
 
   private generateId(): string {
@@ -144,15 +246,20 @@ class SecretLogger {
             JSON.stringify(filteredLogs, null, 2)
           );
           console.log(
-            `🔒 SECRET_LOG [SYSTEM/INFO]: Cleaned ${
+            `🔒 SECRET_LOG [SYSTEM/INFO]: Auto-cleaned ${
               logs.length - filteredLogs.length
-            } old log entries`
+            } old log entries (older than ${this.getMaxLogAgeDescription()})`
           );
         }
       }
     } catch (error) {
       console.error("Failed to clean old logs:", error);
     }
+  }
+
+  private getMaxLogAgeDescription(): string {
+    const settings = this.getSettings();
+    return `${settings.customInterval} ${settings.unit}`;
   }
 
   clearAllLogs(): void {

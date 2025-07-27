@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Trash2, RefreshCw, Search, Filter, Download } from "lucide-react";
+import { X, Trash2, RefreshCw, Search, Filter, Download, Settings, Clock, Save } from "lucide-react";
 
 interface LogEntry {
   id: string;
@@ -18,6 +18,13 @@ interface LogEntry {
   age: string;
 }
 
+interface LogCleanupSettings {
+  autoCleanup: boolean;
+  interval: number;
+  unit: "minutes" | "hours" | "days" | "weeks";
+  customInterval: number;
+}
+
 interface SecretLogsWindowProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,6 +41,14 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [loading, setLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<LogCleanupSettings>({
+    autoCleanup: true,
+    interval: 10 * 60 * 1000,
+    unit: "minutes",
+    customInterval: 10,
+  });
+  const [settingsLoading, setSettingsLoading] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -57,6 +72,34 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
       setFilteredLogs([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const result = await window.api.getLogSettings();
+      if (result.success && result.settings) {
+        setSettings(result.settings);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  };
+
+  const saveSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const result = await window.api.updateLogSettings(settings);
+      if (result.success) {
+        alert("Settings saved successfully!");
+      } else {
+        alert(`Failed to save settings: ${result.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      alert("Failed to save settings. Please try again.");
+    } finally {
+      setSettingsLoading(false);
     }
   };
 
@@ -99,6 +142,7 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchLogs();
+      fetchSettings();
     }
   }, [isOpen]);
 
@@ -177,7 +221,7 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
             <div
               onClick={fetchLogs}
             //   disabled={loading}
-              className="p-2 text-green-400 hover:text-green-300 disabled:opacity-50"
+              className="p-2 text-green-400 hover:text-green-300 disabled:opacity-50 cursor-pointer"
               title="Refresh logs"
             >
               <RefreshCw
@@ -185,22 +229,29 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
               />
             </div>
             <div
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 text-yellow-400 hover:text-yellow-300 cursor-pointer"
+              title="Auto-cleanup settings"
+            >
+              <Settings className="h-4 w-4" />
+            </div>
+            <div
               onClick={exportLogs}
-              className="p-2 text-blue-400 hover:text-blue-300"
+              className="p-2 text-blue-400 hover:text-blue-300 cursor-pointer"
               title="Export logs"
             >
               <Download className="h-4 w-4" />
             </div>
             <div
               onClick={clearLogs}
-              className="p-2 text-red-400 hover:text-red-300"
+              className="p-2 text-red-400 hover:text-red-300 cursor-pointer"
               title="Clear all logs"
             >
               <Trash2 className="h-4 w-4" />
             </div>
             <div
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-white"
+              className="p-2 text-gray-400 hover:text-white cursor-pointer"
             >
               <X className="h-4 w-4" />
             </div>
@@ -246,6 +297,126 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
             <option value="INFO">Info</option>
           </select>
         </div>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="p-4 border-b border-gray-700 bg-[#1a1a1a]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-yellow-400 font-semibold flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Auto-Cleanup Settings
+              </h3>
+              <button
+                onClick={saveSettings}
+                disabled={settingsLoading}
+                className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {settingsLoading ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Save className="h-3 w-3" />
+                )}
+                Save
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <label className="block text-gray-400 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={settings.autoCleanup}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      autoCleanup: e.target.checked
+                    })}
+                    className="mr-2"
+                  />
+                  Enable Auto-Cleanup
+                </label>
+                <p className="text-xs text-gray-500">
+                  Automatically delete old logs at regular intervals
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-gray-400 mb-2">
+                  Delete logs older than:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={settings.customInterval}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1;
+                      const unitMultipliers = {
+                        minutes: 60 * 1000,
+                        hours: 60 * 60 * 1000,
+                        days: 24 * 60 * 60 * 1000,
+                        weeks: 7 * 24 * 60 * 60 * 1000,
+                      };
+                      setSettings({
+                        ...settings,
+                        customInterval: value,
+                        interval: value * unitMultipliers[settings.unit]
+                      });
+                    }}
+                    className="bg-black text-green-400 border border-gray-600 rounded px-2 py-1 text-sm font-mono focus:border-green-500 focus:outline-none flex-1"
+                  />
+                  <select
+                    value={settings.unit}
+                    onChange={(e) => {
+                      const unit = e.target.value as "minutes" | "hours" | "days" | "weeks";
+                      const unitMultipliers = {
+                        minutes: 60 * 1000,
+                        hours: 60 * 60 * 1000,
+                        days: 24 * 60 * 60 * 1000,
+                        weeks: 7 * 24 * 60 * 60 * 1000,
+                      };
+                      setSettings({
+                        ...settings,
+                        unit,
+                        interval: settings.customInterval * unitMultipliers[unit]
+                      });
+                    }}
+                    className="bg-black text-green-400 border border-gray-600 rounded px-2 py-1 text-sm font-mono focus:border-green-500 focus:outline-none"
+                  >
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-gray-400 mb-2">
+                  Current Status:
+                </label>
+                <div className="text-xs">
+                  <div className={`${settings.autoCleanup ? 'text-green-400' : 'text-red-400'}`}>
+                    Auto-cleanup: {settings.autoCleanup ? 'Enabled' : 'Disabled'}
+                  </div>
+                  <div className="text-gray-400">
+                    Retention: {settings.customInterval} {settings.unit}
+                  </div>
+                  <div className="text-gray-400">
+                    Check interval: Every 10 minutes
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-3 p-2 bg-[#2a2a2a] rounded border-l-4 border-yellow-400">
+              <p className="text-xs text-yellow-300">
+                <strong>⚠️ Warning:</strong> Setting very short intervals (like minutes or hours) may result in frequent log deletion. 
+                For production use, consider using days or weeks. Current logs matching your criteria will be deleted immediately upon saving.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Logs Display */}
         <div className="flex-1 overflow-hidden flex">
@@ -378,7 +549,8 @@ export const SecretLogsWindow: React.FC<SecretLogsWindowProps> = ({
         {/* Footer */}
         <div className="p-2 border-t border-gray-700 bg-ltgray text-xs text-gray-500 font-mono text-center">
           🔒 Confidential System Logs - Authorized Personnel Only |
-          Auto-cleanup: 3 weeks | Press Ctrl+` or Ctrl+Shift+L to toggle
+          Auto-cleanup: {settings.autoCleanup ? `${settings.customInterval} ${settings.unit}` : 'Disabled'} | 
+          Press Ctrl+` or Ctrl+Shift+L to toggle
         </div>
       </div>
     </div>

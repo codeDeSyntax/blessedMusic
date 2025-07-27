@@ -46,14 +46,14 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
   }, [onBackClick]);
 
   return (
-    <div className="flex flex-col h-full bg-[#30261d] text-white overflow-hidden">
+    <div className="flex flex-col h-full bg-[#282828] text-white overflow-hidden">
       {/* Window Controls */}
-      <div className="flex items-center justify-between px-2 h-12 z-40 bg-[#30261d] border-b border-gray-700">
+      <div className="flex items-center justify-between px-2 h-8 z-40 bg-[#1a1a1a] border-b border-[#3a3a3a]">
         <div className="flex items-center gap-3">
           {hasBackButton && (
             <div
               onClick={handleBack}
-              className="p-2 rounded-full hover:bg-gray-800 text-white transition-colors duration-200"
+              className="p-2 rounded-full hover:bg-[#3a3a3a] text-white transition-colors duration-200"
             >
               <ArrowLeft size={18} />
             </div>
@@ -63,19 +63,19 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
         <div className="flex space-x-2 items-center">
           <div
             onClick={handleMinimize}
-            className="rounded-full h-6 w-6 flex items-center justify-center text-white hover:bg-gray-800 cursor-pointer transition-colors duration-200"
+            className="rounded-full h-6 w-6 flex items-center justify-center text-white hover:bg-[#3a3a3a] cursor-pointer transition-colors duration-200"
           >
             <Minus size={16} />
           </div>
           <div
             onClick={handleMaximize}
-            className="rounded-full h-6 w-6 flex items-center justify-center text-white hover:bg-gray-800 cursor-pointer transition-colors duration-200"
+            className="rounded-full h-6 w-6 flex items-center justify-center text-white hover:bg-[#3a3a3a] cursor-pointer transition-colors duration-200"
           >
             <Maximize2 size={16} />
           </div>
           <div
             onClick={handleClose}
-            className="rounded-full h-6 w-6 flex items-center justify-center text-white hover:bg-red-900 cursor-pointer transition-colors duration-200"
+            className="rounded-full h-6 w-6 flex items-center justify-center text-white hover:bg-[#ff4444] cursor-pointer transition-colors duration-200"
           >
             <X size={16} />
           </div>
@@ -83,7 +83,7 @@ export const PresentationLayout: React.FC<PresentationLayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden bg-[#30261d]">{children}</div>
+      <div className="flex-1 overflow-hidden bg-[#282828]">{children}</div>
     </div>
   );
 };

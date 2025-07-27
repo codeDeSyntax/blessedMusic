@@ -14,7 +14,6 @@ import { setCurrentScreen, CurrentScreen } from "../store/slices/appSlice";
 
 // Extracted components
 import { useSlideBuilder } from "./components/SlideBuilderHook";
-import SettingsPanel from "./components/SettingsPanel";
 import EnhancedNavigationControls from "./components/EnhancedNavigationControls";
 import VerticalActionPanel from "./components/VerticalActionPanel";
 import FrameModalSettings from "./components/FrameModalSettings";
@@ -667,7 +666,7 @@ export const PresentationSlideshowRefactored: React.FC<{
   return (
     <div
       ref={containerRef}
-      className={`relative w-screen h-screen overflow-hidden bg-[#30261d] ${
+      className={`relative w-screen h-screen overflow-hidden bg-[#282828] ${
         isPresentationMode ? "cursor-none" : ""
       }`}
       onClick={closeAllColorPickers}
@@ -741,7 +740,7 @@ export const PresentationSlideshowRefactored: React.FC<{
       <ColorPickerComponents />
 
       {/* Main Slide Display */}
-      <div className="absolute inset-0 bg-[#30261d]">
+      <div className="absolute inset-0 bg-[#282828]">
         {slideView === "grid" ? (
           <GridView
             slides={slides}
@@ -781,14 +780,14 @@ export const PresentationSlideshowRefactored: React.FC<{
           height: 12px;
           width: 12px;
           border-radius: 50%;
-          background: #9a674a;
+          background: #606060;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           transition: all 0.2s ease;
         }
 
         .slider-thumb::-webkit-slider-thumb:hover {
-          background: #7a5236;
+          background: #808080;
           transform: scale(1.1);
         }
 

@@ -6,7 +6,6 @@ export type CurrentScreen =
   | "create"
   | "edit"
   | "Presentation"
-  | "instRoom"
   | "categorize"
   | "userguide"
   | "backgrounds"

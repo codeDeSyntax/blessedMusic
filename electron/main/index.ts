@@ -1164,6 +1164,40 @@ ipcMain.handle("clear-secret-logs", async () => {
   }
 });
 
+ipcMain.handle("get-log-settings", async () => {
+  try {
+    const settings = secretLogger.getSettings();
+    logSystemInfo("Log settings accessed by admin", settings);
+    return { success: true, settings };
+  } catch (error) {
+    console.error("Error getting log settings:", error);
+    logSystemError("Failed to retrieve log settings", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("update-log-settings", async (event, newSettings) => {
+  try {
+    secretLogger.updateSettings(newSettings);
+    logSystemInfo("Log settings updated by admin", newSettings);
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating log settings:", error);
+    logSystemError("Failed to update log settings", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
 ipcMain.handle("export-secret-logs", async () => {
   try {
     const logs = secretLogger.getLogs();
@@ -1467,7 +1501,7 @@ PREACHER: ${EvSermon.preacher || ""}
 DATE: ${EvSermon.date || ""}
 CREATED_AT: ${sermon.createdAt}
 UPDATED_AT: ${sermon.updatedAt}
-BACKGROUND_IMAGE: ${EvSermon.backgroundImage || ""}
+BACKGROUND_IMAGE: ${EvSermon.backgroundImage || "./evdefault.jpg"}
 
 #SCRIPTURES
 ${

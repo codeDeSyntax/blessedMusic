@@ -88,10 +88,6 @@ export const useSongOperations = () => {
     dispatch(setCurrentScreen("create"));
   }, [dispatch]);
 
-  const goToInstrumentRoom = useCallback(() => {
-    dispatch(setCurrentScreen("instRoom"));
-  }, [dispatch]);
-
   const goToCategorize = useCallback(() => {
     dispatch(setCurrentScreen("categorize"));
   }, [dispatch]);
@@ -161,11 +157,25 @@ export const useSongOperations = () => {
       const songsData = (await window.api.fetchSongs(songRepo)) as Song[];
       dispatch(setSongs(songsData));
     } catch (error) {
-      dispatch(
-        setError(
-          error instanceof Error ? error.message : "Failed to load songs"
-        )
-      );
+      // Extract meaningful information from error for better user experience
+      let errorMessage = "Failed to load songs";
+      
+      if (error instanceof Error) {
+        const message = error.message;
+        if (message.includes("fetch-songs")) {
+          errorMessage = "Failed to fetch songs";
+        } else if (message.includes("permission") || message.includes("EACCES")) {
+          errorMessage = "Permission denied accessing song folder";
+        } else if (message.includes("ENOENT") || message.includes("not found")) {
+          errorMessage = "Song folder not found";
+        } else if (message.includes("network") || message.includes("connection")) {
+          errorMessage = "Network connection error";
+        } else {
+          errorMessage = message;
+        }
+      }
+      
+      dispatch(setError(errorMessage));
     }
   }, [dispatch, songRepo]);
 
@@ -239,7 +249,6 @@ export const useSongOperations = () => {
     presentSelectedSong,
     goToEdit,
     goToCreate,
-    goToInstrumentRoom,
     goToCategorize,
     goToUserGuide,
     goToBackgrounds,

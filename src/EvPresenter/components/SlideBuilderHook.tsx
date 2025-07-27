@@ -708,13 +708,13 @@ export const useSlideBuilder = ({
                                   {/* Scripture text */}
                                   <div className="mb-8 relative z-20">
                                     <p
-                                      className={`text-3xl font-medium leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 relative z-20`}
+                                      className={`text-3xl font-medium leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 relative z-20 font-bitter`}
                                       style={{
                                         color: scriptureColor,
                                         lineHeight: 1.6,
                                         textShadow:
                                           "2px 2px 4px rgba(0,0,0,0.8)",
-                                        fontFamily: scriptureFontFamily,
+                                        // fontFamily: scriptureFontFamily,
                                       }}
                                       onClick={(e) => {
                                         e.stopPropagation();

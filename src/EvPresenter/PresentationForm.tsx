@@ -29,10 +29,14 @@ interface SermonFormProps {
 }
 
 // Update input classes to use primary color for focus
-const inputClasses =
-  "w-full px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm";
+const inputClass =
+  "w-full px-4 py-3 rounded-lg border border-[#606060]/30 bg-[#3a3a3a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] focus:border-[#808080] transition-all shadow-sm";
+const miniInputClass =
+  "w-[80%] px-4 py-3 rounded-lg border border-[#606060]/30 bg-[#3a3a3a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] focus:border-[#808080] transition-all shadow-sm";
 const halfInputClasses =
-  "w-[80%] px-4 py-3 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm";
+  "w-[90%] px-4 py-3 rounded-lg border border-[#606060]/30 bg-[#1a1a1a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] focus:border-[#808080] transition-all shadow-sm";
+const inputClasses =
+  "w-[90%] px-4 py-3 rounded-lg border border-[#606060]/30 bg-[#1a1a1a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] focus:border-[#808080] transition-all shadow-sm";
 
 export const SermonForm: React.FC<SermonFormProps> = ({
   initialData,
@@ -75,7 +79,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
     null
   );
   const [backgroundImage, setBackgroundImage] = useState(
-    initialData?.backgroundImage || ""
+    initialData?.backgroundImage || "./evdefault.jpg"
   );
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
 
@@ -293,25 +297,23 @@ export const SermonForm: React.FC<SermonFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="h-[98%] max-w-3xl mx-auto">
       <div
-        className="bg-[#faeed1] dark:bg-bgray/70 rounded-2xl shadow-xl border border-[#9a674a]/20 dark:border-gray-800 h-full flex flex-col"
+        className="bg-[#272727] rounded-2xl shadow-xl border border-[#606060]/30 h-full flex flex-col"
         style={{
           borderWidth: 2,
           borderStyle: "dashed",
-          borderColor: "#9a674a",
+          borderColor: "#404040",
         }}
       >
         {/* Form Header - Fixed */}
-        <div className="flex items-center p-6 pb-4 border-b border-[#9a674a]/20 dark:border-gray-800">
-          <div className="bg-gradient-to-r from-[#9a674a] to-[#8b5a3c] p-3 rounded-xl text-white shadow-md mr-4">
+        <div className="flex items-center p-6 pb-4 border-b border-[#404040]/20">
+          <div className="bg-gradient-to-r from-[#404040] to-[#505050] p-3 rounded-xl text-white shadow-md mr-4">
             <BookOpen size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#9a674a] dark:text-gray-100">
+            <h2 className="text-xl font-bold text-[#f5f5f5]">
               {initialData?.id ? "Edit Sermon" : "New Sermon"}
             </h2>
-            <p className="text-sm text-[#9a674a]/70 dark:text-gray-400">
-              Fill in the details below
-            </p>
+            <p className="text-sm text-[#808080]">Fill in the details below</p>
           </div>
         </div>
 
@@ -320,7 +322,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
           <div className="space-y-5">
             {/* Title Input */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+              <label className="block text-sm font-medium text-[#f5f5f5]">
                 Title
               </label>
               <input
@@ -336,7 +338,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
               {/* Preacher Input */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+                <label className="block text-sm font-medium text-[#f5f5f5]">
                   <div className="flex items-center">
                     <User size={16} className="mr-1" />
                     <span>Preacher</span>
@@ -354,7 +356,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
 
               {/* Date Input */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+                <label className="block text-sm font-medium text-[#f5f5f5]">
                   <div className="flex items-center">
                     <Calendar size={16} className="mr-1" />
                     <span>Date</span>
@@ -372,7 +374,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
 
             {/* Scripture Input */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+              <label className="block text-sm font-medium text-[#f5f5f5]">
                 <div className="flex items-center">
                   <BookOpen size={16} className="mr-1" />
                   <span>Scriptures</span>
@@ -390,7 +392,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 <button
                   type="button"
                   onClick={addScripture}
-                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#9a674a] dark:hover:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg bg-[#404040] text-white hover:bg-[#505050] transition-colors duration-200 flex items-center gap-2"
                 >
                   <Plus size={16} />
                   Add
@@ -400,15 +402,14 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 {scriptures.map((scripture, index) => (
                   <div
                     key={index}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 group rounded-full bg-[#fdf4d0] dark:bg-stone-800/30 border border-dashed border-[#9a674a]/20 dark:border-gray-700"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 group rounded-full bg-[#404040] border border-dashed border-[#606060]/30"
                   >
-                    <span className="text-sm text-[#9a674a] dark:text-gray-300">
+                    <span className="text-sm text-[#f5f5f5]">
                       {scripture.text}
                     </span>
                     <div
-                      // type="div"
                       onClick={() => removeScripture(index)}
-                      className="p-1 h-4 w-4 hidden group-hover:flex cursor-pointer  rounded-full bg-red-700 text-center hover:bg-red-700 dark:hover:bg-red-700 text-[#9a674a] dark:text-gray-400 transition-colors duration-200"
+                      className="p-1 h-4 w-4 hidden group-hover:flex cursor-pointer rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors duration-200"
                     >
                       <X size={14} />
                     </div>
@@ -419,7 +420,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
 
             {/* Main Message Points */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+              <label className="block text-sm font-medium text-[#f5f5f5]">
                 <div className="flex items-center">
                   <MessageSquare size={16} className="mr-1" />
                   <span>Message Points (Optional)</span>
@@ -437,7 +438,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 <button
                   type="button"
                   onClick={addMessagePoint}
-                  className="px-4 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#9a674a] dark:hover:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg bg-[#404040] text-white hover:bg-[#505050] transition-colors duration-200 flex items-center gap-2"
                 >
                   <Plus size={16} />
                   Add
@@ -447,16 +448,15 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                 {mainMessagePoints.map((point, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 px-4 py-3 rounded-lg bg-[#fdf4d0] dark:bg-stone-800/30 border border-dashed border-[#9a674a]/20 dark:border-stone-300"
+                    className="flex items-start gap-3 px-4 py-3 rounded-lg bg-[#404040] border border-dashed border-[#606060]/30"
                   >
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#9a674a] mt-2"></div>
-                    <span className="flex-1 text-sm text-[#9a674a] dark:text-gray-300">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#606060] mt-2"></div>
+                    <span className="flex-1 text-sm text-[#f5f5f5]">
                       {point.text}
                     </span>
                     <div
-                      // type="div"
                       onClick={() => removeMessagePoint(index)}
-                      className="p-1 h-4 w-4 cursor-pointer rounded-full bg-red-700 hover:bg-red-700 dark:hover:bg-red-700 text-white  transition-colors duration-200"
+                      className="p-1 h-4 w-4 cursor-pointer rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors duration-200"
                     >
                       <X size={14} />
                     </div>
@@ -467,7 +467,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
 
             {/* Quotes Input - New Tag-Based System */}
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-[#9a674a] dark:text-gray-300">
+              <label className="block text-sm font-medium text-[#f5f5f5]">
                 <div className="flex items-center">
                   <QuoteIcon size={16} className="mr-1" />
                   <span>Quotes (Optional)</span>
@@ -475,21 +475,21 @@ export const SermonForm: React.FC<SermonFormProps> = ({
               </label>
 
               {/* Quote input fields */}
-              <div className="space-y-3 p-4 bg-[#fdf4d0]/50 dark:bg-bgray/50 rounded-lg border border-[#9a674a]/20">
+              <div className="space-y-3 p-4 bg-[#404040] rounded-lg border border-[#606060]/30">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <input
                     type="text"
                     value={newQuoteReference}
                     onChange={(e) => setNewQuoteReference(e.target.value)}
-                    placeholder="reference (e.g., Stature of a  pe...p56)"
-                    className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm placeholder:italic"
+                    placeholder="reference (e.g., Stature of a pe...p56)"
+                    className="px-3 py-2 rounded-lg border border-[#606060]/30 bg-[#3a3a3a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] transition-all shadow-sm text-sm"
                   />
                   <input
                     type="text"
                     value={newQuoteProphetInitials}
                     onChange={(e) => setNewQuoteProphetInitials(e.target.value)}
-                    placeholder=" initials (auto-filled when selecting preacher)"
-                    className="px-3 py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm text-sm"
+                    placeholder="initials (auto-filled when selecting preacher)"
+                    className="px-3 py-2 rounded-lg border border-[#606060]/30 bg-[#3a3a3a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] transition-all shadow-sm text-sm"
                   />
 
                   {/* Preacher Selection by Initials */}
@@ -501,8 +501,8 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                       }}
                       className={`cursor-pointer rounded-full h-10 w-10 flex items-center justify-center border transition-all duration-200 text-xs font-bold ${
                         newQuotePreacherImage === "/bob.jpg"
-                          ? "bg-[#9a674a] border-[#9a674a] ring-2 ring-[#9a674a]/50 text-white"
-                          : "bg-[#fdf4d0] dark:bg-bgray border-[#9a674a]/20 hover:bg-[#9a674a]/10 text-[#9a674a] dark:text-gray-300"
+                          ? "bg-[#606060] border-[#606060] ring-2 ring-[#606060]/50 text-white"
+                          : "bg-[#3a3a3a] border-[#606060]/20 hover:bg-[#606060]/10 text-[#f5f5f5]"
                       }`}
                       title="R.L.L - Select Bob's image"
                     >
@@ -515,8 +515,8 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                       }}
                       className={`cursor-pointer rounded-full h-10 w-10 flex items-center justify-center border transition-all duration-200 text-xs font-bold ${
                         newQuotePreacherImage === "/wmb.jpeg"
-                          ? "bg-[#9a674a] border-[#9a674a] ring-2 ring-[#9a674a]/50 text-white"
-                          : "bg-[#fdf4d0] dark:bg-bgray border-[#9a674a]/20 hover:bg-[#9a674a]/10 text-[#9a674a] dark:text-gray-300"
+                          ? "bg-[#606060] border-[#606060] ring-2 ring-[#606060]/50 text-white"
+                          : "bg-[#3a3a3a] border-[#606060]/20 hover:bg-[#606060]/10 text-[#f5f5f5]"
                       }`}
                       title="WMB - Select WMB's image"
                     >
@@ -525,30 +525,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                   </div>
                 </div>
 
-                {/* Selected preacher image preview */}
-                {/* {newQuotePreacherImage && (
-                  <div className="flex items-center gap-2 p-2 bg-[#9a674a]/10 dark:bg-gray-800/50 rounded-lg">
-                    <img
-                      src={newQuotePreacherImage}
-                      alt="Selected preacher"
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                    <span className="text-xs text-[#9a674a] dark:text-gray-300">
-                      Selected:{" "}
-                      {newQuotePreacherImage
-                        .replace("./", "")
-                        .split(".")[0]
-                        .toUpperCase()}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setNewQuotePreacherImage("")}
-                      className="ml-auto p-1 rounded-full hover:bg-[#9a674a]/20 text-[#9a674a] dark:text-gray-400"
-                    >
-                      <XIcon size={12} />
-                    </button>
-                  </div>
-                )} */}
+                {/* Selected preacher image preview - Removed, not needed for current theme */}
                 <div className="flex gap-2">
                   <textarea
                     value={newQuoteText}
@@ -561,7 +538,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                     }}
                     placeholder="Enter the quote text"
                     rows={10}
-                    className="flex-1 px-3 no-scrollbar py-2 rounded-lg border-none border-[#9a674a]/20 dark:border-[#9a674a]/20 bg-[#fdf4d0] dark:bg-bgray text-[#9a674a] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#9a674a] dark:focus:ring-[#9a674a] transition-all shadow-sm resize-none text-sm"
+                    className="flex-1 px-4 py-3 rounded-lg border border-[#606060]/30 bg-[#3a3a3a] text-[#f5f5f5] placeholder-[#808080] focus:outline-none focus:ring-2 focus:ring-[#606060] focus:border-[#808080] transition-all shadow-sm resize-none"
                   />
                   <div
                     // type="div"
@@ -572,7 +549,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                     className={`px-4 py-2 h-8 cursor-pointer  rounded-lg text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2 ${
                       editingQuoteIndex !== null
                         ? "bg-gray-500 hover:bg-gray-600"
-                        : "bg-[#9a674a] hover:bg-[#8b5a3c]"
+                        : "bg-[#404040] hover:bg-[#8b5a3c]"
                     }`}
                   >
                     {editingQuoteIndex !== null ? (
@@ -599,7 +576,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-[#9a674a]/70 dark:text-gray-400">
+                <p className="text-xs text-[#808080]">
                   {editingQuoteIndex !== null
                     ? "Currently editing a quote. Update it or cancel to add a new one."
                     : "Press Ctrl+Enter in the text area or click Add to add the quote"}
@@ -614,8 +591,8 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                       key={index}
                       className={`inline-flex flex-col gap-1 p-3 rounded-xl border-dashed border shadow-sm max-w-xs transition-all duration-200 ${
                         editingQuoteIndex === index
-                          ? "bg-stone-50 dark:bg-primary/20 border-primary dark:border-primary ring-2 ring-primary dark:ring-primary"
-                          : "bg-[#fdf4d0] dark:bg-stone-800/30 border-[#9a674a]/20 dark:border-stone-700"
+                          ? "bg-[#505050] border-[#606060] ring-2 ring-[#606060]"
+                          : "bg-[#2f2f2f] border-[#606060]/30"
                       }`}
                     >
                       {/* Quote header */}
@@ -626,16 +603,16 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                             <img
                               src={quoteItem.preacherImage}
                               alt="Preacher"
-                              className="w-6 h-6 rounded-full object-cover border-2 border-[#9a674a]/20"
+                              className="w-6 h-6 rounded-full object-cover border-2 border-[#606060]/20"
                             />
                           )}
                           {quoteItem.reference && (
-                            <span className="text-xs font-medium text-[#9a674a] dark:text-gray-400">
+                            <span className="text-xs font-medium text-[#d0d0d0]">
                               {quoteItem.reference}
                             </span>
                           )}
                           {quoteItem.prophetInitials && (
-                            <span className="text-xs px-2 py-0.5 bg-[#9a674a]/10 text-[#9a674a] dark:bg-gray-700 dark:text-gray-300 rounded-full font-bold">
+                            <span className="text-xs px-2 py-0.5 bg-[#606060]/20 text-[#f5f5f5] rounded-full font-bold">
                               {quoteItem.prophetInitials}
                             </span>
                           )}
@@ -643,14 +620,14 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                         <div className="flex items-center gap-1">
                           <div
                             onClick={() => editQuote(index)}
-                            className="p-1 h-4 w-4 bg-red-700 text-white rounded-full  dark:hover:bg-red-700  dark:text-gray-400 transition-colors duration-200"
+                            className="p-1 h-4 w-4 bg-primary hover:bg-primary/30 text-white rounded-full cursor-pointer transition-colors duration-200"
                             title="Edit quote"
                           >
                             <Edit2 size={10} />
                           </div>
                           <div
                             onClick={() => removeQuote(index)}
-                            className="p-1 h-4 w-4 bg-red-700 text-white rounded-full  dark:hover:bg-red-700  dark:text-gray-400 transition-colors duration-200"
+                            className="p-1 h-4 w-4 bg-red-500 hover:bg-red-600 text-white rounded-full cursor-pointer transition-colors duration-200"
                             title="Remove quote"
                           >
                             <X size={12} />
@@ -658,7 +635,7 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                         </div>
                       </div>
                       {/* Quote text */}
-                      <p className="text-sm text-[#9a674a] dark:text-gray-300 line-clamp-3">
+                      <p className="text-sm text-[#f5f5f5] line-clamp-3">
                         "{quoteItem.text}"
                       </p>
                     </div>
@@ -670,18 +647,18 @@ export const SermonForm: React.FC<SermonFormProps> = ({
         </div>
 
         {/* Form Actions - Fixed at bottom */}
-        <div className="flex justify-end gap-3 p-6 border-t border-[#9a674a]/20 dark:border-gray-800">
+        <div className="flex justify-end gap-3 p-6 border-t border-[#404040]/20">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 transition-colors duration-200"
+            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2 rounded-lg bg-[#9a674a] text-white hover:bg-[#8b5a3c] dark:bg-[#9a674a] dark:hover:bg-[#8b5a3c] transition-colors duration-200 flex items-center gap-2"
+            className="px-6 py-2 rounded-lg bg-[#404040] text-white hover:bg-[#505050] transition-colors duration-200 flex items-center gap-2"
           >
             {isSubmitting ? (
               <>

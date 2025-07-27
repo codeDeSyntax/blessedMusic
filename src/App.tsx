@@ -5,7 +5,6 @@ import EditSong from "./vmusic/EditForm";
 import WorkspaceSelector from "./vmusic/Welcome";
 import CreateSong from "./vmusic/Form";
 import SongPresentation from "./vmusic/PresentationMode";
-import InstrumentShowroom from "./vmusic/InstrumentShowRoom";
 import SongCollectionManager from "./vmusic/Categorize";
 import UserGuidePage from "./vmusic/Userguide";
 import PresentationBackgroundSelector from "./vmusic/BackgroundChoose";
@@ -115,8 +114,6 @@ const App = () => {
           <EditSong />
         ) : currentScreen === "Presentation" ? (
           <SongPresentation />
-        ) : currentScreen === "instRoom" ? (
-          <InstrumentShowroom />
         ) : currentScreen === "categorize" ? (
           <SongCollectionManager />
         ) : currentScreen === "userguide" ? (

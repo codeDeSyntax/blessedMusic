@@ -1175,6 +1175,7 @@ const BiblePresentationDisplay: React.FC<BiblePresentationDisplayProps> = ({
                   style={{
                     fontSize: "3rem",
                     textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                    
                   }}
                 >
                   {currentBook} {currentChapter}:

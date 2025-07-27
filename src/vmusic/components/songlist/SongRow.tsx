@@ -53,7 +53,7 @@ const SongRow = React.memo(
             className="px-4 py-2 flex items-center justify-center gap-2 text-stone-600 text-[11px] font-medium"
             style={{ fontFamily: "Georgia" }}
           >
-            <img src="./music1.png" className="w-4 h-4" alt="PDF icon" />
+            <img src="./music3.png" className="w-4 h-4" alt="PDF icon" />
             {song.title.charAt(0).toUpperCase() +
               song.title.slice(1).toLowerCase()}
           </td>
