@@ -25,7 +25,7 @@
 //   // Show indicator briefly when Ctrl is pressed
 //   useEffect(() => {
 //     let hideTimeout: NodeJS.Timeout;
-    
+
 //     const handleKeyDown = (event: KeyboardEvent) => {
 //       if (event.ctrlKey && !isVisible) {
 //         setShowIndicator(true);
@@ -42,7 +42,7 @@
 
 //     window.addEventListener("keydown", handleKeyDown);
 //     window.addEventListener("keyup", handleKeyUp);
-    
+
 //     return () => {
 //       window.removeEventListener("keydown", handleKeyDown);
 //       window.removeEventListener("keyup", handleKeyUp);
@@ -54,11 +54,11 @@
 //   const loadDisplayInfo = useCallback(async () => {
 //     try {
 //       setIsLoading(true);
-      
+
 //       // Debug: Check what methods are available
 //       console.log("Available API methods:", Object.keys(window.api || {}));
 //       console.log("setProjectionPreferences available:", typeof (window.api as any)?.setProjectionPreferences);
-      
+
 //       const response = await window.api?.getDisplayInfo?.();
 //       if (response?.success && response.data) {
 //         setDisplayInfo(response.data);
@@ -103,10 +103,10 @@
 
 //     try {
 //       setIsLoading(true);
-      
+
 //       // Use type assertion as a workaround for TypeScript issue
 //       const api = window.api as any;
-      
+
 //       // Call the new API to set projection preferences
 //       const response = await api?.setProjectionPreferences?.({
 //         displayId: selectedDisplayId,
@@ -115,7 +115,7 @@
 
 //       if (response?.success) {
 //         console.log("Applied projection settings:", response.data);
-        
+
 //         // Also store in localStorage as backup
 //         localStorage.setItem("projectionSettings", JSON.stringify({
 //           displayId: selectedDisplayId,
@@ -237,7 +237,7 @@
 //                     <RefreshCw className={`w-4 h-4 text-[#808080] ${isLoading ? 'animate-spin' : ''}`} />
 //                   </button>
 //                 </div>
-                
+
 //                 {displayInfo ? (
 //                   <div className="bg-[#3a3a3a] rounded-lg p-3 text-sm">
 //                     <div className="text-[#f5f5f5] mb-2">

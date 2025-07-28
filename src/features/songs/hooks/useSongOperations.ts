@@ -159,22 +159,31 @@ export const useSongOperations = () => {
     } catch (error) {
       // Extract meaningful information from error for better user experience
       let errorMessage = "Failed to load songs";
-      
+
       if (error instanceof Error) {
         const message = error.message;
         if (message.includes("fetch-songs")) {
           errorMessage = "Failed to fetch songs";
-        } else if (message.includes("permission") || message.includes("EACCES")) {
+        } else if (
+          message.includes("permission") ||
+          message.includes("EACCES")
+        ) {
           errorMessage = "Permission denied accessing song folder";
-        } else if (message.includes("ENOENT") || message.includes("not found")) {
+        } else if (
+          message.includes("ENOENT") ||
+          message.includes("not found")
+        ) {
           errorMessage = "Song folder not found";
-        } else if (message.includes("network") || message.includes("connection")) {
+        } else if (
+          message.includes("network") ||
+          message.includes("connection")
+        ) {
           errorMessage = "Network connection error";
         } else {
           errorMessage = message;
         }
       }
-      
+
       dispatch(setError(errorMessage));
     }
   }, [dispatch, songRepo]);

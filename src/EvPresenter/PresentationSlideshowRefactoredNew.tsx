@@ -52,6 +52,10 @@ export const PresentationSlideshowRefactored: React.FC<{
   const [slidesPerPage, setSlidesPerPage] = useState(1);
   const [slideView, setSlideView] = useState<"grid" | "carousel">("carousel");
 
+  // Cursor management for presentation mode
+  const [cursorVisible, setCursorVisible] = useState(true);
+  const cursorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -320,7 +324,7 @@ export const PresentationSlideshowRefactored: React.FC<{
     [savePresentation]
   );
 
-  // Click outside to close settings
+  // Click outside to close settings and color pickers
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -355,17 +359,20 @@ export const PresentationSlideshowRefactored: React.FC<{
       }
     };
 
-    if (
-      showSettings ||
-      showInfo ||
+    // Add event listeners for both mousedown and click events
+    const hasColorPickers =
       showTitleColorPicker ||
       showScriptureColorPicker ||
       showQuoteColorPicker ||
-      showMainMessageColorPicker
-    ) {
-      document.addEventListener("mousedown", handleClickOutside);
+      showMainMessageColorPicker;
+    const hasModals = showSettings || showInfo;
+
+    if (hasColorPickers || hasModals) {
+      document.addEventListener("mousedown", handleClickOutside, true);
+      document.addEventListener("click", handleClickOutside, true);
       return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("mousedown", handleClickOutside, true);
+        document.removeEventListener("click", handleClickOutside, true);
       };
     }
   }, [
@@ -376,6 +383,47 @@ export const PresentationSlideshowRefactored: React.FC<{
     showQuoteColorPicker,
     showMainMessageColorPicker,
   ]);
+
+  // Cursor management for presentation mode
+  useEffect(() => {
+    if (!isPresentationMode) {
+      setCursorVisible(true);
+      return;
+    }
+
+    const handleMouseMove = () => {
+      setCursorVisible(true);
+
+      // Clear existing timeout
+      if (cursorTimeoutRef.current) {
+        clearTimeout(cursorTimeoutRef.current);
+      }
+
+      // Set new timeout to hide cursor after 3 seconds of inactivity
+      cursorTimeoutRef.current = setTimeout(() => {
+        setCursorVisible(false);
+      }, 3000);
+    };
+
+    const handleMouseLeave = () => {
+      setCursorVisible(false);
+    };
+
+    // Add event listeners
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseleave", handleMouseLeave);
+
+    // Initialize cursor hiding timer
+    handleMouseMove();
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseleave", handleMouseLeave);
+      if (cursorTimeoutRef.current) {
+        clearTimeout(cursorTimeoutRef.current);
+      }
+    };
+  }, [isPresentationMode]);
 
   // Background change handler - now saves to presentation with debouncing
   const handleBackgroundChange = useCallback(
@@ -490,6 +538,8 @@ export const PresentationSlideshowRefactored: React.FC<{
     goToNextScripture,
     goToPreviousScripture,
     currentScriptureIndex,
+    scriptureAnimationInterval,
+    setScriptureAnimationInterval,
   } = useSlideBuilder({
     currentPresentation,
     backgroundImage,
@@ -524,42 +574,56 @@ export const PresentationSlideshowRefactored: React.FC<{
     lookupScripture,
   });
 
+  // Default fallback backgrounds array - only specific images
+  const defaultBackgrounds = [
+    "./wood10.jpg",
+    "./wood6.jpg",
+    "./wood2.jpg",
+    "./snow2.jpg",
+  ];
+
+  // Load images from custom path or default fallbacks
+  const loadPresentationImages = async (customPath?: string) => {
+    const imagePath =
+      customPath || localStorage.getItem("evpresenterimagespath");
+
+    if (imagePath) {
+      try {
+        console.log("Loading custom images from:", imagePath);
+        const images = await window.api.getImages(imagePath);
+        if (images && images.length > 0) {
+          setPresentationbgs(images);
+          console.log("Loaded", images.length, "custom images");
+          return;
+        } else {
+          console.log(
+            "No images found in custom directory, using fallback images"
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load custom images:", error);
+        console.log("Error loading custom images, using fallback images");
+      }
+    }
+
+    // Fallback to specific default backgrounds only
+    console.log("Using fallback background images from public folder");
+    setPresentationbgs(defaultBackgrounds);
+  };
+
+  // Handle custom images path change
+  const handleCustomImagesPathChange = async (newPath: string) => {
+    await loadPresentationImages(newPath);
+  };
+
+  // Handle refresh images
+  const handleRefreshImages = async () => {
+    await loadPresentationImages();
+  };
+
   // Load presentation backgrounds
   useEffect(() => {
-    const loadCustomImages = async () => {
-      const customImagesPath = localStorage.getItem("evpresenterimagespath");
-      if (customImagesPath) {
-        try {
-          const images = await window.api.getImages(customImagesPath);
-          setPresentationbgs(images);
-        } catch (error) {
-          console.error("Failed to load custom images:", error);
-          // Load default backgrounds if custom images fail
-          setPresentationbgs([
-            "./wood2.jpg",
-            "./snow1.jpg",
-            "./wood6.jpg",
-            "./wood7.png",
-            "./pic2.jpg",
-            "./wood10.jpg",
-            "./wood11.jpg",
-          ]);
-        }
-      } else {
-        // Load default backgrounds if no custom path
-        setPresentationbgs([
-          "./wood2.jpg",
-          "./snow1.jpg",
-          "./wood6.jpg",
-          "./wood7.png",
-          "./pic2.jpg",
-          "./wood10.jpg",
-          "./wood11.jpg",
-        ]);
-      }
-    };
-
-    loadCustomImages();
+    loadPresentationImages();
   }, []);
 
   // Initialize Bible data for scripture lookups
@@ -667,9 +731,8 @@ export const PresentationSlideshowRefactored: React.FC<{
     <div
       ref={containerRef}
       className={`relative w-screen h-screen overflow-hidden bg-[#282828] ${
-        isPresentationMode ? "cursor-none" : ""
+        isPresentationMode && !cursorVisible ? "cursor-none" : ""
       }`}
-      onClick={closeAllColorPickers}
     >
       {/* Navigation Controls - Only in presentation mode */}
       <EnhancedNavigationControls
@@ -724,6 +787,8 @@ export const PresentationSlideshowRefactored: React.FC<{
         presentationbgs={presentationbgs}
         backgroundImage={backgroundImage}
         handleBackgroundChange={handleBackgroundChange}
+        onCustomImagesPathChange={handleCustomImagesPathChange}
+        onRefreshImages={handleRefreshImages}
       />
 
       {/* Frame Modal Info */}

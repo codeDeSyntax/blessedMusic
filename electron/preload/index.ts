@@ -112,7 +112,8 @@ contextBridge.exposeInMainWorld("api", {
   clearSecretLogs: () => ipcRenderer.invoke("clear-secret-logs"),
   exportSecretLogs: () => ipcRenderer.invoke("export-secret-logs"),
   getLogSettings: () => ipcRenderer.invoke("get-log-settings"),
-  updateLogSettings: (settings: any) => ipcRenderer.invoke("update-log-settings", settings),
+  updateLogSettings: (settings: any) =>
+    ipcRenderer.invoke("update-log-settings", settings),
 
   // Song Projection Navigation and Font Size API
   sendToSongProjection: (data: {

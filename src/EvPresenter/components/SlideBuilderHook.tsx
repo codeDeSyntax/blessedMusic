@@ -90,6 +90,8 @@ export const useSlideBuilder = ({
 
   // Scripture cycling state
   const [currentScriptureIndex, setCurrentScriptureIndex] = useState(0);
+  const [scriptureAnimationInterval, setScriptureAnimationInterval] =
+    useState(5000); // Default 5 seconds
 
   // Title slide image switching state
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -106,7 +108,7 @@ export const useSlideBuilder = ({
     { label: "Garamond", value: "garamond, serif" },
   ];
 
-  // Auto-cycle scriptures every 5 seconds
+  // Auto-cycle scriptures with configurable interval
   useEffect(() => {
     const scriptures = currentPresentation?.scriptures;
     if (!scriptures || scriptures.length <= 1) return;
@@ -120,10 +122,10 @@ export const useSlideBuilder = ({
 
         return (prevIndex + 1) % currentScriptures.length;
       });
-    }, 5000);
+    }, scriptureAnimationInterval);
 
     return () => clearInterval(interval);
-  }, [currentPresentation?.scriptures?.length]);
+  }, [currentPresentation?.scriptures?.length, scriptureAnimationInterval]);
 
   // Auto-cycle title slide images every 1 minute (60 seconds)
   useEffect(() => {
@@ -375,7 +377,7 @@ export const useSlideBuilder = ({
 
                 <AnimatedContent animation={selectedAnimation} isVisible={true}>
                   <h1
-                    className={`${getTitleFontClass()} font-bold leading-tight cursor-pointer hover:opacity-90 transition-all duration-300 text-right mb-4`}
+                    className={`${getTitleFontClass()} font-bold leading-tight cursor-pointer hover:opacity-90 transition-all duration-300 text-right mb-4 inline-block max-w-fit ml-auto`}
                     style={{
                       color: titleColor || "#FFFFFF",
                       fontFamily: titleFontFamily,
@@ -599,10 +601,8 @@ export const useSlideBuilder = ({
               backgroundRepeat: "no-repeat",
             }}
           />
-
           {/* Backdrop blur overlay */}
           <div className="absolute inset-0 backdrop-blur-sm bg-black/30"></div>
-
           {/* Modern header section */}
           <div className="absolute top-0 left-0 right-0 z-20">
             <div className="flex items-center justify-center pt-12 pb-8">
@@ -610,7 +610,7 @@ export const useSlideBuilder = ({
               <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-12 py-4 shadow-2xl">
                 <AnimatedContent animation={selectedAnimation} isVisible={true}>
                   <h1
-                    className="text-5xl font-bold cursor-pointer font-impact hover:opacity-80 transition-all duration-300 text-center"
+                    className="text-5xl font-bold cursor-pointer font-impact hover:opacity-80 transition-all duration-300 text-center inline-block max-w-fit mx-auto"
                     style={{
                       color: titleColor,
                       //   fontFamily: "Georgia, serif",
@@ -629,7 +629,6 @@ export const useSlideBuilder = ({
               </div>
             </div>
           </div>
-
           {/* Main content area with modern grid layout */}
           <div className="absolute top-32 bottom-8 left-8 right-8 z-10">
             <div className="h-full flex items-center justify-center">
@@ -689,10 +688,11 @@ export const useSlideBuilder = ({
 
                               return (
                                 <div className="w-full max-w-4xl text-center">
-                                  {/* Scripture Reference - AT THE VERY TOP */}
-                                  <div className="">
-                                    <div className="  inline-block shadow-2xl">
-                                      <span className=" text-6xl font-bold tracking-wide drop-shadow-xl">
+                                  {/* Scripture Reference and Interval Selector Container */}
+                                  <div className="relative mb-8">
+                                    {/* Scripture Reference - AT THE VERY TOP */}
+                                    <div className="inline-block shadow-2xl">
+                                      <span className="text-6xl font-bold tracking-wide drop-shadow-xl">
                                         {/* Try multiple sources for the reference */}
                                         {scriptureData?.reference ||
                                           scripture.reference ||
@@ -703,12 +703,46 @@ export const useSlideBuilder = ({
                                           }`}
                                       </span>
                                     </div>
+
+                                    {/* Animation interval selector - positioned to the right of scripture reference */}
+                                    {scriptureCount > 1 && (
+                                      <div className="absolute top-0 right-0 transform translate-x-8">
+                                        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-2 border border-white/20 shadow-xl">
+                                          <div className="flex items-center gap-1">
+                                            {[
+                                              3000, 5000, 7000, 8000, 9000,
+                                              10000,
+                                            ].map((interval) => (
+                                              <button
+                                                key={interval}
+                                                onClick={() =>
+                                                  setScriptureAnimationInterval(
+                                                    interval
+                                                  )
+                                                }
+                                                className={`px-2 py-1 rounded-lg text-xs font-medium transition-all duration-300 ${
+                                                  scriptureAnimationInterval ===
+                                                  interval
+                                                    ? "bg-white/40 text-white shadow-lg border border-white/30 scale-105"
+                                                    : "bg-white/15 text-white/80 hover:bg-white/25 hover:text-white hover:scale-105"
+                                                }`}
+                                                title={`Auto-slide every ${
+                                                  interval / 1000
+                                                } seconds`}
+                                              >
+                                                {interval / 1000}s
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
 
                                   {/* Scripture text */}
                                   <div className="mb-8 relative z-20">
                                     <p
-                                      className={`text-3xl font-medium leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 relative z-20 font-bitter`}
+                                      className={`text-3xl font-medium leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 relative z-20 font-bitter inline-block max-w-fit`}
                                       style={{
                                         color: scriptureColor,
                                         lineHeight: 1.6,
@@ -832,7 +866,6 @@ export const useSlideBuilder = ({
               </div>
             </div>
           </div>
-
           {/* Floating decorative elements */}
           <div className="absolute top-1/4 right-12 text-2xl text-yellow-400/60 animate-pulse">
             ✦
@@ -840,19 +873,16 @@ export const useSlideBuilder = ({
           <div className="absolute bottom-1/4 left-12 text-xl text-yellow-400/60 animate-pulse delay-300">
             ✦
           </div>
-
           {/* Bottom progress indicator for multiple scriptures */}
           {scriptureCount > 1 && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
               <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
                 <span className="text-white/70 text-xs">
-                  Scripture {currentScriptureIndex + 1} of {scriptureCount} •
-                  Auto-sliding every 5s
+                  Scripture {currentScriptureIndex + 1} of {scriptureCount}
                 </span>
               </div>
             </div>
-          )}
-
+          )}{" "}
           {/* Custom scrollbar styles */}
           <style
             dangerouslySetInnerHTML={{
@@ -908,7 +938,7 @@ export const useSlideBuilder = ({
                     isVisible={true}
                   >
                     <h1
-                      className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300"
+                      className="text-6xl font-impact italic cursor-pointer hover:opacity-80 transition-all duration-300 inline-block max-w-fit"
                       style={{
                         color: titleColor,
                         fontFamily: titleFontFamily,
@@ -994,7 +1024,7 @@ export const useSlideBuilder = ({
                     >
                       <div className="text-center">
                         <p
-                          className={`${getQuoteFontClass()} font-bitter leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300`}
+                          className={`${getQuoteFontClass()} font-bitter leading-relaxed cursor-pointer hover:opacity-80 transition-all duration-300 inline-block max-w-fit`}
                           style={{
                             color: quoteColor || "#2d3748",
                             fontFamily: quoteFontFamily,
@@ -1167,7 +1197,7 @@ export const useSlideBuilder = ({
                           isVisible={true}
                         >
                           <div
-                            className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-90 transition-all duration-500`}
+                            className={`${getMainMessageFontClass()} leading-relaxed cursor-pointer hover:opacity-90 transition-all duration-500 inline-block max-w-fit`}
                             style={{
                               color: mainMessageColor,
                               fontFamily: mainMessageFontFamily,
@@ -1702,6 +1732,8 @@ export const useSlideBuilder = ({
     goToNextScripture,
     goToPreviousScripture,
     currentScriptureIndex,
+    scriptureAnimationInterval,
+    setScriptureAnimationInterval,
   };
 };
 

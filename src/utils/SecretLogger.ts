@@ -48,7 +48,7 @@ class SecretLogger {
     }
     this.logsFilePath = path.join(appDataPath, ".system_logs.json");
     this.settingsFilePath = path.join(appDataPath, ".log_settings.json");
-    
+
     this.loadSettings();
     this.cleanOldLogs();
     this.startAutoCleanup();
@@ -80,7 +80,10 @@ class SecretLogger {
 
   private saveSettings(settings: LogCleanupSettings): void {
     try {
-      fs.writeFileSync(this.settingsFilePath, JSON.stringify(settings, null, 2));
+      fs.writeFileSync(
+        this.settingsFilePath,
+        JSON.stringify(settings, null, 2)
+      );
     } catch (error) {
       console.error("Failed to save log settings:", error);
     }
@@ -93,7 +96,7 @@ class SecretLogger {
       days: 24 * 60 * 60 * 1000,
       weeks: 7 * 24 * 60 * 60 * 1000,
     };
-    
+
     this.maxLogAge = settings.customInterval * unitMultipliers[settings.unit];
     this.restartAutoCleanup(settings);
   }
@@ -113,7 +116,7 @@ class SecretLogger {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = null;
     }
-    
+
     // Start new timer if auto cleanup is enabled
     if (settings.autoCleanup) {
       this.cleanupTimer = setInterval(() => {

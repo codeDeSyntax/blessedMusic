@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
@@ -13,8 +13,10 @@ import {
   Tornado,
   Atom,
   Rainbow,
+  Folder,
+  FolderOpen,
+  RefreshCw,
 } from "lucide-react";
-
 
 interface FrameModalSettingsProps {
   showSettings: boolean;
@@ -26,6 +28,8 @@ interface FrameModalSettingsProps {
   presentationbgs: string[];
   backgroundImage: string;
   handleBackgroundChange: (newBackground: string) => void;
+  onCustomImagesPathChange?: (newPath: string) => void;
+  onRefreshImages?: () => void;
 }
 
 interface PowerAnimation {
@@ -44,8 +48,62 @@ export const FrameModalSettings: React.FC<FrameModalSettingsProps> = ({
   presentationbgs,
   backgroundImage,
   handleBackgroundChange,
+  onCustomImagesPathChange,
+  onRefreshImages,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [currentCustomPath, setCurrentCustomPath] = useState<string>("");
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+
+  // Load current custom path from localStorage on component mount
+  useEffect(() => {
+    const savedPath = localStorage.getItem("evpresenterimagespath");
+    if (savedPath) {
+      setCurrentCustomPath(savedPath);
+    }
+  }, []);
+
+  // Handle directory selection
+  const handleSelectCustomDirectory = async () => {
+    try {
+      const result = await window.api.selectDirectory();
+      if (typeof result === "string" && result) {
+        const newPath = result;
+        setCurrentCustomPath(newPath);
+        localStorage.setItem("evpresenterimagespath", newPath);
+
+        // Notify parent component to reload images
+        if (onCustomImagesPathChange) {
+          onCustomImagesPathChange(newPath);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to select directory:", error);
+    }
+  };
+
+  // Handle clearing custom directory (use defaults)
+  const handleClearCustomDirectory = () => {
+    setCurrentCustomPath("");
+    localStorage.removeItem("evpresenterimagespath");
+
+    // Notify parent component to reload default images
+    if (onCustomImagesPathChange) {
+      onCustomImagesPathChange("");
+    }
+  };
+
+  // Handle refreshing images from current directory
+  const handleRefreshImages = async () => {
+    if (!onRefreshImages) return;
+
+    setIsLoadingImages(true);
+    try {
+      await onRefreshImages();
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
 
   // Handle outside click
   useEffect(() => {
@@ -107,7 +165,7 @@ export const FrameModalSettings: React.FC<FrameModalSettingsProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
             onClick={onClose}
           />
 
@@ -121,7 +179,7 @@ export const FrameModalSettings: React.FC<FrameModalSettingsProps> = ({
             className="fixed top-32 right-1 z-50 w-96"
           >
             {/* Frame border - matching title slide design */}
-            <div className="bg-white/20 rounded-xl shadow-2xl border2 border-white border-solid py-2 h-[65vh] w-64 backdrop-blur-md">
+            <div className="bg-white rounded-xl shadow-2xl border2 border-white border-solid py-2 h-[65vh] w-64">
               {/* Frame inner content with background */}
               <div
                 className="w-full h-full rounded-lg relative overflow-"
@@ -375,32 +433,101 @@ export const FrameModalSettings: React.FC<FrameModalSettingsProps> = ({
                           Backgrounds
                         </label>
                       </div>
+
+                      {/* Custom Directory Controls */}
+                      <div className="bg-white/10 rounded-md p-2 backdrop-blur-sm mb-1">
+                        <div className="space-y-2">
+                          {/* Current Path Display */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-white/70">
+                              {currentCustomPath ? "Custom:" : "Using defaults"}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={handleRefreshImages}
+                                disabled={isLoadingImages}
+                                className="p-1 rounded bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
+                                title="Refresh images"
+                              >
+                                <RefreshCw
+                                  size={10}
+                                  className={`text-white/80 ${
+                                    isLoadingImages ? "animate-spin" : ""
+                                  }`}
+                                />
+                              </button>
+                              <button
+                                onClick={handleSelectCustomDirectory}
+                                className="p-1 rounded bg-white/10 hover:bg-white/20 transition-colors"
+                                title="Select custom images folder"
+                              >
+                                <FolderOpen
+                                  size={10}
+                                  className="text-white/80"
+                                />
+                              </button>
+                              {currentCustomPath && (
+                                <button
+                                  onClick={handleClearCustomDirectory}
+                                  className="p-1 rounded bg-red-500/20 hover:bg-red-500/30 transition-colors"
+                                  title="Use default images"
+                                >
+                                  <X size={10} className="text-white/80" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Path Display */}
+                          {currentCustomPath && (
+                            <div className="text-xs text-white/60 truncate bg-black/20 rounded px-2 py-1">
+                              {currentCustomPath}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Background Images Grid */}
                       <div className="bg-white/10 rounded-md p-2 backdrop-blur-sm">
                         <div className="flex overflow-x-auto gap-1 pb-1">
-                          {presentationbgs.map((bg, index) => (
-                            <div
-                              key={index}
-                              className={`relative flex-shrink-0 transition-all duration-300 ${
-                                index > 0 ? "-ml-3" : ""
-                              } ${
-                                backgroundImage === bg
-                                  ? "z-20 scale-110 ring-2 ring-white/50"
-                                  : "z-10 hover:z-15 hover:scale-105"
-                              }`}
-                            >
+                          {presentationbgs.length > 0 ? (
+                            presentationbgs.map((bg, index) => (
                               <div
-                                onClick={() => handleBackgroundChange(bg)}
-                                className="block"
+                                key={index}
+                                className={`relative flex-shrink-0 transition-all duration-300 ${
+                                  index > 0 ? "-ml-3" : ""
+                                } ${
+                                  backgroundImage === bg
+                                    ? "z-20 scale-110 ring-2 ring-white/50"
+                                    : "z-10 hover:z-15 hover:scale-105"
+                                }`}
                               >
                                 <div
-                                  className="w-8 h-8 rounded-full border-2 border-white/30 bg-cover bg-center shadow-lg"
-                                  style={{
-                                    backgroundImage: `url(${bg})`,
-                                  }}
-                                />
+                                  onClick={() => handleBackgroundChange(bg)}
+                                  className="block cursor-pointer"
+                                >
+                                  <div
+                                    className="w-8 h-8 rounded-full border-2 border-white/30 bg-cover bg-center shadow-lg"
+                                    style={{
+                                      backgroundImage: `url(${bg})`,
+                                    }}
+                                  />
+                                </div>
                               </div>
+                            ))
+                          ) : (
+                            <div className="text-xs text-white/60 text-center py-2">
+                              {isLoadingImages
+                                ? "Loading images..."
+                                : "No images found"}
                             </div>
-                          ))}
+                          )}
+                        </div>
+
+                        {/* Images Count */}
+                        <div className="text-xs text-white/60 text-center mt-1">
+                          {presentationbgs.length} image
+                          {presentationbgs.length !== 1 ? "s" : ""} available
                         </div>
                       </div>
                     </div>

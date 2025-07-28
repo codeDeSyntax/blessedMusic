@@ -17,6 +17,8 @@ import {
   X as XIcon,
   FolderUp,
   Edit2,
+  FolderOpen,
+  RefreshCw,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation, Scripture, MessagePoint, Quote } from "@/types";
@@ -87,22 +89,42 @@ export const SermonForm: React.FC<SermonFormProps> = ({
     localStorage.getItem("evpresenterimagespath") || ""
   );
   const [availableImages, setAvailableImages] = useState<string[]>([]);
+  const [defaultImages] = useState<string[]>([
+    "./wood10.jpg",
+    "./wood6.jpg",
+    "./wood2.jpg",
+    "./snow2.jpg",
+  ]);
+  const [allImages, setAllImages] = useState<string[]>([]);
 
-  // Load custom images when path changes
+  // Load images (custom only or fallback to specific defaults)
   useEffect(() => {
-    const loadCustomImages = async () => {
+    const loadAllImages = async () => {
       if (customImagesPath) {
         try {
           const customImages = await window.api.getImages(customImagesPath);
-          setAvailableImages(customImages);
+          if (customImages && customImages.length > 0) {
+            setAvailableImages(customImages);
+            setAllImages(customImages); // Only custom images when available
+            return;
+          } else {
+            console.log(
+              "No images found in custom directory, using fallback images"
+            );
+          }
         } catch (error) {
           console.error("Failed to load custom images:", error);
+          console.log("Error loading custom images, using fallback images");
         }
       }
+
+      // Fallback to specific default images only
+      setAvailableImages(defaultImages);
+      setAllImages(defaultImages);
     };
 
-    loadCustomImages();
-  }, [customImagesPath]);
+    loadAllImages();
+  }, [customImagesPath, defaultImages]);
 
   const handleSelectImagesDirectory = async () => {
     try {
@@ -114,6 +136,32 @@ export const SermonForm: React.FC<SermonFormProps> = ({
     } catch (error) {
       console.error("Failed to select directory:", error);
     }
+  };
+
+  const handleRefreshImages = async () => {
+    const savedPath = localStorage.getItem("evpresenterimagespath");
+
+    if (savedPath) {
+      try {
+        const customImages = await window.api.getImages(savedPath);
+        if (customImages && customImages.length > 0) {
+          setAvailableImages(customImages);
+          setAllImages(customImages);
+          return;
+        } else {
+          console.log(
+            "No images found in custom directory, using fallback images"
+          );
+        }
+      } catch (error) {
+        console.error("Failed to refresh custom images:", error);
+        console.log("Error refreshing custom images, using fallback images");
+      }
+    }
+
+    // Fallback to specific default images only
+    setAvailableImages(defaultImages);
+    setAllImages(defaultImages);
   };
 
   const addScripture = () => {
@@ -641,6 +689,146 @@ export const SermonForm: React.FC<SermonFormProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Background Image Selection */}
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-[#f5f5f5]">
+                <div className="flex items-center">
+                  <ImageIcon size={16} className="mr-1" />
+                  <span>Background Image</span>
+                </div>
+              </label>
+
+              {/* Custom Directory Controls */}
+              <div className="bg-[#404040] rounded-lg p-3 border border-[#606060]/30">
+                <div className="space-y-3">
+                  {/* Current Path Display and Controls */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[#f5f5f5]/70">
+                      {customImagesPath
+                        ? "Custom images:"
+                        : "Using default images"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRefreshImages}
+                        className="p-1.5 rounded bg-[#3a3a3a] hover:bg-[#505050] transition-colors"
+                        title="Refresh images"
+                      >
+                        <RefreshCw size={12} className="text-[#f5f5f5]/80" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSelectImagesDirectory}
+                        className="p-1.5 rounded bg-[#3a3a3a] hover:bg-[#505050] transition-colors"
+                        title="Select custom images folder"
+                      >
+                        <FolderOpen size={12} className="text-[#f5f5f5]/80" />
+                      </button>
+                      {customImagesPath && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomImagesPath("");
+                            localStorage.removeItem("evpresenterimagespath");
+                          }}
+                          className="p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 transition-colors"
+                          title="Use default images"
+                        >
+                          <X size={12} className="text-[#f5f5f5]/80" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Path Display */}
+                  {customImagesPath && (
+                    <div className="text-xs text-[#f5f5f5]/60 truncate bg-[#1a1a1a] rounded px-3 py-2">
+                      {customImagesPath}
+                    </div>
+                  )}
+
+                  {/* Background Images Grid */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[#f5f5f5]/70">
+                        Selected:{" "}
+                        {backgroundImage
+                          ? backgroundImage.split("/").pop()
+                          : "None"}
+                      </span>
+                      <span className="text-xs text-[#f5f5f5]/60">
+                        {allImages.length} image
+                        {allImages.length !== 1 ? "s" : ""} available
+                      </span>
+                    </div>
+
+                    <div className="flex overflow-x-auto gap-2 pb-2 no-scrollbar">
+                      {allImages.length > 0 ? (
+                        allImages.map((image, index) => (
+                          <div
+                            key={index}
+                            className={`relative flex-shrink-0 transition-all duration-300 ${
+                              index > 0 ? "-ml-4" : ""
+                            } ${
+                              backgroundImage === image
+                                ? "z-20 scale-110 ring-2 ring-[#606060]/80"
+                                : "z-10 hover:z-15 hover:scale-105"
+                            }`}
+                          >
+                            <div
+                              onClick={() => setBackgroundImage(image)}
+                              className="block cursor-pointer"
+                              title={image.split("/").pop()}
+                            >
+                              <div
+                                className="w-12 h-12 rounded-full border-2 border-[#606060]/50 bg-cover bg-center shadow-lg hover:border-[#606060] transition-all"
+                                style={{
+                                  backgroundImage: `url(${image})`,
+                                }}
+                              />
+                              {/* Selection indicator */}
+                              {backgroundImage === image && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#272727] flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-[#f5f5f5]/60 text-center py-4 w-full">
+                          No images found
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Current selection preview */}
+                    {backgroundImage && (
+                      <div className="mt-3 p-2 bg-[#3a3a3a] rounded-lg border border-[#606060]/30">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-16 h-12 rounded bg-cover bg-center border border-[#606060]/50"
+                            style={{
+                              backgroundImage: `url(${backgroundImage})`,
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="text-xs font-medium text-[#f5f5f5]">
+                              Current Background
+                            </div>
+                            <div className="text-xs text-[#f5f5f5]/70 truncate">
+                              {backgroundImage.split("/").pop()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
