@@ -1,28 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeftCircle } from "lucide-react";
-import BlessedMusic from "./vmusic/BlessedMusic";
-import EditSong from "./vmusic/EditForm";
-import WorkspaceSelector from "./vmusic/Welcome";
-import CreateSong from "./vmusic/Form";
-import SongPresentation from "./vmusic/PresentationMode";
-import SongCollectionManager from "./vmusic/Categorize";
-import UserGuidePage from "./vmusic/Userguide";
-import PresentationBackgroundSelector from "./vmusic/BackgroundChoose";
-import Biblelayout from "./Bible/Bible";
-import BiblePresentationDisplay from "./Bible/components/BiblePresentationDisplay";
-import SongPresentationDisplay from "./vmusic/components/SongPresentationDisplay";
+import WorkspaceSelector from "./EvPresenter/Welcome";
 import PresentationMasterPage from "./EvPresenter/MasterPresentApp";
-import Recents from "./vmusic/Recents";
 import { useAppSelector, useAppDispatch } from "./store";
 import { setCurrentScreen } from "./store/slices/appSlice";
 import { SecretLogsManager } from "./components/SecretLogsManager";
+import TitleBar from "./shared/TitleBar";
 
 const App = () => {
   const currentScreen = useAppSelector((state) => state.app.currentScreen);
   const dispatch = useAppDispatch();
   const [currentRoute, setCurrentRoute] = useState(window.location.hash);
 
-  // Handle hash-based routing for special pages like Bible presentation
+  // Handle hash-based routing for special pages like EvPresenter presentation
   useEffect(() => {
     const handleHashChange = () => {
       setCurrentRoute(window.location.hash);
@@ -35,26 +25,11 @@ const App = () => {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  // Handle special routes - support both hash formats
-  if (
-    currentRoute === "#/bible-presentation-display" ||
-    currentRoute === "#bible-presentation-display"
-  ) {
-    return <BiblePresentationDisplay />;
-  }
-
-  if (
-    currentRoute === "#/song-presentation-display" ||
-    currentRoute === "#song-presentation-display"
-  ) {
-    return <SongPresentationDisplay />;
-  }
+  // No special routes needed for EvPresenter - it's a single-page app
 
   // set up key combinations to navigate between screens
   // ctrl + H ---- Home
-  // ctrl + B ---- Bible
   // ctrl + P ---- Presenter
-  // ctrl + S ---- Songs
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -63,14 +38,8 @@ const App = () => {
           case "h":
             dispatch(setCurrentScreen("Home"));
             break;
-          case "b":
-            dispatch(setCurrentScreen("bible"));
-            break;
           case "p":
             dispatch(setCurrentScreen("mpresenter"));
-            break;
-          case "s":
-            dispatch(setCurrentScreen("Songs"));
             break;
           default:
             break;
@@ -83,56 +52,40 @@ const App = () => {
     };
   }, [dispatch]);
 
-  // Additional safety check - parse URL parameters if hash routing fails
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const routeParam = urlParams.get("route");
-
-    if (routeParam === "bible-presentation") {
-      console.log("Detected route via URL parameter: bible-presentation");
-      setCurrentRoute("#bible-presentation-display");
-    } else if (routeParam === "song-presentation") {
-      console.log("Detected route via URL parameter: song-presentation");
-      setCurrentRoute("#song-presentation-display");
-    }
-  }, []);
+  // No additional routing needed for EvPresenter
 
   return (
     <SecretLogsManager>
       <div
-        className={`flex flex-col h-screen w-screen thin-scrollbar no-scrollbar bg-white dark:bg-ltgray `}
+        className={`h-screen w-screen bg-[#0f0f0f] overflow-hidden`}
         style={{ fontFamily: "Palatino" }}
       >
-        {/* <BlessedMusic /> */}
-        {currentScreen === "Home" ? (
-          <WorkspaceSelector />
-        ) : currentScreen === "create" ? (
-          <CreateSong />
-        ) : currentScreen === "Songs" ? (
-          <BlessedMusic />
-        ) : currentScreen === "edit" ? (
-          <EditSong />
-        ) : currentScreen === "Presentation" ? (
-          <SongPresentation />
-        ) : currentScreen === "categorize" ? (
-          <SongCollectionManager />
-        ) : currentScreen === "userguide" ? (
-          <UserGuidePage />
-        ) : currentScreen === "backgrounds" ? (
-          <PresentationBackgroundSelector />
-        ) : currentScreen === "bible" ? (
-          <Biblelayout />
-        ) : currentScreen === "mpresenter" ? (
-          <PresentationMasterPage />
-        ) : currentScreen === "recents" ? (
-          <Recents />
-        ) : (
-          <ArrowLeftCircle
-            className="size-6 text-white"
-            onClick={() => dispatch(setCurrentScreen("Home"))}
-          />
+        {/* Fixed Title Bar for main screens (Home and mpresenter) */}
+        {(currentScreen === "Home" || currentScreen === "mpresenter") && (
+          <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center ">
+            <TitleBar />
+          </div>
         )}
-        {/* <SongPresentation/> */}
+
+        {/* Main content area with proper padding for fixed title bar */}
+        <div
+          className={`h-full ${
+            currentScreen === "Home" || currentScreen === "mpresenter"
+              ? "pt-6"
+              : ""
+          }`}
+        >
+          {currentScreen === "Home" ? (
+            <WorkspaceSelector />
+          ) : currentScreen === "mpresenter" ? (
+            <PresentationMasterPage />
+          ) : (
+            <ArrowLeftCircle
+              className="size-6 text-white"
+              onClick={() => dispatch(setCurrentScreen("Home"))}
+            />
+          )}
+        </div>
       </div>
     </SecretLogsManager>
   );

@@ -39,20 +39,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.send("closeApp");
   },
   selectDirectory: () => ipcRenderer.invoke("select-directory"),
-  saveSong: (directory: string, title: string, content: string) =>
-    ipcRenderer.invoke("save-song", { directory, title, content }),
-  editSong: (songData: any) => ipcRenderer.invoke("edit-song", songData),
-  fetchSongs: (directory: string) =>
-    ipcRenderer.invoke("fetch-songs", directory),
-  deleteSong: (filePath: string) => ipcRenderer.invoke("delete-song", filePath),
-  searchSong: (directory: string, query: string) =>
-    ipcRenderer.invoke("search-songs", directory, query),
-  onSongsLoaded: (
-    callback: (event: Electron.IpcRendererEvent, ...args: any[]) => void
-  ) => ipcRenderer.on("songs-loaded", callback),
   getPresentationImages: (directory: string) =>
     ipcRenderer.invoke("get-presentation-images", directory),
-  projectSong: (song: Song) => ipcRenderer.invoke("project-song", song),
   isProjectionActive: () => ipcRenderer.invoke("is-projection-active"),
   closeProjectionWindow: () => ipcRenderer.invoke("close-projection-window"),
   onProjectionStateChanged: (callback: (isActive: boolean) => void) => {
@@ -61,18 +49,6 @@ contextBridge.exposeInMainWorld("api", {
     );
     return () => {
       ipcRenderer.removeAllListeners("projection-state-changed");
-    };
-  },
-  onDisplaySong: (callback: (songData: any) => void) => {
-    ipcRenderer.on("display-song", (event, songData) => callback(songData));
-    return () => {
-      ipcRenderer.removeAllListeners("display-song");
-    };
-  },
-  onDisplayInfo: (callback: (info: DisplayInfo) => void) => {
-    ipcRenderer.on("display-info", (event, info) => callback(info));
-    return () => {
-      ipcRenderer.removeAllListeners("display-info");
     };
   },
   getImages: (dirPath: string) => ipcRenderer.invoke("get-images", dirPath),
@@ -115,37 +91,9 @@ contextBridge.exposeInMainWorld("api", {
   updateLogSettings: (settings: any) =>
     ipcRenderer.invoke("update-log-settings", settings),
 
-  // Song Projection Navigation and Font Size API
-  sendToSongProjection: (data: {
-    command?: string;
-    data?: any;
-    fontSize?: number;
-  }) => ipcRenderer.invoke("send-to-song-projection", data),
+  // EvPresenter main window communication API
   sendToMainWindow: (data: { type: string; data: any }) =>
     ipcRenderer.invoke("send-to-main-window", data),
-  onSongProjectionCommand: (
-    callback: (event: { command: string; data?: any }) => void
-  ) => {
-    const listener = (
-      event: Electron.IpcRendererEvent,
-      data: { command: string; data?: any }
-    ) => {
-      callback(data);
-    };
-    ipcRenderer.on("song-projection-command", listener);
-    return () => {
-      ipcRenderer.removeListener("song-projection-command", listener);
-    };
-  },
-  onFontSizeUpdate: (callback: (fontSize: number) => void) => {
-    const listener = (event: Electron.IpcRendererEvent, fontSize: number) => {
-      callback(fontSize);
-    };
-    ipcRenderer.on("font-size-update", listener);
-    return () => {
-      ipcRenderer.removeListener("font-size-update", listener);
-    };
-  },
   onMainWindowMessage: (
     callback: (event: { type: string; data: any }) => void
   ) => {
@@ -193,26 +141,73 @@ const safeDOM = {
 };
 
 /**
- * https://tobiasahlin.com/spinkit
- * https://connoratherton.com/loaders
- * https://projects.lukehaas.me/css-loaders
- * https://matejkustec.github.io/SpinThatShit
+ * Modern splash screen with Microsoft Word-style animation
+ * Uses dark theme and evappicon.png with sophisticated animation
  */
 function useLoading() {
-  const className = `loaders-css__image-spin`;
+  const className = `modern-splash-loader`;
   const styleContent = `
-@keyframes image-spin {
-  from {
-    transform: rotate(0deg);
+/* Microsoft Word-style fade animation */
+@keyframes msWordFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
   }
 }
-.${className} > img {
-  width: 50px;
-  height: 50px;
+
+/* Subtle glow animation */
+@keyframes logoGlow {
+  0% {
+    box-shadow: 0 0 20px rgba(154, 103, 74, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(154, 103, 74, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(154, 103, 74, 0.2);
+  }
 }
+
+/* Background gradient animation */
+@keyframes backgroundShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Floating orbs animation */
+@keyframes float1 {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
+}
+
+@keyframes float2 {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-30px) rotate(-180deg);
+  }
+}
+
 .app-loading-wrap {
   position: fixed;
   top: 0;
@@ -222,8 +217,110 @@ function useLoading() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #faeed1;
-  z-index: 9;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #1e1e1e 50%, #2d2d2d 75%, #1a1a1a 100%);
+  background-size: 400% 400%;
+  animation: backgroundShift 8s ease-in-out infinite;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Background magical elements */
+.app-loading-wrap::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 25% 25%, rgba(45, 45, 45, 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(64, 64, 64, 0.2) 0%, transparent 50%),
+              radial-gradient(circle at 50% 50%, rgba(30, 30, 30, 0.4) 0%, transparent 70%);
+  animation: float1 12s ease-in-out infinite;
+}
+
+.app-loading-wrap::after {
+  content: '';
+  position: absolute;
+  top: -25%;
+  right: -25%;
+  width: 150%;
+  height: 150%;
+  background: conic-gradient(from 180deg at 50% 50%, rgba(45, 45, 45, 0.1) 0deg, rgba(64, 64, 64, 0.2) 180deg, rgba(45, 45, 45, 0.1) 360deg);
+  animation: float2 15s ease-in-out infinite reverse;
+}
+
+.${className} {
+  position: relative;
+  z-index: 10;
+}
+
+/* Static logo - always visible with subtle glow */
+.${className} .logo-static {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 16px;
+  animation: logoGlow 4s ease-in-out infinite;
+  filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.3));
+}
+
+/* Animated logo - fades in and out like Microsoft Word */
+.${className} .logo-animated {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 16px;
+  animation: msWordFade 3s ease-in-out infinite;
+  filter: drop-shadow(0 8px 32px rgba(154, 103, 74, 0.4));
+}
+
+/* Container for logos */
+.${className} .logo-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+/* Floating particles */
+.floating-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(154, 103, 74, 0.6);
+  border-radius: 50%;
+  animation: float1 6s ease-in-out infinite;
+}
+
+.floating-particle:nth-child(1) {
+  top: 20%;
+  left: 20%;
+  animation-delay: -1s;
+}
+
+.floating-particle:nth-child(2) {
+  top: 80%;
+  right: 20%;
+  animation-delay: -2s;
+  animation-name: float2;
+}
+
+.floating-particle:nth-child(3) {
+  bottom: 30%;
+  left: 30%;
+  animation-delay: -3s;
+}
+
+.floating-particle:nth-child(4) {
+  top: 40%;
+  right: 30%;
+  animation-delay: -4s;
+  animation-name: float2;
 }
     `;
   const oStyle = document.createElement("style");
@@ -232,7 +329,18 @@ function useLoading() {
   oStyle.id = "app-loading-style";
   oStyle.innerHTML = styleContent;
   oDiv.className = "app-loading-wrap";
-  oDiv.innerHTML = `<div class="${className}"><img src="./evv.png" alt="Loading..." /></div>`;
+  oDiv.innerHTML = `
+    <div class="${className}">
+      <div class="logo-container">
+        <img class="logo-static" src="./evappicon.png" alt="" />
+        <img class="logo-animated" src="./evappicon.png" alt="" />
+      </div>
+    </div>
+    <div class="floating-particle"></div>
+    <div class="floating-particle"></div>
+    <div class="floating-particle"></div>
+    <div class="floating-particle"></div>
+  `;
 
   return {
     appendLoading() {
@@ -255,4 +363,4 @@ window.onmessage = (ev) => {
   ev.data.payload === "removeLoading" && removeLoading();
 };
 
-setTimeout(removeLoading, 4999);
+setTimeout(removeLoading, 9000);

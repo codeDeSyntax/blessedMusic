@@ -18,6 +18,14 @@ import {
   Layers,
   ExternalLink,
   FileDown,
+  Plus,
+  Filter,
+  Settings,
+  Bell,
+  Download,
+  Upload,
+  FolderOpen,
+  Save,
 } from "lucide-react";
 import { usePresenterOperations } from "@/features/presenter/hooks/usePresenterOperations";
 import { Presentation as PresentationType } from "@/types";
@@ -428,9 +436,9 @@ export const PresentationList: React.FC<{
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#282828] px-4 py-6 ">
+    <div className="flex flex-col h-screen bg-[#282828] px-4 py-6">
       <div
-        className={`w-full max-w-6xl mx-auto rounded-3xl bg-[#282828]/70 shadow-xl p-6  relative overflow-y-scroll no-scrollbar backdrop-blur-sm h-full border border-[#404040]`}
+        className={`w-full max-w-6xl mx-auto rounded-3xl bg-[#282828]/70 shadow-xl p-6 relative overflow-y-scroll no-scrollbar backdrop-blur-sm h-full border border-[#404040]`}
       >
         {/* Corner backdrop effects for magical feel */}
         <div className="absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-[#404040]/20 to-[#404040]/20 rounded-full blur-2xl animate-pulse"></div>
@@ -502,12 +510,73 @@ export const PresentationList: React.FC<{
             </div>
           </div>
 
-          {/* Loading State */}
+          {/* Loading State - Skeleton Design */}
           {isLoading && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 border-2 border-[#606060] border-t-transparent rounded-full animate-spin" />
-                <span className="text-[#808080]">Loading presentations...</span>
+            <div className="flex-1 overflow-y-auto no-scrollbar px-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {/* Generate 8 skeleton cards */}
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="relative bg-[#282828] border border-[#404040]/30 rounded-lg p-4 h-80 animate-pulse overflow-hidden"
+                    style={{
+                      animationDelay: `${index * 0.1}s`,
+                      animationDuration: "1.5s",
+                    }}
+                  >
+                    {/* Skeleton Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="h-3 bg-[#404040]/40 rounded w-20"></div>
+                      <div className="h-3 bg-[#404040]/40 rounded w-16"></div>
+                    </div>
+
+                    {/* Skeleton Title */}
+                    <div className="mb-4">
+                      <div className="h-4 bg-[#606060]/40 rounded w-full mb-2"></div>
+                      <div className="h-4 bg-[#606060]/30 rounded w-3/4"></div>
+                    </div>
+
+                    {/* Skeleton Content Lines */}
+                    <div className="space-y-2 mb-4">
+                      <div className="h-3 bg-[#404040]/30 rounded w-full"></div>
+                      <div className="h-3 bg-[#404040]/30 rounded w-5/6"></div>
+                      <div className="h-3 bg-[#404040]/30 rounded w-4/5"></div>
+                      <div className="h-3 bg-[#404040]/30 rounded w-full"></div>
+                      <div className="h-3 bg-[#404040]/30 rounded w-3/4"></div>
+                    </div>
+
+                    {/* Skeleton Footer */}
+                    <div className="absolute bottom-4 left-4 right-4 pt-4 border-t border-[#404040]/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 bg-[#9a674a]/40 rounded"></div>
+                          <div className="h-3 bg-[#606060]/40 rounded w-16"></div>
+                        </div>
+                        <div className="flex space-x-1">
+                          <div className="w-6 h-6 bg-[#404040]/40 rounded"></div>
+                          <div className="w-6 h-6 bg-[#404040]/40 rounded"></div>
+                          <div className="w-6 h-6 bg-[#404040]/40 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Animated shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#606060]/10 to-transparent animate-shimmer rounded-lg"></div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Loading status indicator */}
+              <div className="mt-8 flex items-center justify-center">
+                <div className="flex items-center gap-3 px-6 py-3 bg-[#1a1a1a]/50 rounded-full border border-[#404040]/30 backdrop-blur-sm">
+                  <div className="relative">
+                    <div className="w-5 h-5 border-2 border-[#9a674a]/30 border-t-[#9a674a] rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 w-5 h-5 border-2 border-transparent border-r-[#9a674a]/50 rounded-full animate-ping"></div>
+                  </div>
+                  <span className="text-[#808080] text-sm font-medium">
+                    Loading presentations...
+                  </span>
+                </div>
               </div>
             </div>
           )}
